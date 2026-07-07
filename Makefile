@@ -1,6 +1,6 @@
 CC		:= gcc
 CFLAGS 	:= -Wall -Wextra -pedantic -std=c11 -Iinclude
-LDGLAGS	:= -lncurses -lpthread
+LDFLAGS	:= -lncurses -lpthread
 
 SRC_DIR	:= src
 OBJ_DIR	:= build/obj
