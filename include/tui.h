@@ -3,6 +3,6 @@
 #include <ncurses.h>
 
 void ncurses_init(void); 
-void draw_window_frame(WINDOW *window, int window_width, int window_height);
+void draw_window_frame(WINDOW *window, int window_width, int window_height, const char *title);
 
 #endif

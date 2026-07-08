@@ -13,10 +13,12 @@ void SIGINT_handler(int arg){
 }
 
 int main(int argc, char *argv[]){
+	(void)argc;
+	(void)argv;
 
 	struct sigaction sa;
 	sa.sa_handler = SIGINT_handler;
-	sigfillset(&sa.sa_mask);
+	sigfillset(&sa.sa_mask);		// suppress all signals to ensure the program terminates correctly
 	sigaction(SIGINT, &sa, NULL);
 
 	ncurses_init();
@@ -31,7 +33,7 @@ int main(int argc, char *argv[]){
 
 	do {
 		werase(main_window);
-		draw_window_frame(main_window, window_width, window_height);
+		draw_window_frame(main_window, window_width, window_height, " NetDet ");
 		wrefresh(main_window);
 		input = wgetch(main_window);
 	} while(!end_program);
