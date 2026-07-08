@@ -24,21 +24,25 @@ int main(int argc, char *argv[]){
 	ncurses_init();
 
 	int input = 0;
-	int window_outer_indent = 5;
-	int window_start_y = window_outer_indent;
-	int window_start_x = window_outer_indent;
-	int window_width = COLS - (window_outer_indent * 2);	// subtract the window's outer indentation from the total number of columns
-	int window_height = LINES - (window_outer_indent * 2);	// subtract the window's outer indentation from the total number of lines
-	WINDOW *main_window = newwin(window_height, window_width, window_start_y, window_start_x);
 
+	window_data main_window;
+	main_window.start_x = WINDOW_OUTER_INDENT;
+	main_window.start_y = WINDOW_OUTER_INDENT;
+	main_window.height = LINES - (WINDOW_OUTER_INDENT * 2);
+	main_window.width = COLS - (WINDOW_OUTER_INDENT * 2);
+	main_window.window = newwin(main_window.height, main_window.width, main_window.start_y, main_window.start_x);
+	
 	do {
-		werase(main_window);
-		draw_window_frame(main_window, window_width, window_height, " NetDet ");
-		wrefresh(main_window);
-		input = wgetch(main_window);
+		werase(main_window.window);
+		draw_window_frame(&main_window, " NetDet ");
+		wrefresh(main_window.window);
+		
+		input = wgetch(main_window.window);
+		input_handler(&main_window, input);
+
 	} while(!end_program);
 
-	delwin(main_window);
+	delwin(main_window.window);
 	endwin();
 	return 0;
 }
