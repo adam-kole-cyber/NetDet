@@ -12,6 +12,11 @@ void SIGINT_handler(int arg){
 	end_program = 1;
 }
 
+void *network_routine(void *args){
+	(void)args;
+	return NULL;
+}
+
 int main(int argc, char *argv[]){
 	(void)argc;
 	(void)argv;
@@ -25,13 +30,17 @@ int main(int argc, char *argv[]){
 
 	int input = 0;
 
+	pthread_t network_thread;
+
 	window_data main_window;
 	main_window.start_x = WINDOW_OUTER_INDENT;
 	main_window.start_y = WINDOW_OUTER_INDENT;
 	main_window.height = LINES - (WINDOW_OUTER_INDENT * 2);
 	main_window.width = COLS - (WINDOW_OUTER_INDENT * 2);
 	main_window.window = newwin(main_window.height, main_window.width, main_window.start_y, main_window.start_x);
-	
+
+	pthread_create(&network_thread, NULL, network_routine, NULL);
+
 	do {
 		werase(main_window.window);
 		draw_window_frame(&main_window, " NetDet ");
@@ -41,6 +50,8 @@ int main(int argc, char *argv[]){
 		input_handler(&main_window, input);
 
 	} while(!end_program);
+	
+	pthread_join(network_thread, NULL);
 
 	delwin(main_window.window);
 	endwin();
