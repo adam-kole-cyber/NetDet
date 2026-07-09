@@ -76,3 +76,7 @@ void resize_handler(window_data *window_data){
 	wresize(window_data->window, new_height, new_width);
 	mvwin(window_data->window, WINDOW_OUTER_INDENT, WINDOW_OUTER_INDENT);
 }
+
+void mvwprintIPw(window_data *window_data, int y, int x, const unsigned char *ip){
+	mvwprintw(window_data->window, y, x, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+}
