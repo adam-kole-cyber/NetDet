@@ -5,21 +5,21 @@
 #include "network.h"
 #include "tui.h"
 
-volatile sig_atomic_t end_program = 0;
+volatile sig_atomic_t end_main_loop = 0;
 
 void SIGINT_handler(int arg){
 	(void)arg;
-	end_program = 1;
+	end_main_loop = 1;
 }
 
 int main(int argc, char *argv[]){
 	(void)argc;
 	(void)argv;
 
-	struct sigaction sa;
-	sa.sa_handler = SIGINT_handler;
-	sigfillset(&sa.sa_mask);		// suppress all signals to ensure the program terminates correctly
-	sigaction(SIGINT, &sa, NULL);
+	struct sigaction signal_action;
+	signal_action.sa_handler = SIGINT_handler;
+	sigfillset(&signal_action.sa_mask);		// suppress all signals to ensure the program terminates correctly
+	sigaction(SIGINT, &signal_action, NULL);
 
 	ncurses_init();
 
@@ -44,7 +44,7 @@ int main(int argc, char *argv[]){
 		input = wgetch(main_window.window);
 		input_handler(&main_window, input);
 
-	} while(!end_program);
+	} while(!end_main_loop);
 	
 	pthread_join(network_thread, NULL);
 
