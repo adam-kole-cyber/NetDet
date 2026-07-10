@@ -5,6 +5,7 @@
 #include "network.h"
 #include "tui.h"
 
+pthread_t main_thread_id;
 volatile sig_atomic_t end_main_loop = 0;
 
 void sigint_handler(int arg){
@@ -12,14 +13,25 @@ void sigint_handler(int arg){
 	end_main_loop = 1;
 }
 
+void sigusr1_handler(int arg){
+	(void)arg;
+	end_main_loop = 1;
+}
+
 int main(int argc, char *argv[]){
 	(void)argc;
 	(void)argv;
+	main_thread_id = pthread_self();
 
-	struct sigaction signal_action;
-	signal_action.sa_handler = sigint_handler;
-	sigfillset(&signal_action.sa_mask);		// suppress all signals to ensure the program terminates correctly
-	sigaction(SIGINT, &signal_action, NULL);
+	struct sigaction sigint_action;
+	sigint_action.sa_handler = sigint_handler;
+	sigfillset(&sigint_action.sa_mask);		// suppress all signals to ensure the program terminates correctly
+	sigaction(SIGINT, &sigint_action, NULL);
+
+	struct sigaction sigusr1_action;
+	sigusr1_action.sa_handler = sigusr1_handler;
+	sigfillset(&sigusr1_action.sa_mask);
+	sigaction(SIGUSR1, &sigusr1_action, NULL);
 
 	ncurses_init();
 

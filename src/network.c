@@ -1,6 +1,8 @@
 #include "network.h"
+#include <pthread.h>
 #include <linux/if_ether.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -25,6 +27,7 @@ void network_init(int *socket_fd){
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
 	if (*socket_fd == -1){
 		perror("socket failed! try entering: sudo ./NetDet\n");
+		pthread_kill(main_thread_id, SIGUSR1);
 		return;
 	}
 

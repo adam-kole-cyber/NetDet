@@ -1,5 +1,8 @@
 #ifndef NETWORK_H
 #define NETWORK_H
+#include <pthread.h>
+
+extern pthread_t main_thread_id;
 
 struct eth_header {
         unsigned char  dest_addr[6];
