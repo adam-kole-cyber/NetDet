@@ -15,13 +15,16 @@
 
 void *network_routine(void *args){
 	(void)args;
+	int socket_fd;
+	network_init(&socket_fd);
+
 	return NULL;
 }
 
-void network_init(void){
-	int socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
-	if (socket_fd == -1){
-		perror("socket failed. please use sudo!");
+void network_init(int *socket_fd){
+	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
+	if (*socket_fd == -1){
+		perror("socket failed! try entering: sudo ./NetDet\n");
 		return;
 	}
 
@@ -31,9 +34,9 @@ void network_init(void){
 	sll.sll_protocol = htons(ETH_P_ALL);
 	sll.sll_ifindex = if_nametoindex("eth0");
 
-	if (bind(socket_fd, (struct sockaddr *)&sll, sizeof(sll)) == -1){
+	if (bind(*socket_fd, (struct sockaddr *)&sll, sizeof(sll)) == -1){
 		perror("bind");
-		close(socket_fd);
+		close(*socket_fd);
 		return;
 	}
 }

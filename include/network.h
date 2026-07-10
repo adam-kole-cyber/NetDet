@@ -22,6 +22,6 @@ struct arp_header {
 } __attribute__((packed));
 
 void *network_routine(void *args);
-void network_init(void);
+void network_init(int *socket_fd);
 
 #endif

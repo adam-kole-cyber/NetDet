@@ -7,7 +7,7 @@
 
 volatile sig_atomic_t end_main_loop = 0;
 
-void SIGINT_handler(int arg){
+void sigint_handler(int arg){
 	(void)arg;
 	end_main_loop = 1;
 }
@@ -17,7 +17,7 @@ int main(int argc, char *argv[]){
 	(void)argv;
 
 	struct sigaction signal_action;
-	signal_action.sa_handler = SIGINT_handler;
+	signal_action.sa_handler = sigint_handler;
 	sigfillset(&signal_action.sa_mask);		// suppress all signals to ensure the program terminates correctly
 	sigaction(SIGINT, &signal_action, NULL);
 
