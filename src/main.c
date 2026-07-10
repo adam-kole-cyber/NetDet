@@ -7,15 +7,18 @@
 
 pthread_t main_thread_id;
 volatile sig_atomic_t end_main_loop = 0;
+volatile sig_atomic_t termination_reason = 0;
 
 void sigint_handler(int arg){
 	(void)arg;
 	end_main_loop = 1;
+	termination_reason = 1;
 }
 
 void sigusr1_handler(int arg){
 	(void)arg;
 	end_main_loop = 1;
+	termination_reason = 2;
 }
 
 int main(int argc, char *argv[]){
