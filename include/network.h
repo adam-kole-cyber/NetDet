@@ -21,6 +21,7 @@ struct arp_header {
         unsigned int   tpa;
 } __attribute__((packed));
 
+void *network_routine(void *args);
 void network_init(void);
 
 #endif

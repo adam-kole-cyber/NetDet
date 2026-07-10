@@ -13,7 +13,12 @@
 #include <ifaddrs.h>
 #include <net/if.h>
 
-void net_init(void){
+void *network_routine(void *args){
+	(void)args;
+	return NULL;
+}
+
+void network_init(void){
 	int socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
 	if (socket_fd == -1){
 		perror("socket failed. please use sudo!");

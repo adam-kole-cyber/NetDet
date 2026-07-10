@@ -12,11 +12,6 @@ void SIGINT_handler(int arg){
 	end_program = 1;
 }
 
-void *network_routine(void *args){
-	(void)args;
-	return NULL;
-}
-
 int main(int argc, char *argv[]){
 	(void)argc;
 	(void)argv;
