@@ -37,6 +37,7 @@ int main(int argc, char *argv[]) {
 	main_window.height = LINES - (WINDOW_OUTER_INDENT * 2);
 	main_window.width = COLS - (WINDOW_OUTER_INDENT * 2);
 	main_window.window = newwin(main_window.height, main_window.width, main_window.start_y, main_window.start_x);
+	wtimeout(main_window.window, 100);
 
 	pthread_create(&network_thread, NULL, network_routine, NULL);
 
