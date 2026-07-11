@@ -30,6 +30,9 @@ int main(int argc, char *argv[]) {
 	int input = 0;
 
 	pthread_t network_thread;
+	struct network_thread_args args;
+	args.argc = argc;
+	args.argv = argv;
 
 	window_data main_window;
 	main_window.start_x = WINDOW_OUTER_INDENT;
@@ -39,7 +42,7 @@ int main(int argc, char *argv[]) {
 	main_window.window = newwin(main_window.height, main_window.width, main_window.start_y, main_window.start_x);
 	wtimeout(main_window.window, 100);
 
-	pthread_create(&network_thread, NULL, network_routine, NULL);
+	pthread_create(&network_thread, NULL, network_routine, (void *)&args);
 
 	do {
 		werase(main_window.window);

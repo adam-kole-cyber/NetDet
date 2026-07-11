@@ -4,6 +4,11 @@
 
 extern pthread_t main_thread_id;
 
+struct network_thread_args {
+	int argc;
+	char **argv;
+};
+
 struct eth_header {
 	unsigned char dest_addr[6];
 	unsigned char sour_addr[6];
@@ -25,6 +30,6 @@ struct arp_header {
 } __attribute__((packed));
 
 void *network_routine(void *args);
-void network_init(int *socket_fd);
+void network_init(int *socket_fd, struct network_thread_args *args);
 
 #endif

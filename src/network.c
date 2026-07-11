@@ -16,14 +16,13 @@
 #include <unistd.h>
 
 void *network_routine(void *args) {
-	(void)args;
 	int socket_fd;
-	network_init(&socket_fd);
+	network_init(&socket_fd, (struct network_thread_args *)args);
 
 	return NULL;
 }
 
-void network_init(int *socket_fd) {
+void network_init(int *socket_fd, struct network_thread_args *args) {
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
 	if (*socket_fd == -1) {
 		perror("socket failed! try entering: sudo ./NetDet\n");
@@ -31,15 +30,23 @@ void network_init(int *socket_fd) {
 		return;
 	}
 
-	struct sockaddr_ll sll;
-	memset(&sll, 0, sizeof(sll));
-	sll.sll_family = AF_PACKET;
-	sll.sll_protocol = htons(ETH_P_ALL);
-	sll.sll_ifindex = if_nametoindex("eth0");
+	if (args->argc > 1) {
+		struct sockaddr_ll sll;
+		memset(&sll, 0, sizeof(sll));
+		sll.sll_family = AF_PACKET;
+		sll.sll_protocol = htons(ETH_P_ALL);
+		sll.sll_ifindex = if_nametoindex(args->argv[1]);
 
-	if (bind(*socket_fd, (struct sockaddr *)&sll, sizeof(sll)) == -1) {
-		perror("bind");
-		close(*socket_fd);
-		return;
+		if (sll.sll_ifindex == 0) {
+			perror("the specified interface does not exist");
+			pthread_kill(main_thread_id, SIGUSR1);
+			return;
+		}
+
+		if (bind(*socket_fd, (struct sockaddr *)&sll, sizeof(sll)) == -1) {
+			perror("bind");
+			close(*socket_fd);
+			return;
+		}
 	}
 }
