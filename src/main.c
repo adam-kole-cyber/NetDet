@@ -1,34 +1,23 @@
+#include "network.h"
+#include "signal_handler.h"
+#include "tui.h"
+#include <ncurses.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
-#include <pthread.h>
-#include <ncurses.h>
-#include "network.h"
-#include "tui.h"
 
 pthread_t main_thread_id;
 volatile sig_atomic_t end_main_loop = 0;
-volatile sig_atomic_t termination_reason = 0;
+volatile sig_atomic_t termination_reason = PROGRAM_RUNNING;
 
-void sigint_handler(int arg){
-	(void)arg;
-	end_main_loop = 1;
-	termination_reason = 1;
-}
-
-void sigusr1_handler(int arg){
-	(void)arg;
-	end_main_loop = 1;
-	termination_reason = 2;
-}
-
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
 	(void)argc;
 	(void)argv;
 	main_thread_id = pthread_self();
 
 	struct sigaction sigint_action;
 	sigint_action.sa_handler = sigint_handler;
-	sigfillset(&sigint_action.sa_mask);		// suppress all signals to ensure the program terminates correctly
+	sigfillset(&sigint_action.sa_mask); // suppress all signals to ensure the program terminates correctly
 	sigaction(SIGINT, &sigint_action, NULL);
 
 	struct sigaction sigusr1_action;
@@ -55,12 +44,12 @@ int main(int argc, char *argv[]){
 		werase(main_window.window);
 		draw_window_frame(&main_window, " NetDet ");
 		wrefresh(main_window.window);
-		
+
 		input = wgetch(main_window.window);
 		input_handler(&main_window, input);
 
-	} while(!end_main_loop);
-	
+	} while (!end_main_loop);
+
 	pthread_join(network_thread, NULL);
 
 	delwin(main_window.window);
