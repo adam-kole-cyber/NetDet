@@ -39,6 +39,7 @@ void network_init(int *socket_fd, struct network_thread_args *args) {
 
 		if (sll.sll_ifindex == 0) {
 			perror("the specified interface does not exist");
+			close(*socket_fd);
 			pthread_kill(main_thread_id, SIGUSR1);
 			return;
 		}
@@ -46,6 +47,7 @@ void network_init(int *socket_fd, struct network_thread_args *args) {
 		if (bind(*socket_fd, (struct sockaddr *)&sll, sizeof(sll)) == -1) {
 			perror("bind");
 			close(*socket_fd);
+			pthread_kill(main_thread_id, SIGUSR1);
 			return;
 		}
 	}
