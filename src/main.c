@@ -15,12 +15,12 @@ int main(int argc, char *argv[]) {
 	(void)argv;
 	main_thread_id = pthread_self();
 
-	struct sigaction sigint_action;
+	struct sigaction sigint_action = {0};
 	sigint_action.sa_handler = sigint_handler;
 	sigfillset(&sigint_action.sa_mask); // suppress all signals to ensure the program terminates correctly
 	sigaction(SIGINT, &sigint_action, NULL);
 
-	struct sigaction sigusr1_action;
+	struct sigaction sigusr1_action = {0};
 	sigusr1_action.sa_handler = sigusr1_handler;
 	sigfillset(&sigusr1_action.sa_mask);
 	sigaction(SIGUSR1, &sigusr1_action, NULL);
