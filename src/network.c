@@ -20,6 +20,7 @@ static void network_init(int *socket_fd, struct network_thread_args *args) {
 	if (*socket_fd == -1) {
 		set_error(APP_ERR_SOCKET, errno);
 		pthread_kill(main_thread_id, SIGUSR1);
+		pthread_exit(NULL);
 		return;
 	}
 
@@ -34,6 +35,7 @@ static void network_init(int *socket_fd, struct network_thread_args *args) {
 			set_error(APP_ERR_IF_NAMETOINDEX, errno);
 			close(*socket_fd);
 			pthread_kill(main_thread_id, SIGUSR1);
+			pthread_exit(NULL);
 			return;
 		}
 
@@ -41,6 +43,7 @@ static void network_init(int *socket_fd, struct network_thread_args *args) {
 			set_error(APP_ERR_BIND, errno);
 			close(*socket_fd);
 			pthread_kill(main_thread_id, SIGUSR1);
+			pthread_exit(NULL);
 			return;
 		}
 	}
