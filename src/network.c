@@ -15,6 +15,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+volatile sig_atomic_t end_listen_loop = 0;
+
 static void network_init(int *socket_fd, struct network_thread_args *args) {
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
 	if (*socket_fd == -1) {
@@ -53,5 +55,9 @@ void *network_routine(void *args) {
 	int socket_fd;
 	network_init(&socket_fd, (struct network_thread_args *)args);
 
+	while (!end_listen_loop) {
+	}
+
+	close(socket_fd);
 	return NULL;
 }

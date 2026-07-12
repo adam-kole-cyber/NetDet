@@ -3,6 +3,7 @@
 #include <signal.h>
 
 extern volatile sig_atomic_t end_main_loop;
+extern volatile sig_atomic_t end_listen_loop;
 extern volatile sig_atomic_t termination_reason;
 typedef enum { PROGRAM_RUNNING, SIGINT_END, SIGUSR1_END } retval;
 
