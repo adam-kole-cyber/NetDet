@@ -15,14 +15,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-void *network_routine(void *args) {
-	int socket_fd;
-	network_init(&socket_fd, (struct network_thread_args *)args);
-
-	return NULL;
-}
-
-void network_init(int *socket_fd, struct network_thread_args *args) {
+static void network_init(int *socket_fd, struct network_thread_args *args) {
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
 	if (*socket_fd == -1) {
 		set_error(APP_ERR_SOCKET, errno);
@@ -51,4 +44,11 @@ void network_init(int *socket_fd, struct network_thread_args *args) {
 			return;
 		}
 	}
+}
+
+void *network_routine(void *args) {
+	int socket_fd;
+	network_init(&socket_fd, (struct network_thread_args *)args);
+
+	return NULL;
 }

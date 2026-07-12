@@ -1,7 +1,6 @@
 #include "tui.h"
 #include <locale.h>
 #include <ncurses.h>
-#include <stdio.h>
 #include <string.h>
 
 void ncurses_init(void) {

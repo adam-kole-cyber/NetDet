@@ -30,6 +30,5 @@ struct arp_header {
 } __attribute__((packed));
 
 void *network_routine(void *args);
-void network_init(int *socket_fd, struct network_thread_args *args);
 
 #endif
