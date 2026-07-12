@@ -12,8 +12,6 @@ volatile sig_atomic_t end_main_loop = 0;
 volatile sig_atomic_t termination_reason = PROGRAM_RUNNING;
 
 int main(int argc, char *argv[]) {
-	(void)argc;
-	(void)argv;
 	main_thread_id = pthread_self();
 
 	struct sigaction sigint_action = {0};
@@ -26,14 +24,16 @@ int main(int argc, char *argv[]) {
 	sigfillset(&sigusr1_action.sa_mask);
 	sigaction(SIGUSR1, &sigusr1_action, NULL);
 
-	ncurses_init();
-
-	int input = 0;
-
 	pthread_t network_thread;
 	struct network_thread_args args;
 	args.argc = argc;
 	args.argv = argv;
+
+	pthread_create(&network_thread, NULL, network_routine, (void *)&args);
+
+	ncurses_init();
+
+	int input = 0;
 
 	window_data main_window;
 	main_window.start_x = WINDOW_OUTER_INDENT;
@@ -43,17 +43,14 @@ int main(int argc, char *argv[]) {
 	main_window.window = newwin(main_window.height, main_window.width, main_window.start_y, main_window.start_x);
 	wtimeout(main_window.window, 100);
 
-	pthread_create(&network_thread, NULL, network_routine, (void *)&args);
-
-	do {
+	while (!end_main_loop) {
 		werase(main_window.window);
 		draw_window_frame(&main_window, " NetDet ");
 		wrefresh(main_window.window);
 
 		input = wgetch(main_window.window);
 		input_handler(&main_window, input);
-
-	} while (!end_main_loop);
+	}
 
 	pthread_join(network_thread, NULL);
 

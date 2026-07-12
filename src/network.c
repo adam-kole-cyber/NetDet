@@ -53,9 +53,15 @@ static void network_init(int *socket_fd, struct network_thread_args *args) {
 
 void *network_routine(void *args) {
 	int socket_fd;
+	char raw_frame_data[2048]; // expect a standard-length frame (as defined by IEEE 802.3), but I'm still leaving some room
+	ssize_t received_length = 0;
 	network_init(&socket_fd, (struct network_thread_args *)args);
 
 	while (!end_listen_loop) {
+		received_length = recvfrom(socket_fd, raw_frame_data, sizeof(raw_frame_data), 0, NULL, NULL);
+		if (received_length < 0) {
+			break;
+		}
 	}
 
 	close(socket_fd);
