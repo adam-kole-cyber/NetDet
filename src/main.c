@@ -1,3 +1,4 @@
+#include "error.h"
 #include "network.h"
 #include "signal_handler.h"
 #include "tui.h"
@@ -58,5 +59,7 @@ int main(int argc, char *argv[]) {
 
 	delwin(main_window.window);
 	endwin();
+
+	get_error();
 	return 0;
 }

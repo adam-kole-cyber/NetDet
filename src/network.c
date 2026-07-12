@@ -1,5 +1,7 @@
 #include "network.h"
+#include "error.h"
 #include <arpa/inet.h>
+#include <errno.h>
 #include <ifaddrs.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
@@ -9,8 +11,6 @@
 #include <netinet/in.h>
 #include <pthread.h>
 #include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -25,7 +25,7 @@ void *network_routine(void *args) {
 void network_init(int *socket_fd, struct network_thread_args *args) {
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
 	if (*socket_fd == -1) {
-		perror("socket failed! try entering: sudo ./NetDet\n");
+		set_error(APP_ERR_SOCKET, errno);
 		pthread_kill(main_thread_id, SIGUSR1);
 		return;
 	}
@@ -38,14 +38,14 @@ void network_init(int *socket_fd, struct network_thread_args *args) {
 		sll.sll_ifindex = if_nametoindex(args->argv[1]);
 
 		if (sll.sll_ifindex == 0) {
-			perror("the specified interface does not exist");
+			set_error(APP_ERR_IF_NAMETOINDEX, errno);
 			close(*socket_fd);
 			pthread_kill(main_thread_id, SIGUSR1);
 			return;
 		}
 
 		if (bind(*socket_fd, (struct sockaddr *)&sll, sizeof(sll)) == -1) {
-			perror("bind");
+			set_error(APP_ERR_BIND, errno);
 			close(*socket_fd);
 			pthread_kill(main_thread_id, SIGUSR1);
 			return;
