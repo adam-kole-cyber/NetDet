@@ -35,10 +35,7 @@ static void network_init(int *socket_fd, struct network_thread_args *args) {
 	}
 
 	if (setsockopt(*socket_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) == -1) {
-		set_error(APP_ERR_SOCKET, errno);
-		close(*socket_fd);
-		pthread_kill(main_thread_id, SIGUSR1);
-		pthread_exit(NULL);
+		network_error(APP_ERR_SETSOCKOPT, socket_fd);
 		return;
 	}
 
@@ -50,18 +47,12 @@ static void network_init(int *socket_fd, struct network_thread_args *args) {
 		sll.sll_ifindex = if_nametoindex(args->argv[1]);
 
 		if (sll.sll_ifindex == 0) {
-			set_error(APP_ERR_IF_NAMETOINDEX, errno);
-			close(*socket_fd);
-			pthread_kill(main_thread_id, SIGUSR1);
-			pthread_exit(NULL);
+			network_error(APP_ERR_IF_NAMETOINDEX, socket_fd);
 			return;
 		}
 
 		if (bind(*socket_fd, (struct sockaddr *)&sll, sizeof(sll)) == -1) {
-			set_error(APP_ERR_BIND, errno);
-			close(*socket_fd);
-			pthread_kill(main_thread_id, SIGUSR1);
-			pthread_exit(NULL);
+			network_error(APP_ERR_BIND, socket_fd);
 			return;
 		}
 	}
@@ -76,10 +67,8 @@ void *network_routine(void *args) {
 	while (!end_listen_loop) {
 		received_length = recvfrom(socket_fd, raw_frame_data, sizeof(raw_frame_data), 0, NULL, NULL);
 		if (received_length < 0) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
 				continue;
-			}
-
 			break;
 		}
 	}
