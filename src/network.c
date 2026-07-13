@@ -11,11 +11,13 @@
 #include <netinet/in.h>
 #include <pthread.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-volatile sig_atomic_t end_listen_loop = 0;
+volatile sig_atomic_t end_listen_loop = false;
+int socket_fd;
 
 static void network_init(int *socket_fd, struct network_thread_args *args) {
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
@@ -52,7 +54,6 @@ static void network_init(int *socket_fd, struct network_thread_args *args) {
 }
 
 void *network_routine(void *args) {
-	int socket_fd;
 	char raw_frame_data[2048]; // expect a standard-length frame (as defined by IEEE 802.3), but I'm still leaving some room
 	ssize_t received_length = 0;
 	network_init(&socket_fd, (struct network_thread_args *)args);
