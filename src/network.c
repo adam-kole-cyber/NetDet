@@ -1,7 +1,10 @@
 #include "network.h"
 #include "error.h"
 #include <arpa/inet.h>
+#include <asm-generic/errno-base.h>
+#include <asm-generic/errno.h>
 #include <bits/types/sigset_t.h>
+#include <bits/types/struct_timeval.h>
 #include <errno.h>
 #include <ifaddrs.h>
 #include <linux/if_ether.h>
@@ -15,14 +18,25 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 volatile sig_atomic_t end_listen_loop = false;
 
 static void network_init(int *socket_fd, struct network_thread_args *args) {
+	struct timeval tv = {.tv_sec = 0, .tv_usec = 200000};
+
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
 	if (*socket_fd == -1) {
 		set_error(APP_ERR_SOCKET, errno);
+		pthread_kill(main_thread_id, SIGUSR1);
+		pthread_exit(NULL);
+		return;
+	}
+
+	if (setsockopt(*socket_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) == -1) {
+		set_error(APP_ERR_SOCKET, errno);
+		close(*socket_fd);
 		pthread_kill(main_thread_id, SIGUSR1);
 		pthread_exit(NULL);
 		return;
@@ -54,12 +68,6 @@ static void network_init(int *socket_fd, struct network_thread_args *args) {
 }
 
 void *network_routine(void *args) {
-	sigset_t mask;
-	sigemptyset(&mask);
-	sigaddset(&mask, SIGINT);
-	sigaddset(&mask, SIGUSR1);
-	pthread_sigmask(SIG_UNBLOCK, &mask, NULL);
-
 	int socket_fd;
 	char raw_frame_data[2048]; // expect a standard-length frame (as defined by IEEE 802.3), but I'm still leaving some room
 	ssize_t received_length = 0;
@@ -68,9 +76,10 @@ void *network_routine(void *args) {
 	while (!end_listen_loop) {
 		received_length = recvfrom(socket_fd, raw_frame_data, sizeof(raw_frame_data), 0, NULL, NULL);
 		if (received_length < 0) {
-			if (errno == EINTR) {
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				continue;
 			}
+
 			break;
 		}
 	}

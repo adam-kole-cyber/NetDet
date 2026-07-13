@@ -26,12 +26,6 @@ int main(int argc, char *argv[]) {
 	sigfillset(&sigusr1_action.sa_mask);
 	sigaction(SIGUSR1, &sigusr1_action, NULL);
 
-	sigset_t mask;
-	sigemptyset(&mask);
-	sigaddset(&mask, SIGINT);
-	sigaddset(&mask, SIGUSR1);
-	pthread_sigmask(SIG_BLOCK, &mask, NULL);
-
 	pthread_t network_thread;
 	struct network_thread_args args;
 	args.argc = argc;
