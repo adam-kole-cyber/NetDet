@@ -2,6 +2,7 @@
 #include "network.h"
 #include "signal_handler.h"
 #include "tui.h"
+#include <bits/types/sigset_t.h>
 #include <ncurses.h>
 #include <pthread.h>
 #include <signal.h>
@@ -24,6 +25,12 @@ int main(int argc, char *argv[]) {
 	sigusr1_action.sa_handler = sigusr1_handler;
 	sigfillset(&sigusr1_action.sa_mask);
 	sigaction(SIGUSR1, &sigusr1_action, NULL);
+
+	sigset_t mask;
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGINT);
+	sigaddset(&mask, SIGUSR1);
+	pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
 	pthread_t network_thread;
 	struct network_thread_args args;

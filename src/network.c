@@ -1,6 +1,7 @@
 #include "network.h"
 #include "error.h"
 #include <arpa/inet.h>
+#include <bits/types/sigset_t.h>
 #include <errno.h>
 #include <ifaddrs.h>
 #include <linux/if_ether.h>
@@ -17,7 +18,6 @@
 #include <unistd.h>
 
 volatile sig_atomic_t end_listen_loop = false;
-int socket_fd;
 
 static void network_init(int *socket_fd, struct network_thread_args *args) {
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
@@ -54,6 +54,13 @@ static void network_init(int *socket_fd, struct network_thread_args *args) {
 }
 
 void *network_routine(void *args) {
+	sigset_t mask;
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGINT);
+	sigaddset(&mask, SIGUSR1);
+	pthread_sigmask(SIG_UNBLOCK, &mask, NULL);
+
+	int socket_fd;
 	char raw_frame_data[2048]; // expect a standard-length frame (as defined by IEEE 802.3), but I'm still leaving some room
 	ssize_t received_length = 0;
 	network_init(&socket_fd, (struct network_thread_args *)args);
@@ -61,6 +68,9 @@ void *network_routine(void *args) {
 	while (!end_listen_loop) {
 		received_length = recvfrom(socket_fd, raw_frame_data, sizeof(raw_frame_data), 0, NULL, NULL);
 		if (received_length < 0) {
+			if (errno == EINTR) {
+				continue;
+			}
 			break;
 		}
 	}
