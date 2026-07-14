@@ -16,8 +16,6 @@ static const char *error_code_to_text(error_code err) {
 		return "bind() failed";
 	case APP_ERR_SOCKET:
 		return "socket() failed";
-	case APP_ERR_SETSOCKOPT:
-		return "setsockopt() failed";
 	case APP_ERR_IF_NAMETOINDEX:
 		return "if_nametoindex() failed";
 	}

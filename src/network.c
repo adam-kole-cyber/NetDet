@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <stdatomic.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
@@ -45,16 +46,31 @@ static void network_init(int *socket_fd, struct network_thread_args *args) {
 	}
 }
 
+static void process_raw_arp_frame(unsigned char *raw_frame_data, unsigned char *processed_frame, ssize_t *frame_length) {
+	// Since the IEEE standards do not specify what it means when the fields for 802.1Q and 802.1ad tags are set to 0,
+	// I decided that in the program this will represent a missing tag (the frame arrived without a tag),
+	// since I want to maintain a uniform frame length to simplify working with them.
+
+	if (raw_frame_data[12] == 0x08 && raw_frame_data[13] == 0x06) { // EtherType - 0x0806 -> ethernet frame
+		memcpy(processed_frame, raw_frame_data, ETH_MAC_ADDRS_LEN);
+		memset(&processed_frame[12], 0, ETH_QinQ_DOT1Q_TAGS_LEN);
+		memcpy(&processed_frame[20], &raw_frame_data[12], *frame_length - ETH_MAC_ADDRS_LEN);
+		*frame_length += 8;
+	} else if (raw_frame_data[12] == 0x81 && raw_frame_data[13] == 0x00) { // TPID - 0x8100 -> 802.1Q frame
+		memcpy(processed_frame, raw_frame_data, ETH_MAC_ADDRS_LEN);
+		memset(&processed_frame[12], 0, ETH_QinQ_TAG_LEN);
+		memcpy(&processed_frame[16], &raw_frame_data[12], *frame_length - ETH_MAC_ADDRS_LEN);
+		*frame_length += 4;
+	} else if (!(raw_frame_data[12] == 0x88 && raw_frame_data[13] == 0xa8)) { // TPID - 0x88a8 -> 802.1ad frame
+	}
+}
+
 void *network_routine(void *args) {
 	int socket_fd;
 
 	int epoll_fd = epoll_create1(0);
 	struct epoll_event ev;
 	struct epoll_event events[2];
-
-	unsigned char raw_frame_data[2048]; // expect a standard-length frame (as defined by IEEE 802.3), but I'm still leaving some room
-	unsigned char processed_frame[2048];
-	ssize_t frame_length = 0;
 
 	ev.events = EPOLLIN;
 	ev.data.fd = shutdown_fd;
@@ -71,34 +87,21 @@ void *network_routine(void *args) {
 
 		for (int i = 0; i < number_of_events; i++) {
 			if (events[i].data.fd == socket_fd) {
+				unsigned char raw_frame_data[2048]; // expect a standard-length frame (as defined by IEEE 802.3), but I'm still leaving some room
+				unsigned char processed_frame[2048];
+				ssize_t frame_length = 0;
+
 				frame_length = recvfrom(socket_fd, raw_frame_data, sizeof(raw_frame_data), 0, NULL, NULL);
 				if (frame_length < 0) {
 					break;
 				}
+
+				process_raw_arp_frame(raw_frame_data, processed_frame, &frame_length);
+
 			} else if (events[i].data.fd == shutdown_fd) {
 				continue;
 			}
 		}
-		/*frame_length = recvfrom(socket_fd, raw_frame_data, sizeof(raw_frame_data), 0, NULL, NULL);
-		if (frame_length < 0) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
-				continue;
-			break;
-		}
-
-		if (raw_frame_data[12] == 0x08 && raw_frame_data[13] == 0x06) { // EtherType - 0x0806 -> ethernet frame
-			memcpy(processed_frame, raw_frame_data, ETH_MAC_ADDRS_LEN);
-			memset(&processed_frame[12], 0, ETH_QinQ_DOT1Q_TAGS_LEN);
-			memcpy(&processed_frame[20], &raw_frame_data[12], frame_length - ETH_MAC_ADDRS_LEN);
-			frame_length += 8;
-		} else if (raw_frame_data[12] == 0x81 && raw_frame_data[13] == 0x00) { // TPID - 0x8100 -> 802.1Q frame
-			memcpy(processed_frame, raw_frame_data, ETH_MAC_ADDRS_LEN);
-			memset(&processed_frame[12], 0, ETH_QinQ_TAG_LEN);
-			memcpy(&processed_frame[16], &raw_frame_data[12], frame_length - ETH_MAC_ADDRS_LEN);
-			frame_length += 4;
-		} else if (!(raw_frame_data[12] == 0x88 && raw_frame_data[13] == 0xa8)) { // TPID - 0x88a8 -> 802.1ad frame
-			continue;
-		}*/
 	}
 
 	close(socket_fd);
