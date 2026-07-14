@@ -17,6 +17,8 @@
 #include <signal.h>
 #include <stdbool.h>
 #include <string.h>
+#include <sys/epoll.h>
+#include <sys/eventfd.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <unistd.h>
@@ -29,7 +31,7 @@ static void network_init(int *socket_fd, struct network_thread_args *args) {
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
 	if (*socket_fd == -1) {
 		set_error(APP_ERR_SOCKET, errno);
-		pthread_kill(main_thread_id, SIGUSR1);
+		pthread_kill(signal_thread_id, SIGUSR1);
 		pthread_exit(NULL);
 		return;
 	}
@@ -60,13 +62,41 @@ static void network_init(int *socket_fd, struct network_thread_args *args) {
 
 void *network_routine(void *args) {
 	int socket_fd;
+
+	int epoll_fd = epoll_create1(0);
+	struct epoll_event ev;
+	struct epoll_event events[2];
+
 	unsigned char raw_frame_data[2048]; // expect a standard-length frame (as defined by IEEE 802.3), but I'm still leaving some room
 	unsigned char processed_frame[2048];
 	ssize_t frame_length = 0;
+
+	ev.events = EPOLLIN;
+	ev.data.fd = shutdown_fd;
+	epoll_ctl(epoll_fd, EPOLL_CTL_ADD, shutdown_fd, &ev);
+
 	network_init(&socket_fd, (struct network_thread_args *)args);
 
+	ev.events = EPOLLIN;
+	ev.data.fd = socket_fd;
+	epoll_ctl(epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev);
+
 	while (!end_listen_loop) {
-		frame_length = recvfrom(socket_fd, raw_frame_data, sizeof(raw_frame_data), 0, NULL, NULL);
+		int number_of_events = epoll_wait(epoll_fd, events, 2, -1);
+
+		for (int i = 0; i < number_of_events; i++) {
+			if (events[i].data.fd == socket_fd) {
+				frame_length = recvfrom(socket_fd, raw_frame_data, sizeof(raw_frame_data), 0, NULL, NULL);
+				if (frame_length < 0) {
+					if (errno == EAGAIN || errno == EWOULDBLOCK)
+						continue;
+					break;
+				}
+			} else if (events[i].data.fd == shutdown_fd) {
+				end_listen_loop = true;
+			}
+		}
+		/*frame_length = recvfrom(socket_fd, raw_frame_data, sizeof(raw_frame_data), 0, NULL, NULL);
 		if (frame_length < 0) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK)
 				continue;
@@ -85,7 +115,7 @@ void *network_routine(void *args) {
 			frame_length += 4;
 		} else if (!(raw_frame_data[12] == 0x88 && raw_frame_data[13] == 0xa8)) { // TPID - 0x88a8 -> 802.1ad frame
 			continue;
-		}
+		}*/
 	}
 
 	close(socket_fd);

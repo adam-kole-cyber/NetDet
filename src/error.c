@@ -41,7 +41,7 @@ void get_error(void) {
 void network_error(error_code error, int *socket) {
 	set_error(error, errno);
 	close(*socket);
-	pthread_kill(main_thread_id, SIGUSR1);
+	pthread_kill(signal_thread_id, SIGUSR1);
 	pthread_exit(NULL);
 	return;
 }
