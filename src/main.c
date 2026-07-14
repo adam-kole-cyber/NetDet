@@ -5,13 +5,14 @@
 #include <ncurses.h>
 #include <pthread.h>
 #include <signal.h>
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <sys/eventfd.h>
 
 int shutdown_fd;
-volatile sig_atomic_t end_main_loop = false;
-volatile sig_atomic_t termination_reason = PROGRAM_RUNNING;
+atomic_bool end_main_loop = false;
+atomic_uint_fast32_t termination_reason = PROGRAM_RUNNING;
 
 int main(int argc, char *argv[]) {
 	sigset_t mask;
@@ -43,7 +44,7 @@ int main(int argc, char *argv[]) {
 	main_window.window = newwin(main_window.height, main_window.width, main_window.start_y, main_window.start_x);
 	wtimeout(main_window.window, 100);
 
-	while (!end_main_loop) {
+	while (!atomic_load(&end_main_loop)) {
 		werase(main_window.window);
 		draw_window_frame(&main_window, " NetDet ");
 		wrefresh(main_window.window);

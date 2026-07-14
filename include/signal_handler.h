@@ -1,10 +1,11 @@
 #ifndef SIGNAL_HANDLER_H
 #define SIGNAL_HANDLER_H
 #include <signal.h>
+#include <stdatomic.h>
 
-extern volatile sig_atomic_t end_main_loop;
-extern volatile sig_atomic_t end_listen_loop;
-extern volatile sig_atomic_t termination_reason;
+extern atomic_bool end_main_loop;
+extern atomic_bool end_listen_loop;
+extern atomic_uint_fast32_t termination_reason;
 extern int shutdown_fd;
 typedef enum { PROGRAM_RUNNING, SIGINT_END, SIGUSR1_END } retval;
 

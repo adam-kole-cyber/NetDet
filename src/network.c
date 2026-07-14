@@ -7,6 +7,7 @@
 #include <net/if.h>
 #include <pthread.h>
 #include <signal.h>
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <string.h>
 #include <sys/epoll.h>
@@ -14,21 +15,14 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-volatile sig_atomic_t end_listen_loop = false;
+atomic_bool end_listen_loop = false;
 
 static void network_init(int *socket_fd, struct network_thread_args *args) {
-	struct timeval tv = {.tv_sec = 0, .tv_usec = 200000};
-
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
 	if (*socket_fd == -1) {
 		set_error(APP_ERR_SOCKET, errno);
 		pthread_kill(signal_thread_id, SIGUSR1);
 		pthread_exit(NULL);
-		return;
-	}
-
-	if (setsockopt(*socket_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) == -1) {
-		network_error(APP_ERR_SETSOCKOPT, socket_fd);
 		return;
 	}
 
@@ -72,19 +66,17 @@ void *network_routine(void *args) {
 	ev.data.fd = socket_fd;
 	epoll_ctl(epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev);
 
-	while (!end_listen_loop) {
+	while (!atomic_load(&end_listen_loop)) {
 		int number_of_events = epoll_wait(epoll_fd, events, 2, -1);
 
 		for (int i = 0; i < number_of_events; i++) {
 			if (events[i].data.fd == socket_fd) {
 				frame_length = recvfrom(socket_fd, raw_frame_data, sizeof(raw_frame_data), 0, NULL, NULL);
 				if (frame_length < 0) {
-					if (errno == EAGAIN || errno == EWOULDBLOCK)
-						continue;
 					break;
 				}
 			} else if (events[i].data.fd == shutdown_fd) {
-				end_listen_loop = true;
+				continue;
 			}
 		}
 		/*frame_length = recvfrom(socket_fd, raw_frame_data, sizeof(raw_frame_data), 0, NULL, NULL);

@@ -1,6 +1,7 @@
 #include "signal_handler.h"
 #include <pthread.h>
 #include <signal.h>
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -19,11 +20,23 @@ void *signal_routine(void *args) {
 	sigaddset(&mask, SIGINT);
 	sigaddset(&mask, SIGUSR1);
 
-	sigwait(&mask, &signal);
+	if (sigwait(&mask, &signal) != 0) {
+		return NULL;
+	}
+
+	switch (signal) {
+	case SIGINT:
+		termination_reason = SIGINT_END;
+		break;
+
+	case SIGUSR1:
+		termination_reason = SIGUSR1_END;
+		break;
+	}
 
 	uint64_t data = 1;
-	end_main_loop = true;
-	end_listen_loop = true;
+	atomic_store(&end_main_loop, true);
+	atomic_store(&end_listen_loop, true);
 
 	write(shutdown_fd, &data, sizeof(data));
 	return NULL;
