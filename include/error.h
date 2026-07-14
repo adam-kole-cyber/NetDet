@@ -2,7 +2,6 @@
 #define ERROR_H
 #include <pthread.h>
 
-// extern pthread_t main_thread_id;
 extern pthread_t signal_thread_id;
 typedef enum { APP_ERR_NONE = 0, APP_ERR_BIND, APP_ERR_SOCKET, APP_ERR_SETSOCKOPT, APP_ERR_IF_NAMETOINDEX } error_code;
 

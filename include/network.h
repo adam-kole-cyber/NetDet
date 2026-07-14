@@ -1,14 +1,12 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-#include "signal_handler.h"
 #include <pthread.h>
 
 #define ETH_MAC_ADDRS_LEN 12	  // dst mac (6B) + src mac (6B)
 #define ETH_QinQ_TAG_LEN 4		  // in bytes
 #define ETH_QinQ_DOT1Q_TAGS_LEN 8 // in bytes
 
-// extern pthread_t main_thread_id;
 extern pthread_t signal_thread_id;
 extern int shutdown_fd;
 
