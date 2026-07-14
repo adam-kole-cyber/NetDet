@@ -91,6 +91,9 @@ void *network_routine(void *args) {
 				unsigned char processed_frame[2048];
 				ssize_t frame_length = 0;
 
+				memset(raw_frame_data, 0, sizeof(raw_frame_data));
+				memset(processed_frame, 0, sizeof(processed_frame));
+
 				frame_length = recvfrom(socket_fd, raw_frame_data, sizeof(raw_frame_data), 0, NULL, NULL);
 				if (frame_length < 0) {
 					break;
