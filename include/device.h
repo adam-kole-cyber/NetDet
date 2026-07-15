@@ -34,6 +34,6 @@ typedef struct {
 	hash_entry *table;
 	size_t size;
 	pthread_mutex_t mutex;
-} HashMap;
+} hash_map;
 
 #endif

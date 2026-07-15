@@ -1,3 +1,4 @@
+#include "device.h"
 #include "error.h"
 #include "network.h"
 #include "signal_handler.h"
@@ -7,13 +8,15 @@
 #include <signal.h>
 #include <stdatomic.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
 
 int shutdown_fd;
 atomic_bool end_main_loop = false;
 atomic_uint_fast32_t termination_reason = PROGRAM_RUNNING;
-ringbuffer *ring_buffer;
+ring_buffer buffer;
+hash_map map;
 
 int main(int argc, char *argv[]) {
 	sigset_t mask;
@@ -23,6 +26,15 @@ int main(int argc, char *argv[]) {
 	pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
 	shutdown_fd = eventfd(0, 0);
+
+	buffer.capacity = 128;
+	buffer.items = malloc(sizeof(device *) * buffer.capacity);
+	buffer.count = 0;
+	pthread_mutex_init(&buffer.mutex, NULL);
+
+	map.size = 128;
+	map.table = malloc(sizeof(hash_entry) * map.size);
+	pthread_mutex_init(&map.mutex, NULL);
 
 	pthread_t signal_thread;
 	pthread_create(&signal_thread, NULL, signal_routine, NULL);
@@ -58,6 +70,13 @@ int main(int argc, char *argv[]) {
 
 	pthread_join(network_thread, NULL);
 	pthread_join(signal_thread, NULL);
+
+	pthread_mutex_destroy(&map.mutex);
+	free(map.table);
+
+	pthread_mutex_destroy(&buffer.mutex);
+	free(buffer.items);
+
 	close(shutdown_fd);
 
 	delwin(main_window.window);
