@@ -15,28 +15,6 @@ struct network_thread_args {
 	char **argv;
 };
 
-typedef struct {
-	unsigned char hour;
-	unsigned char minutes;
-	unsigned char seconds;
-} time_struct;
-
-typedef struct {
-	unsigned char mac[6];
-	unsigned char ip[4];
-	unsigned char qinq_dotq_tags[3];
-	time_struct last_seen;
-} device;
-
-typedef struct {
-	device **items;
-	unsigned int capacity;
-	unsigned int head;
-	unsigned int count;
-
-	pthread_mutex_t mutex;
-} ringbuffer;
-
 struct eth_header {
 	unsigned char dest_addr[6];
 	unsigned char sour_addr[6];
