@@ -1,6 +1,6 @@
 #ifndef SIGNAL_HANDLER_H
 #define SIGNAL_HANDLER_H
-#include <signal.h>
+
 #include <stdatomic.h>
 
 extern atomic_bool end_main_loop;

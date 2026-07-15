@@ -1,5 +1,6 @@
 #ifndef ERROR_H
 #define ERROR_H
+
 #include <pthread.h>
 
 extern pthread_t signal_thread_id;

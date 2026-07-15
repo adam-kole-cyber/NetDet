@@ -7,8 +7,8 @@
 #include <signal.h>
 #include <stdatomic.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <sys/eventfd.h>
+#include <unistd.h>
 
 int shutdown_fd;
 atomic_bool end_main_loop = false;
@@ -47,6 +47,8 @@ int main(int argc, char *argv[]) {
 	while (!atomic_load(&end_main_loop)) {
 		werase(main_window.window);
 		draw_window_frame(&main_window, " NetDet ");
+		draw_table_header(main_window.window);
+		print_network_data(main_window.window);
 		wrefresh(main_window.window);
 
 		input = wgetch(main_window.window);
@@ -55,6 +57,7 @@ int main(int argc, char *argv[]) {
 
 	pthread_join(network_thread, NULL);
 	pthread_join(signal_thread, NULL);
+	close(shutdown_fd);
 
 	delwin(main_window.window);
 	endwin();

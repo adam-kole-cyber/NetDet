@@ -15,6 +15,7 @@ void ncurses_init(void) {
 		start_color();
 		use_default_colors();
 		init_pair(1, COLOR_GREEN, -1);
+		init_pair(2, COLOR_YELLOW, -1);
 	}
 }
 
@@ -74,6 +75,21 @@ void resize_handler(window_data *window_data) {
 
 	wresize(window_data->window, new_height, new_width);
 	mvwin(window_data->window, WINDOW_OUTER_INDENT, WINDOW_OUTER_INDENT);
+}
+
+void draw_table_header(WINDOW *window) {
+	wattron(window, COLOR_PAIR(2));
+	mvwprintw(window, 1, 2, "MAC\t\t\tIP\t\t802.1Q\t\t802.1ad\t\tLast seen");
+	wattroff(window, COLOR_PAIR(2));
+
+	return;
+}
+
+void print_network_data(WINDOW *window) {
+	static unsigned int row = 2;
+
+	mvwprintw(window, row, 2, "aa:bb:cc:dd:ee:ff\t192.168.0.1\t15\t\t20\t\t14:50:29");
+	return;
 }
 
 void mvwprintIPw(window_data *window_data, int y, int x, const unsigned char *ip) {

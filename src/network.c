@@ -9,7 +9,6 @@
 #include <signal.h>
 #include <stdatomic.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
@@ -19,7 +18,7 @@
 atomic_bool end_listen_loop = false;
 
 static void network_init(int *socket_fd, struct network_thread_args *args) {
-	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
+	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (*socket_fd == -1) {
 		set_error(APP_ERR_SOCKET, errno);
 		pthread_kill(signal_thread_id, SIGUSR1);
