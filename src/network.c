@@ -106,6 +106,7 @@ void *network_routine(void *args) {
 		}
 	}
 
+	close(epoll_fd);
 	close(socket_fd);
 	return NULL;
 }

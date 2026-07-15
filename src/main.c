@@ -13,6 +13,7 @@
 int shutdown_fd;
 atomic_bool end_main_loop = false;
 atomic_uint_fast32_t termination_reason = PROGRAM_RUNNING;
+ringbuffer *ring_buffer;
 
 int main(int argc, char *argv[]) {
 	sigset_t mask;
