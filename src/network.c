@@ -89,6 +89,7 @@ void *network_routine(void *args) {
 				unsigned char raw_frame_data[2048]; // expect a standard-length frame (as defined by IEEE 802.3), but I'm still leaving some room
 				unsigned char processed_frame[2048];
 				ssize_t frame_length = 0;
+				device device_data;
 
 				memset(raw_frame_data, 0, sizeof(raw_frame_data));
 				memset(processed_frame, 0, sizeof(processed_frame));
@@ -99,7 +100,15 @@ void *network_routine(void *args) {
 				}
 
 				process_raw_arp_frame(raw_frame_data, processed_frame, &frame_length);
+				if ((size_t)frame_length < sizeof(struct eth_header) + sizeof(struct arp_header)) {
+					continue;
+				}
 
+				struct eth_header *eth = (struct eth_header *)processed_frame;
+				struct arp_header *arp = (struct arp_header *)(processed_frame + sizeof(struct eth_header));
+
+				memcpy(device_data.mac, eth->sour_addr, sizeof(eth->sour_addr));
+				memcpy(device_data.ip, &arp->spa, sizeof(arp->spa));
 			} else if (events[i].data.fd == shutdown_fd) {
 				continue;
 			}
