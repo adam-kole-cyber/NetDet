@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
 	pthread_mutex_init(&buffer.mutex, NULL);
 
 	map.size = 128;
-	map.table = malloc(sizeof(hash_entry) * map.size);
+	map.table = calloc(128, sizeof(hash_entry));
 	pthread_mutex_init(&map.mutex, NULL);
 
 	pthread_t signal_thread;

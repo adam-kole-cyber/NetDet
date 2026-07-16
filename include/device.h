@@ -2,6 +2,7 @@
 #define DEVICE_H
 
 #include <pthread.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef struct {
@@ -37,6 +38,10 @@ typedef struct {
 	pthread_mutex_t mutex;
 } hash_map;
 
+extern hash_map map;
+extern sliding_window_buffer buffer;
+
 uint32_t hash_mac(const uint8_t mac[6]);
+bool hashmap_check_entry(const uint8_t mac[6]);
 
 #endif

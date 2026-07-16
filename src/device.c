@@ -17,3 +17,12 @@ uint32_t hash_mac(const uint8_t mac[6]) {
 
 	return (uint32_t)mac_number;
 }
+
+bool hashmap_check_entry(const uint8_t *mac) {
+	uint32_t index = hash_mac(mac) % map.size;
+	bool entry_exists = false;
+
+	if (map.table[index].device == NULL) {
+	};
+	return true;
+}
