@@ -112,7 +112,12 @@ void *network_routine(void *args) {
 				memcpy(device_data->mac, eth->sour_addr, sizeof(eth->sour_addr));
 				memcpy(device_data->ip, &arp->spa, sizeof(arp->spa));
 
-				hashmap_check_entry(device_data->mac);
+				device *exitsing_device = hashmap_check_entry(device_data->mac);
+				if (exitsing_device != NULL) {
+
+				} else {
+				}
+
 			} else if (events[i].data.fd == shutdown_fd) {
 				continue;
 			}

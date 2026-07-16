@@ -1,5 +1,7 @@
 #include "device.h"
+#include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 
 static uint64_t mac_to_u64(const uint8_t mac[6]) {
 	return ((uint64_t)mac[0] << 40) | ((uint64_t)mac[1] << 32) | ((uint64_t)mac[2] << 24) | ((uint64_t)mac[3] << 16) | ((uint64_t)mac[4] << 8) |
@@ -18,11 +20,21 @@ uint32_t hash_mac(const uint8_t mac[6]) {
 	return (uint32_t)mac_number;
 }
 
-bool hashmap_check_entry(const uint8_t *mac) {
+device *hashmap_check_entry(const uint8_t *mac) {
 	uint32_t index = hash_mac(mac) % map.size;
-	bool entry_exists = false;
+	uint32_t start_index = index;
 
-	if (map.table[index].device == NULL) {
-	};
-	return true;
+	while (map.table[index].device != NULL) {
+		if (memcmp(map.table[index].mac, mac, 6) == 0) {
+			return map.table[index].device;
+		}
+
+		index = (index + 1) % map.size;
+
+		if (index == start_index) {
+			break;
+		}
+	}
+
+	return NULL;
 }
