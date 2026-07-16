@@ -2,6 +2,7 @@
 #define DEVICE_H
 
 #include <pthread.h>
+#include <stdint.h>
 
 typedef struct {
 	unsigned char hour;
@@ -35,5 +36,7 @@ typedef struct {
 	size_t size;
 	pthread_mutex_t mutex;
 } hash_map;
+
+uint32_t hash_mac(const uint8_t mac[6]);
 
 #endif

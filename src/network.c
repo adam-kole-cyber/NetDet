@@ -1,4 +1,5 @@
 #include "network.h"
+#include "device.h"
 #include "error.h"
 #include <arpa/inet.h>
 #include <errno.h>
@@ -9,6 +10,7 @@
 #include <signal.h>
 #include <stdatomic.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
@@ -89,7 +91,7 @@ void *network_routine(void *args) {
 				unsigned char raw_frame_data[2048]; // expect a standard-length frame (as defined by IEEE 802.3), but I'm still leaving some room
 				unsigned char processed_frame[2048];
 				ssize_t frame_length = 0;
-				device device_data;
+				device *device_data = malloc(sizeof(device) * 1);
 
 				memset(raw_frame_data, 0, sizeof(raw_frame_data));
 				memset(processed_frame, 0, sizeof(processed_frame));
@@ -107,8 +109,8 @@ void *network_routine(void *args) {
 				struct eth_header *eth = (struct eth_header *)processed_frame;
 				struct arp_header *arp = (struct arp_header *)(processed_frame + sizeof(struct eth_header));
 
-				memcpy(device_data.mac, eth->sour_addr, sizeof(eth->sour_addr));
-				memcpy(device_data.ip, &arp->spa, sizeof(arp->spa));
+				memcpy(device_data->mac, eth->sour_addr, sizeof(eth->sour_addr));
+				memcpy(device_data->ip, &arp->spa, sizeof(arp->spa));
 			} else if (events[i].data.fd == shutdown_fd) {
 				continue;
 			}
