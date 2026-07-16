@@ -10,7 +10,7 @@
 
 extern pthread_t signal_thread_id;
 extern int shutdown_fd;
-extern ring_buffer buffer;
+extern sliding_window_buffer buffer;
 extern hash_map map;
 
 struct network_thread_args {

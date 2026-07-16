@@ -70,6 +70,8 @@ void resize_handler(window_data *window_data) {
 	window_data->height = new_height;
 	window_data->width = new_width;
 
+	buffer.display_limit = (window_data->height - 2) < 0 ? 0 : (window_data->height - 2);
+
 	wnoutrefresh(window_data->window);
 	doupdate();
 

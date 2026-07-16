@@ -21,9 +21,9 @@ typedef struct {
 	unsigned int capacity;
 	unsigned int head;
 	unsigned int count;
-
+	unsigned int display_limit;
 	pthread_mutex_t mutex;
-} ring_buffer;
+} sliding_window_buffer;
 
 typedef struct {
 	unsigned char mac[6];

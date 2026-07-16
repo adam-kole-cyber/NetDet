@@ -15,7 +15,7 @@
 int shutdown_fd;
 atomic_bool end_main_loop = false;
 atomic_uint_fast32_t termination_reason = PROGRAM_RUNNING;
-ring_buffer buffer;
+sliding_window_buffer buffer;
 hash_map map;
 
 int main(int argc, char *argv[]) {
@@ -30,6 +30,7 @@ int main(int argc, char *argv[]) {
 	buffer.capacity = 128;
 	buffer.items = malloc(sizeof(device *) * buffer.capacity);
 	buffer.count = 0;
+	buffer.display_limit = 0;
 	pthread_mutex_init(&buffer.mutex, NULL);
 
 	map.size = 128;
@@ -56,6 +57,8 @@ int main(int argc, char *argv[]) {
 	main_window.width = COLS - (WINDOW_OUTER_INDENT * 2);
 	main_window.window = newwin(main_window.height, main_window.width, main_window.start_y, main_window.start_x);
 	wtimeout(main_window.window, 100);
+
+	buffer.display_limit = (main_window.height - 2) < 0 ? 0 : (main_window.height - 2);
 
 	while (!atomic_load(&end_main_loop)) {
 		werase(main_window.window);

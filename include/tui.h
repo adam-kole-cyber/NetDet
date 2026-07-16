@@ -1,9 +1,13 @@
 #ifndef TUI_H
 #define TUI_H
 
+#include "device.h"
 #include <ncurses.h>
 
 #define WINDOW_OUTER_INDENT 5
+
+extern sliding_window_buffer buffer;
+extern hash_map map;
 
 typedef struct {
 	int width;
