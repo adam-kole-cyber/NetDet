@@ -114,8 +114,9 @@ void *network_routine(void *args) {
 
 				device *exitsing_device = hashmap_check_entry(device_data->mac);
 				if (exitsing_device != NULL) {
-
+					// TODO update last senn
 				} else {
+					hashmap_store_entry(device_data);
 				}
 
 			} else if (events[i].data.fd == shutdown_fd) {

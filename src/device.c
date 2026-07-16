@@ -38,3 +38,15 @@ device *hashmap_check_entry(const uint8_t *mac) {
 
 	return NULL;
 }
+
+int hashmap_store_entry(device *dev) {
+	size_t index = hash_mac(dev->mac) % map.size;
+
+	while (map.table[index].device != NULL) {
+		index = (index + 1) % map.size;
+	}
+
+	memcpy(map.table[index].mac, dev->mac, 6);
+	map.table[index].device = dev;
+	return 1;
+}
