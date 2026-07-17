@@ -117,6 +117,7 @@ void *network_routine(void *args) {
 					// TODO update last senn
 				} else {
 					hashmap_store_entry(device_data);
+					slidingwindowbuffer_store_entry(device_data);
 				}
 
 			} else if (events[i].data.fd == shutdown_fd) {

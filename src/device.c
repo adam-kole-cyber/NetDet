@@ -50,3 +50,11 @@ int hashmap_store_entry(device *dev) {
 	map.table[index].device = dev;
 	return 1;
 }
+
+int slidingwindowbuffer_store_entry(device *dev) {
+	int index = buffer.count;
+
+	buffer.items[index] = dev;
+	buffer.count++;
+	return 1;
+}
