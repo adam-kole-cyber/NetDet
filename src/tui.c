@@ -1,7 +1,21 @@
 #include "tui.h"
+#include "device.h"
+#include "network.h"
+#include <bits/pthreadtypes.h>
 #include <locale.h>
 #include <ncurses.h>
+#include <pthread.h>
 #include <string.h>
+
+static void print_mac(WINDOW *window, int row, int column, const unsigned char *mac) {
+	mvwprintw(window, row, column, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	return;
+}
+
+static void print_ip(WINDOW *window, int row, int column, const unsigned char *ip) {
+	mvwprintw(window, row, column, "%02d.%02d.%02d.%02d", ip[0], ip[1], ip[2], ip[3]);
+	return;
+}
 
 void ncurses_init(void) {
 	setlocale(LC_ALL, "");
@@ -81,19 +95,24 @@ void resize_handler(window_data *window_data) {
 
 void draw_table_header(WINDOW *window) {
 	wattron(window, COLOR_PAIR(2));
-	mvwprintw(window, 1, 2, "MAC\t\t\tIP\t\t802.1Q\t\t802.1ad\t\tLast seen");
+	mvwprintw(window, 1, 2, "MAC\t\t\tIP\t\t802.1ad\t\t802.1Q\t\tLast seen");
 	wattroff(window, COLOR_PAIR(2));
 
 	return;
 }
 
 void print_network_data(WINDOW *window) {
-	static unsigned int row = 2;
+	int display_row_start = 2;
+	int limit = buffer.display_limit <= buffer.count ? buffer.display_limit : buffer.count;
 
-	mvwprintw(window, row, 2, "aa:bb:cc:dd:ee:ff\t192.168.0.1\t15\t\t20\t\t14:50:29");
+	pthread_mutex_lock(&device_data_structures_mutex);
+	for (int i = 0; i < limit; i++) {
+		print_mac(window, display_row_start + i, 2, buffer.items[i]->mac);
+		print_ip(window, display_row_start + i, 24, buffer.items[i]->ip);
+		mvwprintw(window, display_row_start + i, 40, "%d\t\t%d\t\t%02d:%02d:%02d", buffer.items[i]->qinq_tag, buffer.items[i]->dot1q_tag,
+				  buffer.items[i]->last_seen.hour, buffer.items[i]->last_seen.minutes, buffer.items[i]->last_seen.seconds);
+	}
+	// mvwprintw(window, row, 2, "aa:bb:cc:dd:ee:ff\t192.168.0.1\t15\t\t20\t\t14:50:29");
+	pthread_mutex_unlock(&device_data_structures_mutex);
 	return;
-}
-
-void mvwprintIPw(window_data *window_data, int y, int x, const unsigned char *ip) {
-	mvwprintw(window_data->window, y, x, "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 }
