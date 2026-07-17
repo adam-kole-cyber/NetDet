@@ -137,6 +137,9 @@ void *network_routine(void *args) {
 				device *exitsing_device = hashmap_check_entry(device_data->mac);
 				if (exitsing_device != NULL) {
 					// TODO update last seen
+					exitsing_device->last_seen.hour = device_data->last_seen.hour;
+					exitsing_device->last_seen.minutes = device_data->last_seen.minutes;
+					exitsing_device->last_seen.seconds = device_data->last_seen.seconds;
 				} else {
 					hashmap_store_entry(device_data);
 					slidingwindowbuffer_store_entry(device_data);
