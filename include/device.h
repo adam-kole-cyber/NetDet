@@ -14,7 +14,8 @@ typedef struct {
 typedef struct {
 	unsigned char mac[6];
 	unsigned char ip[4];
-	unsigned char qinq_dotq_tags[3];
+	unsigned int qinq_tag;
+	unsigned int dot1q_tag;
 	time_struct last_seen;
 } device;
 

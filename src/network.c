@@ -15,6 +15,7 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
 
 atomic_bool end_listen_loop = false;
@@ -66,6 +67,31 @@ static void process_raw_arp_frame(unsigned char *raw_frame_data, unsigned char *
 	}
 }
 
+static void set_device_data(device *device_data, unsigned char *processed_frame, int *socket) {
+	time_t now;
+	struct tm local_time;
+	struct eth_header *eth = (struct eth_header *)processed_frame;
+	struct arp_header *arp = (struct arp_header *)(processed_frame + sizeof(struct eth_header));
+
+	memcpy(device_data->mac, eth->sour_addr, sizeof(eth->sour_addr));
+	memcpy(device_data->ip, &arp->spa, sizeof(arp->spa));
+	device_data->qinq_tag = eth->qinq_tag;
+	device_data->dot1q_tag = eth->dot1q_tag;
+
+	now = time(NULL);
+
+	if (localtime_r(&now, &local_time) == NULL) {
+		network_error(APP_ERR_LOCALTIME_R, socket);
+		return;
+	}
+
+	device_data->last_seen.hour = local_time.tm_hour;
+	device_data->last_seen.minutes = local_time.tm_min;
+	device_data->last_seen.seconds = local_time.tm_sec;
+
+	return;
+}
+
 void *network_routine(void *args) {
 	int socket_fd;
 
@@ -106,15 +132,11 @@ void *network_routine(void *args) {
 					continue;
 				}
 
-				struct eth_header *eth = (struct eth_header *)processed_frame;
-				struct arp_header *arp = (struct arp_header *)(processed_frame + sizeof(struct eth_header));
-
-				memcpy(device_data->mac, eth->sour_addr, sizeof(eth->sour_addr));
-				memcpy(device_data->ip, &arp->spa, sizeof(arp->spa));
+				set_device_data(device_data, processed_frame, &socket_fd);
 
 				device *exitsing_device = hashmap_check_entry(device_data->mac);
 				if (exitsing_device != NULL) {
-					// TODO update last senn
+					// TODO update last seen
 				} else {
 					hashmap_store_entry(device_data);
 					slidingwindowbuffer_store_entry(device_data);
