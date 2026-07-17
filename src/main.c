@@ -3,6 +3,7 @@
 #include "network.h"
 #include "signal_handler.h"
 #include "tui.h"
+#include <bits/pthreadtypes.h>
 #include <ncurses.h>
 #include <pthread.h>
 #include <signal.h>
@@ -16,6 +17,7 @@ int shutdown_fd;
 atomic_bool end_main_loop = false;
 atomic_uint_fast32_t termination_reason = PROGRAM_RUNNING;
 sliding_window_buffer buffer;
+pthread_mutex_t device_data_structures_mutex;
 hash_map map;
 
 int main(int argc, char *argv[]) {
@@ -31,11 +33,11 @@ int main(int argc, char *argv[]) {
 	buffer.items = malloc(sizeof(device *) * buffer.capacity);
 	buffer.count = 0;
 	buffer.display_limit = 0;
-	pthread_mutex_init(&buffer.mutex, NULL);
 
 	map.size = 128;
 	map.table = calloc(128, sizeof(hash_entry));
-	pthread_mutex_init(&map.mutex, NULL);
+
+	pthread_mutex_init(&device_data_structures_mutex, NULL);
 
 	pthread_t signal_thread;
 	pthread_create(&signal_thread, NULL, signal_routine, NULL);
@@ -74,10 +76,8 @@ int main(int argc, char *argv[]) {
 	pthread_join(network_thread, NULL);
 	pthread_join(signal_thread, NULL);
 
-	pthread_mutex_destroy(&map.mutex);
+	pthread_mutex_destroy(&device_data_structures_mutex);
 	free(map.table);
-
-	pthread_mutex_destroy(&buffer.mutex);
 	free(buffer.items);
 
 	close(shutdown_fd);

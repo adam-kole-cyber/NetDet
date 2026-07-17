@@ -2,6 +2,7 @@
 #define NETWORK_H
 
 #include "device.h"
+#include <bits/pthreadtypes.h>
 #include <pthread.h>
 
 #define ETH_MAC_ADDRS_LEN 12	  // dst mac (6B) + src mac (6B)
@@ -12,6 +13,7 @@ extern pthread_t signal_thread_id;
 extern int shutdown_fd;
 extern sliding_window_buffer buffer;
 extern hash_map map;
+extern pthread_mutex_t device_data_structures_mutex;
 
 struct network_thread_args {
 	int argc;

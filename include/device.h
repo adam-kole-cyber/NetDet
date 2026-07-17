@@ -25,7 +25,6 @@ typedef struct {
 	unsigned int head;
 	unsigned int count;
 	unsigned int display_limit;
-	pthread_mutex_t mutex;
 } sliding_window_buffer;
 
 typedef struct {
@@ -36,7 +35,6 @@ typedef struct {
 typedef struct {
 	hash_entry *table;
 	size_t size;
-	pthread_mutex_t mutex;
 } hash_map;
 
 extern hash_map map;

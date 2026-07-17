@@ -8,6 +8,7 @@
 
 extern sliding_window_buffer buffer;
 extern hash_map map;
+extern pthread_mutex_t device_data_structures_mutex;
 
 typedef struct {
 	int width;

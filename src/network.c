@@ -134,9 +134,9 @@ void *network_routine(void *args) {
 
 				set_device_data(device_data, processed_frame, &socket_fd);
 
+				pthread_mutex_lock(&device_data_structures_mutex);
 				device *exitsing_device = hashmap_check_entry(device_data->mac);
 				if (exitsing_device != NULL) {
-					// TODO update last seen
 					exitsing_device->last_seen.hour = device_data->last_seen.hour;
 					exitsing_device->last_seen.minutes = device_data->last_seen.minutes;
 					exitsing_device->last_seen.seconds = device_data->last_seen.seconds;
@@ -144,6 +144,7 @@ void *network_routine(void *args) {
 					hashmap_store_entry(device_data);
 					slidingwindowbuffer_store_entry(device_data);
 				}
+				pthread_mutex_unlock(&device_data_structures_mutex);
 
 			} else if (events[i].data.fd == shutdown_fd) {
 				continue;
