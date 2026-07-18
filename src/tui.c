@@ -53,6 +53,9 @@ static void cursor_move(int direction) {
 		buffer.head++;
 		cursor_position = buffer.display_limit;
 	} else {
+		if (buffer.head + (unsigned int)new_position >= buffer.count) {
+			return;
+		}
 		cursor_position = new_position;
 	}
 }
