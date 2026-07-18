@@ -59,15 +59,29 @@ static void process_raw_arp_frame(unsigned char *raw_frame_data, unsigned char *
 		memcpy(&processed_frame[20], &raw_frame_data[12], *frame_length - ETH_MAC_ADDRS_LEN);
 		*frame_length += 8;
 	} else if (raw_frame_data[12] == 0x81 && raw_frame_data[13] == 0x00) { // TPID - 0x8100 -> 802.1Q frame
+		if (!(raw_frame_data[16] == 0x08 && raw_frame_data[17] == 0x06)) {
+			*frame_length = 0;
+			return;
+		}
+
 		memcpy(processed_frame, raw_frame_data, ETH_MAC_ADDRS_LEN);
 		memset(&processed_frame[12], 0, ETH_QinQ_TAG_LEN);
 		memcpy(&processed_frame[16], &raw_frame_data[12], *frame_length - ETH_MAC_ADDRS_LEN);
+
 		*frame_length += 4;
-	} else if (!(raw_frame_data[12] == 0x88 && raw_frame_data[13] == 0xa8)) { // TPID - 0x88a8 -> 802.1ad frame
+	} else if (raw_frame_data[12] == 0x88 && raw_frame_data[13] == 0xa8) { // TPID - 0x88a8 -> 802.1ad frame
+		if (!(raw_frame_data[20] == 0x08 && raw_frame_data[21] == 0x06)) {
+			*frame_length = 0;
+			return;
+		}
+
+		memcpy(processed_frame, raw_frame_data, *frame_length);
+	} else {
+		*frame_length = 0;
 	}
 }
 
-static void set_device_data(device *device_data, unsigned char *processed_frame, int *socket) {
+static void set_device_data(device *device_data, unsigned char *processed_frame, int *socket, device *device) {
 	time_t now;
 	struct tm local_time;
 	struct eth_header *eth = (struct eth_header *)processed_frame;
@@ -75,12 +89,13 @@ static void set_device_data(device *device_data, unsigned char *processed_frame,
 
 	memcpy(device_data->mac, eth->sour_addr, sizeof(eth->sour_addr));
 	memcpy(device_data->ip, &arp->spa, sizeof(arp->spa));
-	device_data->qinq_tag = eth->qinq_tag;
-	device_data->dot1q_tag = eth->dot1q_tag;
+	device_data->qinq_tag = ntohl(eth->qinq_tag);
+	device_data->dot1q_tag = ntohl(eth->dot1q_tag);
 
 	now = time(NULL);
 
 	if (localtime_r(&now, &local_time) == NULL) {
+		free(device);
 		network_error(APP_ERR_LOCALTIME_R, socket);
 		return;
 	}
@@ -124,15 +139,17 @@ void *network_routine(void *args) {
 
 				frame_length = recvfrom(socket_fd, raw_frame_data, sizeof(raw_frame_data), 0, NULL, NULL);
 				if (frame_length < 0) {
+					free(device_data);
 					break;
 				}
 
 				process_raw_arp_frame(raw_frame_data, processed_frame, &frame_length);
-				if ((size_t)frame_length < sizeof(struct eth_header) + sizeof(struct arp_header)) {
+				if (frame_length <= 0 || (size_t)frame_length < sizeof(struct eth_header) + sizeof(struct arp_header)) {
+					free(device_data);
 					continue;
 				}
 
-				set_device_data(device_data, processed_frame, &socket_fd);
+				set_device_data(device_data, processed_frame, &socket_fd, device_data);
 
 				pthread_mutex_lock(&device_data_structures_mutex);
 				device *exitsing_device = hashmap_check_entry(device_data->mac);
@@ -140,6 +157,7 @@ void *network_routine(void *args) {
 					exitsing_device->last_seen.hour = device_data->last_seen.hour;
 					exitsing_device->last_seen.minutes = device_data->last_seen.minutes;
 					exitsing_device->last_seen.seconds = device_data->last_seen.seconds;
+					free(device_data);
 				} else {
 					hashmap_store_entry(device_data);
 					slidingwindowbuffer_store_entry(device_data);
