@@ -112,11 +112,9 @@ void input_handler(window_data *window_data, int input) {
 		break;
 	case KEY_DOWN:
 		cursor_move(1);
-		mvwprintw(window_data->window, 8, 8, "key_down");
 		break;
 	case KEY_UP:
 		cursor_move(-1);
-		mvwprintw(window_data->window, 8, 8, "key_up");
 		break;
 	default:
 		break;
