@@ -7,6 +7,8 @@
 #include <pthread.h>
 #include <string.h>
 
+static int cursor_position = 0;
+
 static void print_mac(WINDOW *window, int row, int column, const unsigned char *mac) {
 	mvwprintw(window, row, column, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 	return;
@@ -15,6 +17,44 @@ static void print_mac(WINDOW *window, int row, int column, const unsigned char *
 static void print_ip(WINDOW *window, int row, int column, const unsigned char *ip) {
 	mvwprintw(window, row, column, "%02d.%02d.%02d.%02d", ip[0], ip[1], ip[2], ip[3]);
 	return;
+}
+
+static void resize_handler(window_data *window_data) {
+	int new_height = LINES - (WINDOW_OUTER_INDENT * 2);
+	int new_width = COLS - (WINDOW_OUTER_INDENT * 2);
+
+	for (int i = 0; i < window_data->height; i++) { // cleaning leftovers from old window
+		for (int j = 0; j < window_data->width; j++) {
+			mvwprintw(window_data->window, i, j, " ");
+		}
+	}
+
+	window_data->height = new_height;
+	window_data->width = new_width;
+
+	buffer.display_limit = (window_data->height - 2) < 0 ? 0 : (window_data->height - 2);
+
+	wnoutrefresh(window_data->window);
+	doupdate();
+
+	wresize(window_data->window, new_height, new_width);
+	mvwin(window_data->window, WINDOW_OUTER_INDENT, WINDOW_OUTER_INDENT);
+}
+
+static void cursor_move(int direction) {
+	int new_position = cursor_position + direction;
+
+	if (new_position < 0) {
+		if (buffer.head > 0) {
+			buffer.head--;
+		}
+		cursor_position = 0;
+	} else if ((unsigned int)new_position > buffer.display_limit && buffer.items[buffer.head + buffer.display_limit] != NULL) {
+		buffer.head++;
+		cursor_position = buffer.display_limit;
+	} else {
+		cursor_position = new_position;
+	}
 }
 
 void ncurses_init(void) {
@@ -30,6 +70,7 @@ void ncurses_init(void) {
 		use_default_colors();
 		init_pair(1, COLOR_GREEN, -1);
 		init_pair(2, COLOR_YELLOW, -1);
+		init_pair(3, -1, COLOR_BLACK);
 	}
 }
 
@@ -66,31 +107,17 @@ void input_handler(window_data *window_data, int input) {
 	case KEY_RESIZE:
 		resize_handler(window_data);
 		break;
+	case KEY_DOWN:
+		cursor_move(1);
+		mvwprintw(window_data->window, 8, 8, "key_down");
+		break;
+	case KEY_UP:
+		cursor_move(-1);
+		mvwprintw(window_data->window, 8, 8, "key_up");
+		break;
 	default:
 		break;
 	}
-}
-
-void resize_handler(window_data *window_data) {
-	int new_height = LINES - (WINDOW_OUTER_INDENT * 2);
-	int new_width = COLS - (WINDOW_OUTER_INDENT * 2);
-
-	for (int i = 0; i < window_data->height; i++) { // cleaning leftovers from old window
-		for (int j = 0; j < window_data->width; j++) {
-			mvwprintw(window_data->window, i, j, " ");
-		}
-	}
-
-	window_data->height = new_height;
-	window_data->width = new_width;
-
-	buffer.display_limit = (window_data->height - 2) < 0 ? 0 : (window_data->height - 2);
-
-	wnoutrefresh(window_data->window);
-	doupdate();
-
-	wresize(window_data->window, new_height, new_width);
-	mvwin(window_data->window, WINDOW_OUTER_INDENT, WINDOW_OUTER_INDENT);
 }
 
 void draw_table_header(WINDOW *window) {
@@ -103,16 +130,22 @@ void draw_table_header(WINDOW *window) {
 
 void print_network_data(WINDOW *window) {
 	int display_row_start = 2;
-	int limit = buffer.display_limit <= buffer.count ? buffer.display_limit : buffer.count;
+	unsigned int limit = buffer.display_limit <= buffer.count ? buffer.display_limit : buffer.count;
 
 	pthread_mutex_lock(&device_data_structures_mutex);
-	for (int i = 0; i < limit; i++) {
-		print_mac(window, display_row_start + i, 2, buffer.items[i]->mac);
-		print_ip(window, display_row_start + i, 24, buffer.items[i]->ip);
-		mvwprintw(window, display_row_start + i, 40, "%d\t\t%d\t\t%02d:%02d:%02d", buffer.items[i]->qinq_tag, buffer.items[i]->dot1q_tag,
-				  buffer.items[i]->last_seen.hour, buffer.items[i]->last_seen.minutes, buffer.items[i]->last_seen.seconds);
+	for (unsigned int i = 0; i < limit; i++) {
+		if (i == (unsigned int)cursor_position) {
+			wattron(window, COLOR_PAIR(3));
+		}
+		print_mac(window, display_row_start + i, 2, buffer.items[buffer.head + i]->mac);
+		print_ip(window, display_row_start + i, 24, buffer.items[buffer.head + i]->ip);
+		mvwprintw(window, display_row_start + i, 40, "%d\t\t%d\t\t%02d:%02d:%02d", buffer.items[buffer.head + i]->qinq_tag,
+				  buffer.items[buffer.head + i]->dot1q_tag, buffer.items[buffer.head + i]->last_seen.hour,
+				  buffer.items[buffer.head + i]->last_seen.minutes, buffer.items[buffer.head + i]->last_seen.seconds);
+		if (i == (unsigned int)cursor_position) {
+			wattroff(window, COLOR_PAIR(3));
+		}
 	}
-	// mvwprintw(window, row, 2, "aa:bb:cc:dd:ee:ff\t192.168.0.1\t15\t\t20\t\t14:50:29");
 	pthread_mutex_unlock(&device_data_structures_mutex);
 	return;
 }

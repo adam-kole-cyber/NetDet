@@ -10,7 +10,6 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
 
@@ -31,9 +30,10 @@ int main(int argc, char *argv[]) {
 	shutdown_fd = eventfd(0, 0);
 
 	buffer.capacity = 128;
-	buffer.items = malloc(sizeof(device *) * buffer.capacity);
+	buffer.items = calloc(buffer.capacity, sizeof(device *));
 	buffer.count = 0;
 	buffer.display_limit = 0;
+	buffer.head = 0;
 
 	map.size = 128;
 	map.table = calloc(128, sizeof(hash_entry));
@@ -60,6 +60,7 @@ int main(int argc, char *argv[]) {
 	main_window.width = COLS - (WINDOW_OUTER_INDENT * 2);
 	main_window.window = newwin(main_window.height, main_window.width, main_window.start_y, main_window.start_x);
 	wtimeout(main_window.window, 100);
+	keypad(main_window.window, TRUE);
 
 	buffer.display_limit = (main_window.height - 2) < 0 ? 0 : (main_window.height - 2);
 
