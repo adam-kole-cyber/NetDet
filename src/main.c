@@ -10,6 +10,7 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
 
@@ -77,8 +78,16 @@ int main(int argc, char *argv[]) {
 	pthread_join(signal_thread, NULL);
 
 	pthread_mutex_destroy(&device_data_structures_mutex);
+
+	for (unsigned int i = 0; i < buffer.count; i++) {
+		free(buffer.items[i]);
+		buffer.items[i] = NULL;
+	}
+
 	free(map.table);
+	map.table = NULL;
 	free(buffer.items);
+	buffer.items = NULL;
 
 	close(shutdown_fd);
 

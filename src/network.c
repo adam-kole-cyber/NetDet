@@ -96,6 +96,7 @@ static void set_device_data(device *device_data, unsigned char *processed_frame,
 
 	if (localtime_r(&now, &local_time) == NULL) {
 		free(device);
+		device = NULL;
 		network_error(APP_ERR_LOCALTIME_R, socket);
 		return;
 	}
@@ -140,12 +141,14 @@ void *network_routine(void *args) {
 				frame_length = recvfrom(socket_fd, raw_frame_data, sizeof(raw_frame_data), 0, NULL, NULL);
 				if (frame_length < 0) {
 					free(device_data);
+					device_data = NULL;
 					break;
 				}
 
 				process_raw_arp_frame(raw_frame_data, processed_frame, &frame_length);
 				if (frame_length <= 0 || (size_t)frame_length < sizeof(struct eth_header) + sizeof(struct arp_header)) {
 					free(device_data);
+					device_data = NULL;
 					continue;
 				}
 
@@ -158,6 +161,7 @@ void *network_routine(void *args) {
 					exitsing_device->last_seen.minutes = device_data->last_seen.minutes;
 					exitsing_device->last_seen.seconds = device_data->last_seen.seconds;
 					free(device_data);
+					device_data = NULL;
 				} else {
 					hashmap_store_entry(device_data);
 					slidingwindowbuffer_store_entry(device_data);
