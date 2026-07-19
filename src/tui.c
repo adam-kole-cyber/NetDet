@@ -152,7 +152,6 @@ void print_network_data(WINDOW *window) {
 		mvwprintw(window, display_row_start + i, 40, "%d\t\t%d\t\t%02d:%02d:%02d", buffer.items[buffer.head + i]->qinq_tag,
 				  buffer.items[buffer.head + i]->dot1q_tag, buffer.items[buffer.head + i]->last_seen.hour,
 				  buffer.items[buffer.head + i]->last_seen.minutes, buffer.items[buffer.head + i]->last_seen.seconds);
-		mvwprintw(window, display_row_start + i, 90, "%d %d", limit, buffer.display_limit);
 		if (i == (unsigned int)cursor_position) {
 			wattroff(window, COLOR_PAIR(3));
 		}
