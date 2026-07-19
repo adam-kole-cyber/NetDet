@@ -32,7 +32,12 @@ static void resize_handler(window_data *window_data) {
 	window_data->height = new_height;
 	window_data->width = new_width;
 
-	buffer.display_limit = (window_data->height - 2) < 0 ? 0 : (window_data->height - 2) - 1;
+	int computed_limit = (window_data->height - 2) - 1;
+	buffer.display_limit = (computed_limit) < 0 ? 0 : computed_limit;
+
+	if (buffer.display_limit > buffer.capacity) {
+		buffer.display_limit = buffer.capacity;
+	}
 
 	wnoutrefresh(window_data->window);
 	doupdate();
@@ -49,9 +54,10 @@ static void cursor_move(int direction) {
 			buffer.head--;
 		}
 		cursor_position = 0;
-	} else if ((unsigned int)new_position > buffer.display_limit && buffer.items[buffer.head + buffer.display_limit] != NULL) {
+	} else if ((unsigned int)new_position >= buffer.display_limit && (buffer.head + buffer.display_limit) < buffer.capacity &&
+			   buffer.items[buffer.head + buffer.display_limit] != NULL) {
 		buffer.head++;
-		cursor_position = buffer.display_limit;
+		cursor_position = buffer.display_limit - 1;
 	} else {
 		if (buffer.head + (unsigned int)new_position >= buffer.count) {
 			return;
@@ -131,7 +137,10 @@ void draw_table_header(WINDOW *window) {
 
 void print_network_data(WINDOW *window) {
 	int display_row_start = 2;
-	unsigned int limit = buffer.display_limit <= buffer.count ? buffer.display_limit : buffer.count;
+	unsigned int limit = buffer.display_limit;
+	if (buffer.head + limit > buffer.count) {
+		limit = buffer.count - buffer.head;
+	}
 
 	pthread_mutex_lock(&device_data_structures_mutex);
 	for (unsigned int i = 0; i < limit; i++) {
@@ -143,7 +152,7 @@ void print_network_data(WINDOW *window) {
 		mvwprintw(window, display_row_start + i, 40, "%d\t\t%d\t\t%02d:%02d:%02d", buffer.items[buffer.head + i]->qinq_tag,
 				  buffer.items[buffer.head + i]->dot1q_tag, buffer.items[buffer.head + i]->last_seen.hour,
 				  buffer.items[buffer.head + i]->last_seen.minutes, buffer.items[buffer.head + i]->last_seen.seconds);
-		mvwprintw(window, display_row_start + i, 90, "%d", limit);
+		mvwprintw(window, display_row_start + i, 90, "%d %d", limit, buffer.display_limit);
 		if (i == (unsigned int)cursor_position) {
 			wattroff(window, COLOR_PAIR(3));
 		}
