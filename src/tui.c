@@ -9,13 +9,11 @@
 
 static int cursor_position = 0;
 
-static void print_mac(WINDOW *window, int row, int column, const unsigned char *mac) {
-	mvwprintw(window, row, column, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-	return;
-}
-
-static void print_ip(WINDOW *window, int row, int column, const unsigned char *ip) {
-	mvwprintw(window, row, column, "%02d.%02d.%02d.%02d", ip[0], ip[1], ip[2], ip[3]);
+static void print_network_row(WINDOW *window, int row, int column, const device *device_data) {
+	mvwprintw(window, row, column, "%02x:%02x:%02x:%02x:%02x:%02x\t%d.%d.%d.%d\t%d\t\t%d\t\t%02d:%02d:%02d ", device_data->mac[0],
+			  device_data->mac[1], device_data->mac[2], device_data->mac[3], device_data->mac[4], device_data->mac[5], device_data->ip[0],
+			  device_data->ip[1], device_data->ip[2], device_data->ip[3], device_data->qinq_tag, device_data->dot1q_tag, device_data->last_seen.hour,
+			  device_data->last_seen.minutes, device_data->last_seen.seconds);
 	return;
 }
 
@@ -147,11 +145,9 @@ void print_network_data(WINDOW *window) {
 		if (i == (unsigned int)cursor_position) {
 			wattron(window, COLOR_PAIR(3));
 		}
-		print_mac(window, display_row_start + i, 2, buffer.items[buffer.head + i]->mac);
-		print_ip(window, display_row_start + i, 24, buffer.items[buffer.head + i]->ip);
-		mvwprintw(window, display_row_start + i, 40, "%d\t\t%d\t\t%02d:%02d:%02d", buffer.items[buffer.head + i]->qinq_tag,
-				  buffer.items[buffer.head + i]->dot1q_tag, buffer.items[buffer.head + i]->last_seen.hour,
-				  buffer.items[buffer.head + i]->last_seen.minutes, buffer.items[buffer.head + i]->last_seen.seconds);
+
+		print_network_row(window, display_row_start + i, 2, buffer.items[buffer.head + i]);
+
 		if (i == (unsigned int)cursor_position) {
 			wattroff(window, COLOR_PAIR(3));
 		}
