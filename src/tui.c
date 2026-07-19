@@ -31,11 +31,14 @@ static void resize_handler(window_data *window_data) {
 	window_data->width = new_width;
 
 	int computed_limit = (window_data->height - 2) - 1;
+
+	pthread_mutex_lock(&device_data_structures_mutex);
 	buffer.display_limit = (computed_limit) < 0 ? 0 : computed_limit;
 
 	if (buffer.display_limit > buffer.capacity) {
 		buffer.display_limit = buffer.capacity;
 	}
+	pthread_mutex_unlock(&device_data_structures_mutex);
 
 	wnoutrefresh(window_data->window);
 	doupdate();
@@ -47,6 +50,7 @@ static void resize_handler(window_data *window_data) {
 static void cursor_move(int direction) {
 	int new_position = cursor_position + direction;
 
+	pthread_mutex_lock(&device_data_structures_mutex);
 	if (new_position < 0) {
 		if (buffer.head > 0) {
 			buffer.head--;
@@ -62,6 +66,7 @@ static void cursor_move(int direction) {
 		}
 		cursor_position = new_position;
 	}
+	pthread_mutex_unlock(&device_data_structures_mutex);
 }
 
 void ncurses_init(void) {
@@ -135,12 +140,13 @@ void draw_table_header(WINDOW *window) {
 
 void print_network_data(WINDOW *window) {
 	int display_row_start = 2;
+
+	pthread_mutex_lock(&device_data_structures_mutex);
 	unsigned int limit = buffer.display_limit;
 	if (buffer.head + limit > buffer.count) {
 		limit = buffer.count - buffer.head;
 	}
 
-	pthread_mutex_lock(&device_data_structures_mutex);
 	for (unsigned int i = 0; i < limit; i++) {
 		if (i == (unsigned int)cursor_position) {
 			wattron(window, COLOR_PAIR(3));
