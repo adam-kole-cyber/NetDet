@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
 	wtimeout(main_window.window, 100);
 	keypad(main_window.window, TRUE);
 
-	buffer.display_limit = (main_window.height - 2) < 0 ? 0 : (main_window.height - 2);
+	buffer.display_limit = (main_window.height - 2) < 0 ? 0 : (main_window.height - 2) - 1;
 
 	while (!atomic_load(&end_main_loop)) {
 		werase(main_window.window);
