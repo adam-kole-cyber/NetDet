@@ -67,11 +67,20 @@ int main(int argc, char *argv[]) {
 	pthread_mutex_unlock(&device_data_structures_mutex);
 
 	while (!atomic_load(&end_main_loop)) {
-		werase(main_window.window);
-		draw_window_frame(&main_window, " NetDet ");
-		draw_table_header(main_window.window);
-		print_network_data(main_window.window);
-		wrefresh(main_window.window);
+		if (main_window.height < 4 || main_window.width < 83) {
+			werase(stdscr);
+			mvwprintw(stdscr, 0, 0, "Window is too small!");
+			wrefresh(stdscr);
+		} else {
+			werase(stdscr);
+			wnoutrefresh(stdscr);
+			werase(main_window.window);
+			draw_window_frame(&main_window, " NetDet ");
+			draw_table_header(main_window.window);
+			print_network_data(main_window.window);
+			mvwprintw(main_window.window, 8, 8, "%d %d", main_window.width, main_window.height);
+			wrefresh(main_window.window);
+		}
 
 		input = wgetch(main_window.window);
 		input_handler(&main_window, input);

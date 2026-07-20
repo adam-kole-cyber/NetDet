@@ -23,6 +23,5 @@ void draw_window_frame(window_data *window_data, const char *title);
 void input_handler(window_data *window_data, int input);
 void draw_table_header(WINDOW *window);
 void print_network_data(WINDOW *window);
-void mvwprintIPw(window_data *window_data, int y, int x, const unsigned char *ip);
 
 #endif
