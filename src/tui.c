@@ -62,6 +62,7 @@ static void cursor_move(int direction) {
 		cursor_position = buffer.display_limit - 1;
 	} else {
 		if (buffer.head + (unsigned int)new_position >= buffer.count) {
+			pthread_mutex_unlock(&device_data_structures_mutex);
 			return;
 		}
 		cursor_position = new_position;
