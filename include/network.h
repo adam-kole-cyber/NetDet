@@ -7,7 +7,11 @@
 
 #define ETH_MAC_ADDRS_LEN 12	  // dst mac (6B) + src mac (6B)
 #define ETH_QinQ_TAG_LEN 4		  // in bytes
-#define ETH_QinQ_DOT1Q_TAGS_LEN 8 // in bytes
+#define ETH_QinQ_DOT1Q_TAGS_LEN 8 // in byte
+#define FRAME_BUFFER_SIZE 2048
+#define ETH_TYPE_OFFSET_UNTAGGED 12	  // EtherType/TPID (no tag)
+#define ETH_TYPE_OFFSET_SINGLE_TAG 16 // EtherType/TPID after (802.1Q) tag
+#define ETH_TYPE_OFFSET_DOUBLE_TAG 20 // EtherType after (802.1ad + 802.1Q) tags
 
 extern pthread_t signal_thread_id;
 extern int shutdown_fd;

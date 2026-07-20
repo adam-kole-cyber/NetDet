@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define BUFFER_INITIAL_CAPACITY 128
+
 typedef struct {
 	unsigned char hour;
 	unsigned char minutes;

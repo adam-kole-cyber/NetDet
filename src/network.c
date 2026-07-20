@@ -53,24 +53,25 @@ static void process_raw_arp_frame(unsigned char *raw_frame_data, unsigned char *
 	// I decided that in the program this will represent a missing tag (the frame arrived without a tag),
 	// since I want to maintain a uniform frame length to simplify working with them.
 
-	if (raw_frame_data[12] == 0x08 && raw_frame_data[13] == 0x06) { // EtherType - 0x0806 -> ethernet frame
+	if (raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED] == 0x08 && raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED + 1] == 0x06) {
 		memcpy(processed_frame, raw_frame_data, ETH_MAC_ADDRS_LEN);
-		memset(&processed_frame[12], 0, ETH_QinQ_DOT1Q_TAGS_LEN);
-		memcpy(&processed_frame[20], &raw_frame_data[12], *frame_length - ETH_MAC_ADDRS_LEN);
-		*frame_length += 8;
-	} else if (raw_frame_data[12] == 0x81 && raw_frame_data[13] == 0x00) { // TPID - 0x8100 -> 802.1Q frame
-		if (!(raw_frame_data[16] == 0x08 && raw_frame_data[17] == 0x06)) {
+		memset(&processed_frame[ETH_TYPE_OFFSET_UNTAGGED], 0, ETH_QinQ_DOT1Q_TAGS_LEN);
+		memcpy(&processed_frame[ETH_TYPE_OFFSET_DOUBLE_TAG], &raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED], *frame_length - ETH_MAC_ADDRS_LEN);
+
+		*frame_length += ETH_QinQ_DOT1Q_TAGS_LEN;
+	} else if (raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED] == 0x81 && raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED + 1] == 0x00) {
+		if (!(raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG] == 0x08 && raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG + 1] == 0x06)) {
 			*frame_length = 0;
 			return;
 		}
 
 		memcpy(processed_frame, raw_frame_data, ETH_MAC_ADDRS_LEN);
-		memset(&processed_frame[12], 0, ETH_QinQ_TAG_LEN);
-		memcpy(&processed_frame[16], &raw_frame_data[12], *frame_length - ETH_MAC_ADDRS_LEN);
+		memset(&processed_frame[ETH_TYPE_OFFSET_UNTAGGED], 0, ETH_QinQ_TAG_LEN);
+		memcpy(&processed_frame[ETH_TYPE_OFFSET_SINGLE_TAG], &raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED], *frame_length - ETH_MAC_ADDRS_LEN);
 
-		*frame_length += 4;
-	} else if (raw_frame_data[12] == 0x88 && raw_frame_data[13] == 0xa8) { // TPID - 0x88a8 -> 802.1ad frame
-		if (!(raw_frame_data[20] == 0x08 && raw_frame_data[21] == 0x06)) {
+		*frame_length += ETH_QinQ_TAG_LEN;
+	} else if (raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED] == 0x88 && raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED + 1] == 0xa8) {
+		if (!(raw_frame_data[ETH_TYPE_OFFSET_DOUBLE_TAG] == 0x08 && raw_frame_data[ETH_TYPE_OFFSET_DOUBLE_TAG + 1] == 0x06)) {
 			*frame_length = 0;
 			return;
 		}
@@ -130,8 +131,8 @@ void *network_routine(void *args) {
 
 		for (int i = 0; i < number_of_events; i++) {
 			if (events[i].data.fd == socket_fd) {
-				unsigned char raw_frame_data[2048]; // expect a standard-length frame (as defined by IEEE 802.3), but I'm still leaving some room
-				unsigned char processed_frame[2048];
+				unsigned char raw_frame_data[FRAME_BUFFER_SIZE]; // expect a standard-length frame (as defined by IEEE 802.3)
+				unsigned char processed_frame[FRAME_BUFFER_SIZE];
 				ssize_t frame_length = 0;
 				device *device_data = malloc(sizeof(device) * 1);
 
