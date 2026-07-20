@@ -78,7 +78,6 @@ int main(int argc, char *argv[]) {
 			draw_window_frame(&main_window, " NetDet ");
 			draw_table_header(main_window.window);
 			print_network_data(main_window.window);
-			mvwprintw(main_window.window, 8, 8, "%d %d", main_window.width, main_window.height);
 			wrefresh(main_window.window);
 		}
 
