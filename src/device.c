@@ -1,6 +1,7 @@
 #include "device.h"
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 static uint64_t mac_to_u64(const uint8_t mac[6]) {
@@ -57,4 +58,11 @@ int slidingwindowbuffer_store_entry(device *dev) {
 	buffer.items[index] = dev;
 	buffer.count++;
 	return 1;
+}
+
+void hashmap_realloc(hash_entry *entry) {
+	static int multiplier = 2;
+	entry = realloc(entry, BUFFER_INITIAL_CAPACITY);
+	multiplier++;
+	return;
 }
