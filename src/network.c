@@ -164,7 +164,10 @@ void *network_routine(void *args) {
 					free(device_data);
 					device_data = NULL;
 				} else {
-					hashmap_store_entry(device_data);
+					if (hashmap_store_entry(device_data) == -1) {
+						network_error(APP_ERR_BIND, &socket_fd);
+						pthread_mutex_unlock(&device_data_structures_mutex);
+					}
 					slidingwindowbuffer_store_entry(device_data);
 				}
 				pthread_mutex_unlock(&device_data_structures_mutex);

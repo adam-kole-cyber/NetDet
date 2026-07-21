@@ -20,6 +20,8 @@ static const char *error_code_to_text(error_code err) {
 		return "if_nametoindex() failed";
 	case APP_ERR_LOCALTIME_R:
 		return "localtime_r() failed";
+	case APP_ERR_HASHMAP_SOTRE_ENTRY:
+		return "hashmap_store_entry() failed";
 	}
 	return "unknown error";
 }
