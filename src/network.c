@@ -165,10 +165,14 @@ void *network_routine(void *args) {
 					device_data = NULL;
 				} else {
 					if (hashmap_store_entry(device_data) == -1) {
-						network_error(APP_ERR_BIND, &socket_fd);
+						network_error(APP_ERR_HASHMAP_SOTRE_ENTRY, &socket_fd);
 						pthread_mutex_unlock(&device_data_structures_mutex);
 					}
-					slidingwindowbuffer_store_entry(device_data);
+
+					if (slidingwindowbuffer_store_entry(device_data) == -1) {
+						network_error(APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY, &socket_fd);
+						pthread_mutex_unlock(&device_data_structures_mutex);
+					}
 				}
 				pthread_mutex_unlock(&device_data_structures_mutex);
 

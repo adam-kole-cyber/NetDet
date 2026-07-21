@@ -15,6 +15,17 @@ static void hashmap_rehash(void) {
 	return;
 }
 
+static int slidingwindowbuffer_realloc(void) {
+	device **tmp = realloc(buffer.items, map.size * sizeof(device *));
+	if (tmp == NULL) {
+		return -1;
+	}
+
+	buffer.items = tmp;
+	buffer.capacity = map.size;
+	return 0;
+}
+
 static uint64_t mac_to_u64(const uint8_t mac[6]) {
 	return ((uint64_t)mac[0] << 40) | ((uint64_t)mac[1] << 32) | ((uint64_t)mac[2] << 24) | ((uint64_t)mac[3] << 16) | ((uint64_t)mac[4] << 8) |
 		   ((uint64_t)mac[5]);
@@ -71,6 +82,12 @@ int hashmap_store_entry(device *dev) {
 }
 
 int slidingwindowbuffer_store_entry(device *dev) {
+	if (map.size != buffer.capacity) {
+		if (slidingwindowbuffer_realloc() == -1) {
+			return -1;
+		}
+	}
+
 	int index = buffer.count;
 
 	buffer.items[index] = dev;

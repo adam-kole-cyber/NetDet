@@ -22,6 +22,8 @@ static const char *error_code_to_text(error_code err) {
 		return "localtime_r() failed";
 	case APP_ERR_HASHMAP_SOTRE_ENTRY:
 		return "hashmap_store_entry() failed";
+	case APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY:
+		return "slidingwindowbuffer_store_entry() failed";
 	}
 	return "unknown error";
 }
