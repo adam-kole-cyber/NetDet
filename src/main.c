@@ -70,7 +70,9 @@ int main(int argc, char *argv[]) {
 	while (!atomic_load(&end_main_loop)) {
 		if (main_window.height < MIN_HEIGHT || main_window.width < MIN_WIDTH) {
 			werase(stdscr);
+			wattron(stdscr, COLOR_PAIR(4));
 			mvwprintw(stdscr, 0, 0, "Window is too small!");
+			wattroff(stdscr, COLOR_PAIR(4));
 			wrefresh(stdscr);
 		} else {
 			werase(stdscr);
