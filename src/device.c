@@ -1,8 +1,19 @@
 #include "device.h"
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+
+static void hashmap_rehash(void) {
+	for (unsigned int i = 0; i < buffer.count; i++) {
+		hashmap_store_entry(buffer.items[i]);
+	}
+
+	map.count = buffer.count;
+	return;
+}
 
 static uint64_t mac_to_u64(const uint8_t mac[6]) {
 	return ((uint64_t)mac[0] << 40) | ((uint64_t)mac[1] << 32) | ((uint64_t)mac[2] << 24) | ((uint64_t)mac[3] << 16) | ((uint64_t)mac[4] << 8) |
@@ -41,6 +52,12 @@ device *hashmap_check_entry(const uint8_t *mac) {
 }
 
 int hashmap_store_entry(device *dev) {
+	if ((map.count + 1) > (map.size * 0.8)) {
+		if (hashmap_realloc() == -1) {
+			return -1;
+		}
+	}
+
 	size_t index = hash_mac(dev->mac) % map.size;
 
 	while (map.table[index].device != NULL) {
@@ -49,7 +66,8 @@ int hashmap_store_entry(device *dev) {
 
 	memcpy(map.table[index].mac, dev->mac, 6);
 	map.table[index].device = dev;
-	return 1;
+	map.count++;
+	return 0;
 }
 
 int slidingwindowbuffer_store_entry(device *dev) {
@@ -57,12 +75,25 @@ int slidingwindowbuffer_store_entry(device *dev) {
 
 	buffer.items[index] = dev;
 	buffer.count++;
-	return 1;
+	return 0;
 }
 
-void hashmap_realloc(hash_entry *entry) {
-	static int multiplier = 2;
-	entry = realloc(entry, BUFFER_INITIAL_CAPACITY);
-	multiplier++;
-	return;
+int hashmap_realloc(void) {
+	size_t new_size = map.size << 1;
+	hash_entry *tmp;
+
+	free(map.table);
+	map.table = NULL;
+	map.count = 0;
+
+	tmp = calloc(new_size, sizeof(hash_entry));
+	if (tmp == NULL) {
+		return -1;
+	}
+
+	map.table = tmp;
+	map.size = new_size;
+
+	hashmap_rehash();
+	return 0;
 }

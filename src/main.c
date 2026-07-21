@@ -36,6 +36,7 @@ int main(int argc, char *argv[]) {
 	buffer.head = 0;
 
 	map.size = BUFFER_INITIAL_CAPACITY;
+	map.count = 0;
 	map.table = calloc(map.size, sizeof(hash_entry));
 
 	pthread_mutex_init(&device_data_structures_mutex, NULL);

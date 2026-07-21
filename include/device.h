@@ -37,6 +37,7 @@ typedef struct {
 typedef struct {
 	hash_entry *table;
 	size_t size;
+	unsigned int count;
 } hash_map;
 
 extern hash_map map;
@@ -46,6 +47,6 @@ uint32_t hash_mac(const uint8_t mac[6]);
 device *hashmap_check_entry(const uint8_t *mac);
 int hashmap_store_entry(device *dev);
 int slidingwindowbuffer_store_entry(device *dev);
-void hashmap_realloc(hash_entry *entry);
+int hashmap_realloc(void);
 
 #endif
