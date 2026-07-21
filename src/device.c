@@ -15,6 +15,26 @@ static void hashmap_rehash(void) {
 	return;
 }
 
+static int hashmap_realloc(void) {
+	size_t new_size = map.size << 1;
+	hash_entry *tmp;
+
+	free(map.table);
+	map.table = NULL;
+	map.count = 0;
+
+	tmp = calloc(new_size, sizeof(hash_entry));
+	if (tmp == NULL) {
+		return -1;
+	}
+
+	map.table = tmp;
+	map.size = new_size;
+
+	hashmap_rehash();
+	return 0;
+}
+
 static int slidingwindowbuffer_realloc(void) {
 	device **tmp = realloc(buffer.items, map.size * sizeof(device *));
 	if (tmp == NULL) {
@@ -92,25 +112,5 @@ int slidingwindowbuffer_store_entry(device *dev) {
 
 	buffer.items[index] = dev;
 	buffer.count++;
-	return 0;
-}
-
-int hashmap_realloc(void) {
-	size_t new_size = map.size << 1;
-	hash_entry *tmp;
-
-	free(map.table);
-	map.table = NULL;
-	map.count = 0;
-
-	tmp = calloc(new_size, sizeof(hash_entry));
-	if (tmp == NULL) {
-		return -1;
-	}
-
-	map.table = tmp;
-	map.size = new_size;
-
-	hashmap_rehash();
 	return 0;
 }

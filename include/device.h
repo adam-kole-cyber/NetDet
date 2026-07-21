@@ -47,6 +47,5 @@ uint32_t hash_mac(const uint8_t mac[6]);
 device *hashmap_check_entry(const uint8_t *mac);
 int hashmap_store_entry(device *dev);
 int slidingwindowbuffer_store_entry(device *dev);
-int hashmap_realloc(void);
 
 #endif
