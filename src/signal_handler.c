@@ -7,11 +7,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-pthread_t signal_thread_id;
-
 void *signal_routine(void *args) {
 	(void)args;
-	signal_thread_id = pthread_self();
 	sigset_t mask;
 	int32_t signal;
 

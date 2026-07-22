@@ -14,7 +14,7 @@
 #define ETH_TYPE_OFFSET_SINGLE_TAG 16 // EtherType/TPID after (802.1Q) tag
 #define ETH_TYPE_OFFSET_DOUBLE_TAG 20 // EtherType after (802.1ad + 802.1Q) tags
 
-extern pthread_t signal_thread_id;
+extern pthread_t signal_thread;
 extern int32_t shutdown_fd;
 extern sliding_window_buffer buffer;
 extern hash_map map;

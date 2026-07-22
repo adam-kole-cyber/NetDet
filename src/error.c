@@ -49,7 +49,7 @@ void get_error(void) {
 void network_error(error_code error, int32_t *socket) {
 	set_error(error, errno);
 	close(*socket);
-	pthread_kill(signal_thread_id, SIGUSR1);
+	pthread_kill(signal_thread, SIGUSR1);
 	pthread_exit(NULL);
 	return;
 }

@@ -4,7 +4,7 @@
 #include <pthread.h>
 #include <stdint.h>
 
-extern pthread_t signal_thread_id;
+extern pthread_t signal_thread;
 typedef enum {
 	APP_ERR_NONE = 0,
 	APP_ERR_BIND,
