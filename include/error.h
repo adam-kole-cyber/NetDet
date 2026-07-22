@@ -4,7 +4,6 @@
 #include <pthread.h>
 #include <stdint.h>
 
-extern pthread_t signal_thread;
 typedef enum {
 	APP_ERR_NONE = 0,
 	APP_ERR_BIND,
@@ -17,6 +16,6 @@ typedef enum {
 
 void set_error(error_code error, int32_t errno_val);
 void get_error(void);
-void network_error(error_code error, int32_t *socket);
+void network_error(error_code error, int32_t *socket, pthread_t signal_thread);
 
 #endif

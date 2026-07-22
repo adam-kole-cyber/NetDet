@@ -49,6 +49,7 @@ int main(int argc, char *argv[]) {
 	struct network_thread_args args;
 	args.argc = argc;
 	args.argv = argv;
+	args.signal_thread = signal_thread;
 	pthread_create(&network_thread, NULL, network_routine, (void *)&args);
 
 	ncurses_init();

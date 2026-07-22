@@ -25,7 +25,7 @@ static void network_init(int32_t *socket_fd, struct network_thread_args *args) {
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (*socket_fd == -1) {
 		set_error(APP_ERR_SOCKET, errno);
-		pthread_kill(signal_thread, SIGUSR1);
+		pthread_kill(args->signal_thread, SIGUSR1);
 		pthread_exit(NULL);
 		return;
 	}
@@ -38,12 +38,12 @@ static void network_init(int32_t *socket_fd, struct network_thread_args *args) {
 		sll.sll_ifindex = if_nametoindex(args->argv[1]);
 
 		if (sll.sll_ifindex == 0) {
-			network_error(APP_ERR_IF_NAMETOINDEX, socket_fd);
+			network_error(APP_ERR_IF_NAMETOINDEX, socket_fd, args->signal_thread);
 			return;
 		}
 
 		if (bind(*socket_fd, (struct sockaddr *)&sll, sizeof(sll)) == -1) {
-			network_error(APP_ERR_BIND, socket_fd);
+			network_error(APP_ERR_BIND, socket_fd, args->signal_thread);
 			return;
 		}
 	}
@@ -87,7 +87,7 @@ static void process_raw_arp_frame(unsigned char *raw_frame_data, unsigned char *
 	return;
 }
 
-static void set_device_data(device *device_data, unsigned char *processed_frame, int32_t *socket, device *device) {
+static void set_device_data(device *device_data, unsigned char *processed_frame, int32_t *socket, device *device, pthread_t signal_thread) {
 	time_t now;
 	struct tm local_time;
 	struct eth_header *eth = (struct eth_header *)processed_frame;
@@ -103,7 +103,7 @@ static void set_device_data(device *device_data, unsigned char *processed_frame,
 	if (localtime_r(&now, &local_time) == NULL) {
 		free(device);
 		device = NULL;
-		network_error(APP_ERR_LOCALTIME_R, socket);
+		network_error(APP_ERR_LOCALTIME_R, socket, signal_thread);
 		return;
 	}
 
@@ -117,6 +117,7 @@ static void set_device_data(device *device_data, unsigned char *processed_frame,
 void *network_routine(void *args) {
 	int32_t socket_fd;
 
+	pthread_t signal_thread = ((struct network_thread_args *)args)->signal_thread;
 	int32_t epoll_fd = epoll_create1(0);
 	struct epoll_event ev;
 	struct epoll_event events[2];
@@ -158,7 +159,7 @@ void *network_routine(void *args) {
 					continue;
 				}
 
-				set_device_data(device_data, processed_frame, &socket_fd, device_data);
+				set_device_data(device_data, processed_frame, &socket_fd, device_data, signal_thread);
 
 				pthread_mutex_lock(&device_data_structures_mutex);
 				device *exitsing_device = hashmap_check_entry(device_data->mac);
@@ -170,12 +171,12 @@ void *network_routine(void *args) {
 					device_data = NULL;
 				} else {
 					if (hashmap_store_entry(device_data) == -1) {
-						network_error(APP_ERR_HASHMAP_SOTRE_ENTRY, &socket_fd);
+						network_error(APP_ERR_HASHMAP_SOTRE_ENTRY, &socket_fd, signal_thread);
 						pthread_mutex_unlock(&device_data_structures_mutex);
 					}
 
 					if (slidingwindowbuffer_store_entry(device_data) == -1) {
-						network_error(APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY, &socket_fd);
+						network_error(APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY, &socket_fd, signal_thread);
 						pthread_mutex_unlock(&device_data_structures_mutex);
 					}
 				}
