@@ -32,6 +32,7 @@ static const char *error_code_to_text(error_code err) {
 void set_error(error_code error, int32_t errno_val) {
 	error_app = error;
 	errno_val_app = errno_val;
+	return;
 }
 
 void get_error(void) {
@@ -41,6 +42,8 @@ void get_error(void) {
 
 	errno = errno_val_app;
 	perror(error_code_to_text(error_app));
+
+	return;
 }
 
 void network_error(error_code error, int32_t *socket) {

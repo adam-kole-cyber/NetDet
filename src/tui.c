@@ -46,6 +46,8 @@ static void resize_handler(window_data *window_data) {
 
 	wresize(window_data->window, new_height, new_width);
 	mvwin(window_data->window, WINDOW_OUTER_INDENT, WINDOW_OUTER_INDENT);
+
+	return;
 }
 
 static void cursor_move(int32_t direction) {
@@ -69,6 +71,8 @@ static void cursor_move(int32_t direction) {
 		cursor_position = new_position;
 	}
 	pthread_mutex_unlock(&device_data_structures_mutex);
+
+	return;
 }
 
 void ncurses_init(void) {
@@ -87,6 +91,8 @@ void ncurses_init(void) {
 		init_pair(3, -1, COLOR_BLACK);
 		init_pair(4, COLOR_RED, -1);
 	}
+
+	return;
 }
 
 void draw_window_frame(window_data *window_data, const char *title) {
@@ -115,6 +121,8 @@ void draw_window_frame(window_data *window_data, const char *title) {
 		mvwprintw(window_data->window, y, 0, "│");
 		mvwprintw(window_data->window, y, last_usable_column, "│");
 	}
+
+	return;
 }
 
 void input_handler(window_data *window_data, int32_t input) {
@@ -131,6 +139,8 @@ void input_handler(window_data *window_data, int32_t input) {
 	default:
 		break;
 	}
+
+	return;
 }
 
 void draw_table_header(WINDOW *window) {

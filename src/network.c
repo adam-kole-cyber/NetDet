@@ -47,6 +47,8 @@ static void network_init(int32_t *socket_fd, struct network_thread_args *args) {
 			return;
 		}
 	}
+
+	return;
 }
 
 static void process_raw_arp_frame(unsigned char *raw_frame_data, unsigned char *processed_frame, ssize_t *frame_length) {
@@ -81,6 +83,8 @@ static void process_raw_arp_frame(unsigned char *raw_frame_data, unsigned char *
 	} else {
 		*frame_length = 0;
 	}
+
+	return;
 }
 
 static void set_device_data(device *device_data, unsigned char *processed_frame, int32_t *socket, device *device) {
