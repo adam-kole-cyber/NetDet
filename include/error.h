@@ -2,6 +2,7 @@
 #define ERROR_H
 
 #include <pthread.h>
+#include <stdint.h>
 
 extern pthread_t signal_thread_id;
 typedef enum {
@@ -14,8 +15,8 @@ typedef enum {
 	APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY
 } error_code;
 
-void set_error(error_code error, int errno_val);
+void set_error(error_code error, int32_t errno_val);
 void get_error(void);
-void network_error(error_code error, int *socket);
+void network_error(error_code error, int32_t *socket);
 
 #endif

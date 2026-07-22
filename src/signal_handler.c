@@ -13,7 +13,7 @@ void *signal_routine(void *args) {
 	(void)args;
 	signal_thread_id = pthread_self();
 	sigset_t mask;
-	int signal;
+	int32_t signal;
 
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGINT);

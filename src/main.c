@@ -9,11 +9,12 @@
 #include <signal.h>
 #include <stdatomic.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
 
-int shutdown_fd;
+int32_t shutdown_fd;
 atomic_bool end_main_loop = false;
 atomic_uint_fast32_t termination_reason = PROGRAM_RUNNING;
 sliding_window_buffer buffer;
@@ -42,7 +43,7 @@ int main(int argc, char *argv[]) {
 	pthread_mutex_init(&device_data_structures_mutex, NULL);
 
 	pthread_t signal_thread;
-	pthread_create(&signal_thread, NULL, signal_routine, NULL);
+	pthread_create(&signal_thread, NULL, signal_routine, NULL); // TODO fix the race condition when program doesnt start with sudo
 
 	pthread_t network_thread;
 	struct network_thread_args args;
@@ -52,7 +53,7 @@ int main(int argc, char *argv[]) {
 
 	ncurses_init();
 
-	int input = 0;
+	int32_t input = 0;
 
 	window_data main_window;
 	main_window.start_x = WINDOW_OUTER_INDENT;
@@ -94,7 +95,7 @@ int main(int argc, char *argv[]) {
 
 	pthread_mutex_destroy(&device_data_structures_mutex);
 
-	for (unsigned int i = 0; i < buffer.count; i++) {
+	for (uint32_t i = 0; i < buffer.count; i++) {
 		free(buffer.items[i]);
 		buffer.items[i] = NULL;
 	}

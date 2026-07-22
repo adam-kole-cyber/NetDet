@@ -8,36 +8,36 @@
 #define BUFFER_INITIAL_CAPACITY 128
 
 typedef struct {
-	unsigned char hour;
-	unsigned char minutes;
-	unsigned char seconds;
+	uint8_t hour;
+	uint8_t minutes;
+	uint8_t seconds;
 } time_struct;
 
 typedef struct {
-	unsigned char mac[6];
-	unsigned char ip[4];
-	unsigned int qinq_tag;
-	unsigned int dot1q_tag;
+	uint8_t mac[6];
+	uint8_t ip[4];
+	uint32_t qinq_tag;
+	uint32_t dot1q_tag;
 	time_struct last_seen;
 } device;
 
 typedef struct {
 	device **items;
-	unsigned int capacity;
-	unsigned int head;
-	unsigned int count;
-	unsigned int display_limit;
+	uint32_t capacity;
+	uint32_t head;
+	uint32_t count;
+	uint32_t display_limit;
 } sliding_window_buffer;
 
 typedef struct {
-	unsigned char mac[6];
+	uint8_t mac[6];
 	device *device;
 } hash_entry;
 
 typedef struct {
 	hash_entry *table;
 	size_t size;
-	unsigned int count;
+	uint32_t count;
 } hash_map;
 
 extern hash_map map;
@@ -45,7 +45,7 @@ extern sliding_window_buffer buffer;
 
 uint32_t hash_mac(const uint8_t mac[6]);
 device *hashmap_check_entry(const uint8_t *mac);
-int hashmap_store_entry(device *dev);
-int slidingwindowbuffer_store_entry(device *dev);
+uint32_t hashmap_store_entry(device *dev);
+uint32_t slidingwindowbuffer_store_entry(device *dev);
 
 #endif

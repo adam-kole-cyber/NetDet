@@ -10,6 +10,7 @@
 #include <signal.h>
 #include <stdatomic.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/epoll.h>
@@ -20,7 +21,7 @@
 
 atomic_bool end_listen_loop = false;
 
-static void network_init(int *socket_fd, struct network_thread_args *args) {
+static void network_init(int32_t *socket_fd, struct network_thread_args *args) {
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (*socket_fd == -1) {
 		set_error(APP_ERR_SOCKET, errno);
@@ -82,7 +83,7 @@ static void process_raw_arp_frame(unsigned char *raw_frame_data, unsigned char *
 	}
 }
 
-static void set_device_data(device *device_data, unsigned char *processed_frame, int *socket, device *device) {
+static void set_device_data(device *device_data, unsigned char *processed_frame, int32_t *socket, device *device) {
 	time_t now;
 	struct tm local_time;
 	struct eth_header *eth = (struct eth_header *)processed_frame;
@@ -110,9 +111,9 @@ static void set_device_data(device *device_data, unsigned char *processed_frame,
 }
 
 void *network_routine(void *args) {
-	int socket_fd;
+	int32_t socket_fd;
 
-	int epoll_fd = epoll_create1(0);
+	int32_t epoll_fd = epoll_create1(0);
 	struct epoll_event ev;
 	struct epoll_event events[2];
 
@@ -127,9 +128,9 @@ void *network_routine(void *args) {
 	epoll_ctl(epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev);
 
 	while (!atomic_load(&end_listen_loop)) {
-		int number_of_events = epoll_wait(epoll_fd, events, 2, -1);
+		int32_t number_of_events = epoll_wait(epoll_fd, events, 2, -1);
 
-		for (int i = 0; i < number_of_events; i++) {
+		for (int32_t i = 0; i < number_of_events; i++) {
 			if (events[i].data.fd == socket_fd) {
 				unsigned char raw_frame_data[FRAME_BUFFER_SIZE]; // expect a standard-length frame (as defined by IEEE 802.3)
 				unsigned char processed_frame[FRAME_BUFFER_SIZE];

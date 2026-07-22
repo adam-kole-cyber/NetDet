@@ -4,6 +4,7 @@
 #include "device.h"
 #include <bits/pthreadtypes.h>
 #include <pthread.h>
+#include <stdint.h>
 
 #define ETH_MAC_ADDRS_LEN 12	  // dst mac (6B) + src mac (6B)
 #define ETH_QinQ_TAG_LEN 4		  // in bytes
@@ -14,7 +15,7 @@
 #define ETH_TYPE_OFFSET_DOUBLE_TAG 20 // EtherType after (802.1ad + 802.1Q) tags
 
 extern pthread_t signal_thread_id;
-extern int shutdown_fd;
+extern int32_t shutdown_fd;
 extern sliding_window_buffer buffer;
 extern hash_map map;
 extern pthread_mutex_t device_data_structures_mutex;
@@ -25,23 +26,23 @@ struct network_thread_args {
 };
 
 struct eth_header {
-	unsigned char dest_addr[6];
-	unsigned char sour_addr[6];
-	unsigned int qinq_tag;	// IEEE 802.1ad - optional field
-	unsigned int dot1q_tag; // IEEE 802.1Q - optional field
-	unsigned short ether_type;
+	uint8_t dest_addr[6];
+	uint8_t sour_addr[6];
+	uint32_t qinq_tag;	// IEEE 802.1ad - optional field
+	uint32_t dot1q_tag; // IEEE 802.1Q - optional field
+	uint16_t ether_type;
 } __attribute__((packed));
 
 struct arp_header {
-	unsigned short htype;
-	unsigned short ptype;
-	unsigned char hlen;
-	unsigned char plen;
-	unsigned short oper;
-	unsigned char sha[6];
-	unsigned int spa;
-	unsigned char tha[6];
-	unsigned int tpa;
+	uint16_t htype;
+	uint16_t ptype;
+	uint8_t hlen;
+	uint8_t plen;
+	uint16_t oper;
+	uint8_t sha[6];
+	uint32_t spa;
+	uint8_t tha[6];
+	uint32_t tpa;
 } __attribute__((packed));
 
 void *network_routine(void *args);

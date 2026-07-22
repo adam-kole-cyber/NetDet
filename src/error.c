@@ -2,11 +2,12 @@
 #include <errno.h>
 #include <pthread.h>
 #include <signal.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
 
 static error_code error_app;
-static int errno_val_app = 0;
+static int32_t errno_val_app = 0;
 
 static const char *error_code_to_text(error_code err) {
 	switch (err) {
@@ -28,7 +29,7 @@ static const char *error_code_to_text(error_code err) {
 	return "unknown error";
 }
 
-void set_error(error_code error, int errno_val) {
+void set_error(error_code error, int32_t errno_val) {
 	error_app = error;
 	errno_val_app = errno_val;
 }
@@ -42,7 +43,7 @@ void get_error(void) {
 	perror(error_code_to_text(error_app));
 }
 
-void network_error(error_code error, int *socket) {
+void network_error(error_code error, int32_t *socket) {
 	set_error(error, errno);
 	close(*socket);
 	pthread_kill(signal_thread_id, SIGUSR1);

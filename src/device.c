@@ -7,7 +7,7 @@
 #include <time.h>
 
 static void hashmap_rehash(void) {
-	for (unsigned int i = 0; i < buffer.count; i++) {
+	for (uint32_t i = 0; i < buffer.count; i++) {
 		hashmap_store_entry(buffer.items[i]);
 	}
 
@@ -15,7 +15,7 @@ static void hashmap_rehash(void) {
 	return;
 }
 
-static int hashmap_realloc(void) {
+static int32_t hashmap_realloc(void) {
 	size_t new_size = map.size << 1;
 	hash_entry *tmp;
 
@@ -35,7 +35,7 @@ static int hashmap_realloc(void) {
 	return 0;
 }
 
-static int slidingwindowbuffer_realloc(void) {
+static int32_t slidingwindowbuffer_realloc(void) {
 	device **tmp = realloc(buffer.items, map.size * sizeof(device *));
 	if (tmp == NULL) {
 		return -1;
@@ -82,7 +82,7 @@ device *hashmap_check_entry(const uint8_t *mac) {
 	return NULL;
 }
 
-int hashmap_store_entry(device *dev) {
+int32_t hashmap_store_entry(device *dev) {
 	if ((map.count + 1) > (map.size * 0.8)) {
 		if (hashmap_realloc() == -1) {
 			return -1;
@@ -101,14 +101,14 @@ int hashmap_store_entry(device *dev) {
 	return 0;
 }
 
-int slidingwindowbuffer_store_entry(device *dev) {
+int32_t slidingwindowbuffer_store_entry(device *dev) {
 	if (map.size != buffer.capacity) {
 		if (slidingwindowbuffer_realloc() == -1) {
 			return -1;
 		}
 	}
 
-	int index = buffer.count;
+	int32_t index = buffer.count;
 
 	buffer.items[index] = dev;
 	buffer.count++;

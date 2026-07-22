@@ -2,11 +2,12 @@
 #define SIGNAL_HANDLER_H
 
 #include <stdatomic.h>
+#include <stdint.h>
 
 extern atomic_bool end_main_loop;
 extern atomic_bool end_listen_loop;
 extern atomic_uint_fast32_t termination_reason;
-extern int shutdown_fd;
+extern int32_t shutdown_fd;
 typedef enum { PROGRAM_RUNNING, SIGINT_END, SIGUSR1_END } retval;
 
 void *signal_routine(void *args);
