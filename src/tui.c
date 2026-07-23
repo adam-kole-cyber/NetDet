@@ -11,51 +11,38 @@
 static int32_t cursor_position = 0;
 
 static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t *mac, bool highlight_line) {
-	if (!highlight_line) {
-		if ((mac[0] & 0x03) == 0x03) {
-			wattron(window, COLOR_PAIR(4));
-		} else if ((mac[0] & 0x02) == 0x02) {
-			wattron(window, COLOR_PAIR(5));
-		} else if ((mac[0] & 0x01) == 0x01) {
-			wattron(window, COLOR_PAIR(1));
-		}
-	} else {
-		wattroff(window, COLOR_PAIR(3));
+	short pair = 0;
 
-		if ((mac[0] & 0x03) == 0x03) {
-			wattron(window, COLOR_PAIR(6));
-		} else if ((mac[0] & 0x02) == 0x02) {
-			wattron(window, COLOR_PAIR(7));
-		} else if ((mac[0] & 0x01) == 0x01) {
-			wattron(window, COLOR_PAIR(8));
-		}
+	if (highlight_line) {
+		if ((mac[0] & 0x03) == 0x03)
+			pair = 6;
+		else if ((mac[0] & 0x02) == 0x02)
+			pair = 7;
+		else if ((mac[0] & 0x01) == 0x01)
+			pair = 8;
+		else
+			pair = 3;
+	} else {
+		if ((mac[0] & 0x03) == 0x03)
+			pair = 4;
+		else if ((mac[0] & 0x02) == 0x02)
+			pair = 5;
+		else if ((mac[0] & 0x01) == 0x01)
+			pair = 1;
+		else
+			pair = 0;
 	}
 
+	wattrset(window, pair ? COLOR_PAIR(pair) : A_NORMAL);
 	mvwprintw(window, row, column, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	wattrset(window, A_NORMAL);
 
-	if (!highlight_line) {
-		if ((mac[0] & 0x03) == 0x03) {
-			wattroff(window, COLOR_PAIR(4));
-		} else if ((mac[0] & 0x02) == 0x02) {
-			wattroff(window, COLOR_PAIR(5));
-		} else if ((mac[0] & 0x01) == 0x01) {
-			wattroff(window, COLOR_PAIR(1));
-		}
-	} else {
-		if ((mac[0] & 0x03) == 0x03) {
-			wattroff(window, COLOR_PAIR(6));
-		} else if ((mac[0] & 0x02) == 0x02) {
-			wattroff(window, COLOR_PAIR(7));
-		} else if ((mac[0] & 0x01) == 0x01) {
-			wattroff(window, COLOR_PAIR(8));
-		}
-
+	if (highlight_line) {
 		wattron(window, COLOR_PAIR(3));
 	}
 
 	return;
 }
-
 static void print_ip(WINDOW *window, const uint8_t *ip) {
 	wprintw(window, "\t%d.%d.%d.%d\t", ip[0], ip[1], ip[2], ip[3]);
 	return;
