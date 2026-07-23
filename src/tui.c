@@ -10,11 +10,79 @@
 
 static int32_t cursor_position = 0;
 
-static void print_network_row(WINDOW *window, int32_t row, int32_t column, const device *device_data) {
-	mvwprintw(window, row, column, "%02x:%02x:%02x:%02x:%02x:%02x\t%d.%d.%d.%d\t%d\t\t%d\t\t%02d:%02d:%02d ", device_data->mac[0],
-			  device_data->mac[1], device_data->mac[2], device_data->mac[3], device_data->mac[4], device_data->mac[5], device_data->ip[0],
-			  device_data->ip[1], device_data->ip[2], device_data->ip[3], device_data->qinq_tag, device_data->dot1q_tag, device_data->last_seen.hour,
-			  device_data->last_seen.minutes, device_data->last_seen.seconds);
+static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t *mac, bool highlight_line) {
+	if (!highlight_line) {
+		if ((mac[0] & 0x03) == 0x03) {
+			wattron(window, COLOR_PAIR(4));
+		} else if ((mac[0] & 0x02) == 0x02) {
+			wattron(window, COLOR_PAIR(5));
+		} else if ((mac[0] & 0x01) == 0x01) {
+			wattron(window, COLOR_PAIR(1));
+		}
+	} else {
+		wattroff(window, COLOR_PAIR(3));
+
+		if ((mac[0] & 0x03) == 0x03) {
+			wattron(window, COLOR_PAIR(6));
+		} else if ((mac[0] & 0x02) == 0x02) {
+			wattron(window, COLOR_PAIR(7));
+		} else if ((mac[0] & 0x01) == 0x01) {
+			wattron(window, COLOR_PAIR(8));
+		}
+	}
+
+	mvwprintw(window, row, column, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+	if (!highlight_line) {
+		if ((mac[0] & 0x03) == 0x03) {
+			wattroff(window, COLOR_PAIR(4));
+		} else if ((mac[0] & 0x02) == 0x02) {
+			wattroff(window, COLOR_PAIR(5));
+		} else if ((mac[0] & 0x01) == 0x01) {
+			wattroff(window, COLOR_PAIR(1));
+		}
+	} else {
+		if ((mac[0] & 0x03) == 0x03) {
+			wattroff(window, COLOR_PAIR(6));
+		} else if ((mac[0] & 0x02) == 0x02) {
+			wattroff(window, COLOR_PAIR(7));
+		} else if ((mac[0] & 0x01) == 0x01) {
+			wattroff(window, COLOR_PAIR(8));
+		}
+
+		wattron(window, COLOR_PAIR(3));
+	}
+
+	return;
+}
+
+static void print_ip(WINDOW *window, const uint8_t *ip) {
+	wprintw(window, "\t%d.%d.%d.%d\t", ip[0], ip[1], ip[2], ip[3]);
+	return;
+}
+
+static void print_qinq(WINDOW *window, const uint32_t *qinq_tag) {
+	wprintw(window, "%d\t\t", *qinq_tag);
+	return;
+}
+
+static void print_dot1q(WINDOW *window, const uint32_t *dot1q_tag) {
+	wprintw(window, "%d\t\t", *dot1q_tag);
+	return;
+}
+
+static void print_lastseen(WINDOW *window, const time_struct *last_seen) {
+	wprintw(window, "%02d:%02d:%02d", last_seen->hour, last_seen->minutes, last_seen->seconds);
+	return;
+}
+
+static void print_network_row(WINDOW *window, int32_t row, int32_t column, const device *device_data, bool highlight_line) {
+	print_mac(window, row, column, device_data->mac, highlight_line);
+	print_ip(window, device_data->ip);
+	print_qinq(window, &device_data->qinq_tag);
+	print_dot1q(window, &device_data->dot1q_tag);
+	print_lastseen(window, &device_data->last_seen);
+
 	return;
 }
 
@@ -37,10 +105,6 @@ static void resize_handler(window_data *window_data) {
 
 	pthread_mutex_lock(&device_data_structures_mutex);
 	buffer.display_row = (computed_limit) < 0 ? 0 : computed_limit;
-
-	// if (buffer.display_limit > buffer.size) { // TODO fix this bc after realloc new records dont show up imidietly
-	//	buffer.display_limit = buffer.size;
-	// }
 	pthread_mutex_unlock(&device_data_structures_mutex);
 
 	wnoutrefresh(window_data->window);
@@ -93,6 +157,10 @@ void ncurses_init(void) {
 		init_pair(2, COLOR_YELLOW, -1);
 		init_pair(3, -1, COLOR_BLACK);
 		init_pair(4, COLOR_RED, -1);
+		init_pair(5, COLOR_CYAN, -1);
+		init_pair(6, COLOR_RED, COLOR_BLACK);
+		init_pair(7, COLOR_CYAN, COLOR_BLACK);
+		init_pair(8, COLOR_GREEN, COLOR_BLACK);
 	}
 
 	return;
@@ -170,7 +238,7 @@ void print_network_data(WINDOW *window) {
 			wattron(window, COLOR_PAIR(3));
 		}
 
-		print_network_row(window, display_row_start + i, 2, buffer.items[buffer.head + i]);
+		print_network_row(window, display_row_start + i, 2, buffer.items[buffer.head + i], i == (uint32_t)cursor_position);
 
 		if (i == (uint32_t)cursor_position) {
 			wattroff(window, COLOR_PAIR(3));
