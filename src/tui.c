@@ -36,7 +36,7 @@ static void resize_handler(window_data *window_data) {
 	pthread_mutex_lock(&device_data_structures_mutex);
 	buffer.display_limit = (computed_limit) < 0 ? 0 : computed_limit;
 
-	if (buffer.display_limit > buffer.capacity) {
+	if (buffer.display_limit > buffer.capacity) { // TODO fix this bc after realloc new records dont show up imidietly
 		buffer.display_limit = buffer.capacity;
 	}
 	pthread_mutex_unlock(&device_data_structures_mutex);

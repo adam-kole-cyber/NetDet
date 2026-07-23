@@ -42,7 +42,7 @@ static int32_t slidingwindowbuffer_realloc(void) {
 	}
 
 	for (uint32_t i = buffer.capacity; i < map.size; i++) {
-		memset(buffer.items[i], 0, sizeof(device));
+		tmp[i] = NULL;
 	}
 
 	buffer.items = tmp;

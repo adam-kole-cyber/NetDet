@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
 	pthread_mutex_init(&device_data_structures_mutex, NULL);
 
 	pthread_t signal_thread;
-	pthread_create(&signal_thread, NULL, signal_routine, NULL); // TODO fix the race condition when program doesnt start with sudo
+	pthread_create(&signal_thread, NULL, signal_routine, NULL);
 
 	pthread_t network_thread;
 	struct network_thread_args args;
