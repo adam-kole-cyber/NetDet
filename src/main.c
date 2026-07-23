@@ -30,13 +30,14 @@ int main(int argc, char *argv[]) {
 
 	shutdown_fd = eventfd(0, 0);
 
-	buffer.capacity = BUFFER_INITIAL_CAPACITY;
-	buffer.items = calloc(buffer.capacity, sizeof(device *));
+	buffer.size = BUFFER_INITIAL_SIZE;
+	buffer.items = calloc(buffer.size, sizeof(device *));
 	buffer.count = 0;
+	buffer.display_row = 0;
 	buffer.display_limit = 0;
 	buffer.head = 0;
 
-	map.size = BUFFER_INITIAL_CAPACITY;
+	map.size = BUFFER_INITIAL_SIZE;
 	map.count = 0;
 	map.table = calloc(map.size, sizeof(hash_entry));
 
@@ -66,7 +67,7 @@ int main(int argc, char *argv[]) {
 	keypad(main_window.window, TRUE);
 
 	pthread_mutex_lock(&device_data_structures_mutex);
-	buffer.display_limit =
+	buffer.display_row =
 		(main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) < 0 ? 0 : (main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) - 1;
 	pthread_mutex_unlock(&device_data_structures_mutex);
 

@@ -41,12 +41,12 @@ static int32_t slidingwindowbuffer_realloc(void) {
 		return -1;
 	}
 
-	for (uint32_t i = buffer.capacity; i < map.size; i++) {
+	for (uint32_t i = buffer.size; i < map.size; i++) {
 		tmp[i] = NULL;
 	}
 
 	buffer.items = tmp;
-	buffer.capacity = map.size;
+	buffer.size = map.size;
 	return 0;
 }
 
@@ -106,7 +106,7 @@ int32_t hashmap_store_entry(device *dev) {
 }
 
 int32_t slidingwindowbuffer_store_entry(device *dev) {
-	if (map.size != buffer.capacity) {
+	if (map.size != buffer.size) {
 		if (slidingwindowbuffer_realloc() == -1) {
 			return -1;
 		}

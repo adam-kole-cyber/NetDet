@@ -18,6 +18,8 @@ static void print_network_row(WINDOW *window, int32_t row, int32_t column, const
 	return;
 }
 
+static inline void sync_display_limit(void) { buffer.display_limit = (buffer.display_row < buffer.size) ? buffer.display_row : buffer.size; }
+
 static void resize_handler(window_data *window_data) {
 	int32_t new_height = LINES - (WINDOW_OUTER_INDENT * 2);
 	int32_t new_width = COLS - (WINDOW_OUTER_INDENT * 2);
@@ -31,14 +33,14 @@ static void resize_handler(window_data *window_data) {
 	window_data->height = new_height;
 	window_data->width = new_width;
 
-	int32_t computed_limit = (window_data->height - 2) - 1;
+	int32_t computed_limit = (window_data->height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) - 1;
 
 	pthread_mutex_lock(&device_data_structures_mutex);
-	buffer.display_limit = (computed_limit) < 0 ? 0 : computed_limit;
+	buffer.display_row = (computed_limit) < 0 ? 0 : computed_limit;
 
-	if (buffer.display_limit > buffer.capacity) { // TODO fix this bc after realloc new records dont show up imidietly
-		buffer.display_limit = buffer.capacity;
-	}
+	// if (buffer.display_limit > buffer.size) { // TODO fix this bc after realloc new records dont show up imidietly
+	//	buffer.display_limit = buffer.size;
+	// }
 	pthread_mutex_unlock(&device_data_structures_mutex);
 
 	wnoutrefresh(window_data->window);
@@ -54,13 +56,14 @@ static void cursor_move(int32_t direction) {
 	int32_t new_position = cursor_position + direction;
 
 	pthread_mutex_lock(&device_data_structures_mutex);
+	sync_display_limit();
+
 	if (new_position < 0) {
 		if (buffer.head > 0) {
 			buffer.head--;
 		}
 		cursor_position = 0;
-	} else if ((uint32_t)new_position >= buffer.display_limit && (buffer.head + buffer.display_limit) < buffer.capacity &&
-			   buffer.items[buffer.head + buffer.display_limit] != NULL) {
+	} else if ((uint32_t)new_position >= buffer.display_limit && (buffer.head + buffer.display_limit) < buffer.count) {
 		buffer.head++;
 		cursor_position = buffer.display_limit - 1;
 	} else {
@@ -155,6 +158,8 @@ void print_network_data(WINDOW *window) {
 	int32_t display_row_start = 2;
 
 	pthread_mutex_lock(&device_data_structures_mutex);
+	sync_display_limit();
+
 	uint32_t limit = buffer.display_limit;
 	if (buffer.head + limit > buffer.count) {
 		limit = buffer.count - buffer.head;

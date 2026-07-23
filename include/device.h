@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define BUFFER_INITIAL_CAPACITY 128
+#define BUFFER_INITIAL_SIZE 128
 
 typedef struct {
 	uint8_t hour;
@@ -22,11 +22,12 @@ typedef struct {
 } device;
 
 typedef struct {
-	device **items;
-	uint32_t capacity;
-	uint32_t head;
-	uint32_t count;
-	uint32_t display_limit;
+	device **items;			// array of pointers to devices
+	uint32_t count;			// number of curently stored devices
+	uint32_t display_row;	// stores a number that indicates how many rows of records can be currently displayed
+	uint32_t display_limit; // stores the number that indicates how many records can be safely displayed (it will be either size or display_row)
+	uint32_t head;			// index of the device to start displaying from
+	uint32_t size;			// size of whole buffer
 } sliding_window_buffer;
 
 typedef struct {
@@ -36,7 +37,7 @@ typedef struct {
 
 typedef struct {
 	hash_entry *table;
-	size_t size;
+	uint32_t size;
 	uint32_t count;
 } hash_map;
 
