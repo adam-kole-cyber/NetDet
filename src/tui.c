@@ -26,7 +26,7 @@ static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t
 		if ((mac[0] & 0x03) == 0x03)
 			pair = 4;
 		else if ((mac[0] & 0x02) == 0x02)
-			pair = 5;
+			pair = 2;
 		else if ((mac[0] & 0x01) == 0x01)
 			pair = 1;
 		else
@@ -146,7 +146,7 @@ void ncurses_init(void) {
 		init_pair(4, COLOR_RED, -1);
 		init_pair(5, COLOR_CYAN, -1);
 		init_pair(6, COLOR_RED, COLOR_BLACK);
-		init_pair(7, COLOR_CYAN, COLOR_BLACK);
+		init_pair(7, COLOR_YELLOW, COLOR_BLACK);
 		init_pair(8, COLOR_GREEN, COLOR_BLACK);
 	}
 
