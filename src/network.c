@@ -74,12 +74,19 @@ static void process_raw_arp_frame(unsigned char *raw_frame_data, unsigned char *
 
 		*frame_length += ETH_QinQ_TAG_LEN;
 	} else if (raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED] == 0x88 && raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED + 1] == 0xa8) {
-		if (!(raw_frame_data[ETH_TYPE_OFFSET_DOUBLE_TAG] == 0x08 && raw_frame_data[ETH_TYPE_OFFSET_DOUBLE_TAG + 1] == 0x06)) {
+		if ((raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG] == 0x81 && raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG + 1] == 0x00) &&
+			(raw_frame_data[ETH_TYPE_OFFSET_DOUBLE_TAG] == 0x08 && raw_frame_data[ETH_TYPE_OFFSET_DOUBLE_TAG + 1] == 0x06)) {
+			memcpy(processed_frame, raw_frame_data, *frame_length);
+		} else if (raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG] == 0x08 && raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG + 1] == 0x06) {
+			memcpy(processed_frame, raw_frame_data, ETH_MAC_ADDRS_LEN + ETH_QinQ_TAG_LEN);
+			memset(&processed_frame[ETH_TYPE_OFFSET_SINGLE_TAG], 0, ETH_QinQ_TAG_LEN);
+			memcpy(&processed_frame[ETH_TYPE_OFFSET_DOUBLE_TAG], &raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG],
+				   *frame_length - ETH_TYPE_OFFSET_SINGLE_TAG);
+			*frame_length += ETH_QinQ_TAG_LEN;
+		} else {
 			*frame_length = 0;
 			return;
 		}
-
-		memcpy(processed_frame, raw_frame_data, *frame_length);
 	} else {
 		*frame_length = 0;
 	}
