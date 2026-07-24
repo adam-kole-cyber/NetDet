@@ -19,7 +19,6 @@ atomic_bool end_main_loop = false;
 atomic_uint_fast32_t termination_reason = PROGRAM_RUNNING;
 sliding_window_buffer buffer;
 pthread_mutex_t device_data_structures_mutex;
-hash_map map;
 
 int main(int argc, char *argv[]) {
 	sigset_t mask;
@@ -36,10 +35,6 @@ int main(int argc, char *argv[]) {
 	buffer.display_row = 0;
 	buffer.display_limit = 0;
 	buffer.head = 0;
-
-	map.size = BUFFER_INITIAL_SIZE;
-	map.count = 0;
-	map.table = calloc(map.size, sizeof(hash_entry));
 
 	pthread_mutex_init(&device_data_structures_mutex, NULL);
 
@@ -102,8 +97,6 @@ int main(int argc, char *argv[]) {
 		buffer.items[i] = NULL;
 	}
 
-	free(map.table);
-	map.table = NULL;
 	free(buffer.items);
 	buffer.items = NULL;
 

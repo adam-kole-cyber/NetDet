@@ -20,6 +20,7 @@
 #include <unistd.h>
 
 atomic_bool end_listen_loop = false;
+hash_map map;
 
 static void network_init(int32_t *socket_fd, struct network_thread_args *args) {
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
@@ -129,6 +130,10 @@ void *network_routine(void *args) {
 	struct epoll_event ev;
 	struct epoll_event events[2];
 
+	map.size = BUFFER_INITIAL_SIZE;
+	map.count = 0;
+	map.table = calloc(map.size, sizeof(hash_entry));
+
 	ev.events = EPOLLIN;
 	ev.data.fd = shutdown_fd;
 	epoll_ctl(epoll_fd, EPOLL_CTL_ADD, shutdown_fd, &ev);
@@ -182,6 +187,7 @@ void *network_routine(void *args) {
 						pthread_mutex_unlock(&device_data_structures_mutex);
 					}
 
+					// TODO add an eventfd and send this to the main thread
 					if (slidingwindowbuffer_store_entry(device_data) == -1) {
 						network_error(APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY, &socket_fd, signal_thread);
 						pthread_mutex_unlock(&device_data_structures_mutex);
@@ -195,6 +201,8 @@ void *network_routine(void *args) {
 		}
 	}
 
+	free(map.table);
+	map.table = NULL;
 	close(epoll_fd);
 	close(socket_fd);
 	return NULL;
