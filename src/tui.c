@@ -44,22 +44,22 @@ static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t
 	return;
 }
 static void print_ip(WINDOW *window, const uint8_t *ip) {
-	wprintw(window, "\t%d.%d.%d.%d\t", ip[0], ip[1], ip[2], ip[3]);
+	wprintw(window, "\t%u.%u.%u.%u\t", ip[0], ip[1], ip[2], ip[3]);
 	return;
 }
 
 static void print_qinq(WINDOW *window, const uint32_t *qinq_tag) {
-	wprintw(window, "%d\t\t", *qinq_tag);
+	wprintw(window, "%u\t\t", (*qinq_tag & 0xfff));
 	return;
 }
 
 static void print_dot1q(WINDOW *window, const uint32_t *dot1q_tag) {
-	wprintw(window, "%d\t\t", *dot1q_tag);
+	wprintw(window, "%u\t\t", (*dot1q_tag & 0xfff));
 	return;
 }
 
 static void print_lastseen(WINDOW *window, const time_struct *last_seen) {
-	wprintw(window, "%02d:%02d:%02d", last_seen->hour, last_seen->minutes, last_seen->seconds);
+	wprintw(window, "%02u:%02u:%02u", last_seen->hour, last_seen->minutes, last_seen->seconds);
 	return;
 }
 
