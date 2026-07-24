@@ -12,7 +12,6 @@
 #define WINDOW_UNUSABLE_NUMBERS_OF_LINES 2 // they are unusable because of the window frame
 
 extern sliding_window_buffer buffer;
-extern hash_map map;
 extern pthread_mutex_t device_data_structures_mutex;
 
 typedef struct {

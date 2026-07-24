@@ -20,7 +20,6 @@
 #include <unistd.h>
 
 atomic_bool end_listen_loop = false;
-hash_map map;
 
 static void network_init(int32_t *socket_fd, struct network_thread_args *args) {
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
@@ -124,6 +123,7 @@ static void set_device_data(device *device_data, unsigned char *processed_frame,
 
 void *network_routine(void *args) {
 	int32_t socket_fd;
+	hash_map map;
 
 	pthread_t signal_thread = ((struct network_thread_args *)args)->signal_thread;
 	int32_t epoll_fd = epoll_create1(0);
@@ -174,7 +174,7 @@ void *network_routine(void *args) {
 				set_device_data(device_data, processed_frame, &socket_fd, device_data, signal_thread);
 
 				pthread_mutex_lock(&device_data_structures_mutex);
-				device *exitsing_device = hashmap_check_entry(device_data->mac);
+				device *exitsing_device = hashmap_check_entry(&map, device_data->mac);
 				if (exitsing_device != NULL) {
 					exitsing_device->last_seen.hour = device_data->last_seen.hour;
 					exitsing_device->last_seen.minutes = device_data->last_seen.minutes;
@@ -182,7 +182,7 @@ void *network_routine(void *args) {
 					free(device_data);
 					device_data = NULL;
 				} else {
-					if (hashmap_store_entry(device_data) == -1) {
+					if (hashmap_store_entry(&map, device_data) == -1) {
 						network_error(APP_ERR_HASHMAP_SOTRE_ENTRY, &socket_fd, signal_thread);
 						pthread_mutex_unlock(&device_data_structures_mutex);
 					}
@@ -203,6 +203,7 @@ void *network_routine(void *args) {
 
 	free(map.table);
 	map.table = NULL;
+
 	close(epoll_fd);
 	close(socket_fd);
 	return NULL;
