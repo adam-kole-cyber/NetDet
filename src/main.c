@@ -69,7 +69,6 @@ int main(int argc, char *argv[]) {
 	main_window.height = LINES - (WINDOW_OUTER_INDENT * 2);
 	main_window.width = COLS - (WINDOW_OUTER_INDENT * 2);
 	main_window.window = newwin(main_window.height, main_window.width, main_window.start_y, main_window.start_x);
-	wtimeout(main_window.window, WINDOW_TIMEOUT);
 	keypad(main_window.window, TRUE);
 
 	register_event.events = EPOLLIN;
