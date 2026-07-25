@@ -130,22 +130,22 @@ void *network_routine(void *args) {
 
 	pthread_t signal_thread = ((struct network_thread_args *)args)->signal_thread;
 	int32_t epoll_fd = epoll_create1(0);
-	struct epoll_event ev;
+	struct epoll_event register_event;
 	struct epoll_event events[2];
 
 	map.size = BUFFER_INITIAL_SIZE;
 	map.count = 0;
 	map.table = calloc(map.size, sizeof(hash_entry));
 
-	ev.events = EPOLLIN;
-	ev.data.fd = shutdown_fd;
-	epoll_ctl(epoll_fd, EPOLL_CTL_ADD, shutdown_fd, &ev);
+	register_event.events = EPOLLIN;
+	register_event.data.fd = shutdown_fd;
+	epoll_ctl(epoll_fd, EPOLL_CTL_ADD, shutdown_fd, &register_event);
 
 	network_init(&socket_fd, (struct network_thread_args *)args);
 
-	ev.events = EPOLLIN;
-	ev.data.fd = socket_fd;
-	epoll_ctl(epoll_fd, EPOLL_CTL_ADD, socket_fd, &ev);
+	register_event.events = EPOLLIN;
+	register_event.data.fd = socket_fd;
+	epoll_ctl(epoll_fd, EPOLL_CTL_ADD, socket_fd, &register_event);
 
 	while (!atomic_load(&end_listen_loop)) {
 		int32_t number_of_events = epoll_wait(epoll_fd, events, 2, -1);

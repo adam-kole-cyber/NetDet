@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
 
@@ -21,13 +22,23 @@ pthread_mutex_t device_data_structures_mutex;
 
 int main(int argc, char *argv[]) {
 	sliding_window_buffer buffer;
+	int32_t epoll_fd;
+	struct epoll_event register_event;
+	struct epoll_event events[2];
 	sigset_t mask;
+
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGINT);
 	sigaddset(&mask, SIGUSR1);
 	pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
 	data_update_fd = eventfd(0, 0);
+
+	epoll_fd = epoll_create1(0);
+
+	register_event.events = EPOLLIN;
+	register_event.data.fd = data_update_fd;
+	epoll_ctl(epoll_fd, EPOLL_CTL_ADD, data_update_fd, &register_event);
 
 	buffer.size = BUFFER_INITIAL_SIZE;
 	buffer.items = calloc(buffer.size, sizeof(device *));
@@ -60,6 +71,10 @@ int main(int argc, char *argv[]) {
 	main_window.window = newwin(main_window.height, main_window.width, main_window.start_y, main_window.start_x);
 	wtimeout(main_window.window, WINDOW_TIMEOUT);
 	keypad(main_window.window, TRUE);
+
+	register_event.events = EPOLLIN;
+	register_event.data.fd = STDIN_FILENO;
+	epoll_ctl(epoll_fd, EPOLL_CTL_ADD, STDIN_FILENO, &register_event);
 
 	pthread_mutex_lock(&device_data_structures_mutex);
 	buffer.display_row =
@@ -100,6 +115,7 @@ int main(int argc, char *argv[]) {
 	free(buffer.items);
 	buffer.items = NULL;
 
+	close(epoll_fd);
 	close(data_update_fd);
 	delwin(main_window.window);
 	endwin();
