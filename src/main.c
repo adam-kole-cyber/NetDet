@@ -17,10 +17,10 @@
 int32_t shutdown_fd;
 atomic_bool end_main_loop = false;
 atomic_uint_fast32_t termination_reason = PROGRAM_RUNNING;
-sliding_window_buffer buffer;
 pthread_mutex_t device_data_structures_mutex;
 
 int main(int argc, char *argv[]) {
+	sliding_window_buffer buffer;
 	sigset_t mask;
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGINT);

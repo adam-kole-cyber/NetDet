@@ -1,8 +1,8 @@
 #ifndef TUI_H
 #define TUI_H
 
-#include "device.h"
 #include <ncurses.h>
+#include <pthread.h>
 #include <stdint.h>
 
 #define WINDOW_OUTER_INDENT 5
@@ -11,7 +11,6 @@
 #define WINDOW_TIMEOUT 100
 #define WINDOW_UNUSABLE_NUMBERS_OF_LINES 2 // they are unusable because of the window frame
 
-extern sliding_window_buffer buffer;
 extern pthread_mutex_t device_data_structures_mutex;
 
 typedef struct {

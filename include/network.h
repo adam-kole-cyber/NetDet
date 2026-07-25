@@ -1,8 +1,6 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-#include "device.h"
-#include <bits/pthreadtypes.h>
 #include <pthread.h>
 #include <stdint.h>
 
@@ -15,7 +13,6 @@
 #define ETH_TYPE_OFFSET_DOUBLE_TAG 20 // EtherType after (802.1ad + 802.1Q) tags
 
 extern int32_t shutdown_fd;
-extern sliding_window_buffer buffer;
 extern pthread_mutex_t device_data_structures_mutex;
 
 struct network_thread_args {

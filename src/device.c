@@ -6,51 +6,6 @@
 #include <string.h>
 #include <time.h>
 
-static void hashmap_rehash(hash_map *map) {
-	for (uint32_t i = 0; i < buffer.count; i++) {
-		hashmap_store_entry(map, buffer.items[i]);
-	}
-
-	map->count = buffer.count;
-	return;
-}
-
-static int32_t hashmap_realloc(hash_map *map) {
-	uint32_t new_size = map->size << 1;
-	hash_entry *tmp;
-
-	free(map->table);
-	map->table = NULL;
-	map->count = 0;
-
-	tmp = calloc(new_size, sizeof(hash_entry));
-	if (tmp == NULL) {
-		return -1;
-	}
-
-	map->table = tmp;
-	map->size = new_size;
-
-	hashmap_rehash(map);
-	return 0;
-}
-
-static int32_t slidingwindowbuffer_realloc(void) {
-	uint32_t new_size = buffer.size << 1;
-	device **tmp = realloc(buffer.items, buffer.size * sizeof(device *));
-	if (tmp == NULL) {
-		return -1;
-	}
-
-	for (uint32_t i = buffer.size; i < new_size; i++) {
-		tmp[i] = NULL;
-	}
-
-	buffer.items = tmp;
-	buffer.size = new_size;
-	return 0;
-}
-
 static uint64_t mac_to_u64(const uint8_t mac[6]) {
 	return ((uint64_t)mac[0] << 40) | ((uint64_t)mac[1] << 32) | ((uint64_t)mac[2] << 24) | ((uint64_t)mac[3] << 16) | ((uint64_t)mac[4] << 8) |
 		   ((uint64_t)mac[5]);
@@ -66,6 +21,58 @@ static uint32_t hash_mac(const uint8_t mac[6]) {
 	mac_number ^= mac_number >> 33;
 
 	return (uint32_t)mac_number;
+}
+
+static void store_entry(hash_entry *map, hash_entry entry_to_save, uint32_t map_size) {
+	size_t index = hash_mac(entry_to_save.mac) % map_size;
+
+	while (map[index].device != NULL) {
+		index = (index + 1) % map_size;
+	}
+
+	memcpy(map[index].mac, entry_to_save.mac, 6);
+	map[index].device = entry_to_save.device;
+	return;
+}
+
+static int32_t hashmap_realloc(hash_map *map) {
+	uint32_t new_size = map->size << 1;
+
+	hash_entry *tmp = calloc(new_size, sizeof(hash_entry));
+	if (tmp == NULL) {
+		return -1;
+	}
+
+	for (uint32_t i = 0; i < map->size; i++) {
+		if (map->table[i].device == NULL) {
+			continue;
+		} else {
+			store_entry(tmp, map->table[i], new_size);
+		}
+	}
+
+	free(map->table);
+
+	map->table = tmp;
+	map->size = new_size;
+
+	return 0;
+}
+
+static int32_t slidingwindowbuffer_realloc(sliding_window_buffer *buffer) {
+	uint32_t new_size = buffer->size << 1;
+	device **tmp = realloc(buffer->items, buffer->size * sizeof(device *));
+	if (tmp == NULL) {
+		return -1;
+	}
+
+	for (uint32_t i = buffer->size; i < new_size; i++) {
+		tmp[i] = NULL;
+	}
+
+	buffer->items = tmp;
+	buffer->size = new_size;
+	return 0;
 }
 
 device *hashmap_check_entry(hash_map *map, const uint8_t *mac) {
@@ -94,28 +101,25 @@ int32_t hashmap_store_entry(hash_map *map, device *dev) {
 		}
 	}
 
-	size_t index = hash_mac(dev->mac) % map->size;
+	hash_entry entry;
+	entry.device = dev;
+	memcpy(entry.mac, dev->mac, 6);
 
-	while (map->table[index].device != NULL) {
-		index = (index + 1) % map->size;
-	}
-
-	memcpy(map->table[index].mac, dev->mac, 6);
-	map->table[index].device = dev;
+	store_entry(map->table, entry, map->size);
 	map->count++;
 	return 0;
 }
 
-int32_t slidingwindowbuffer_store_entry(device *dev) {
-	if ((buffer.count + 1) > (buffer.size * 0.8)) {
-		if (slidingwindowbuffer_realloc() == -1) {
+int32_t slidingwindowbuffer_store_entry(sliding_window_buffer *buffer, device *dev) {
+	if ((buffer->count + 1) > (buffer->size * 0.8)) {
+		if (slidingwindowbuffer_realloc(buffer) == -1) {
 			return -1;
 		}
 	}
 
-	int32_t index = buffer.count;
+	int32_t index = buffer->count;
 
-	buffer.items[index] = dev;
-	buffer.count++;
+	buffer->items[index] = dev;
+	buffer->count++;
 	return 0;
 }

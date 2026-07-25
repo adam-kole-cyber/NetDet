@@ -41,10 +41,8 @@ typedef struct {
 	uint32_t count;
 } hash_map;
 
-extern sliding_window_buffer buffer;
-
 device *hashmap_check_entry(hash_map *map, const uint8_t *mac);
 int32_t hashmap_store_entry(hash_map *map, device *dev);
-int32_t slidingwindowbuffer_store_entry(device *dev);
+int32_t slidingwindowbuffer_store_entry(sliding_window_buffer *buffer, device *dev);
 
 #endif
