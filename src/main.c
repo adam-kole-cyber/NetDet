@@ -14,9 +14,9 @@
 #include <sys/eventfd.h>
 #include <unistd.h>
 
-int32_t shutdown_fd;
 atomic_bool end_main_loop = false;
 atomic_uint_fast32_t termination_reason = PROGRAM_RUNNING;
+int32_t data_update_fd;
 pthread_mutex_t device_data_structures_mutex;
 
 int main(int argc, char *argv[]) {
@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 	sigaddset(&mask, SIGUSR1);
 	pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
-	shutdown_fd = eventfd(0, 0);
+	data_update_fd = eventfd(0, 0);
 
 	buffer.size = BUFFER_INITIAL_SIZE;
 	buffer.items = calloc(buffer.size, sizeof(device *));
@@ -100,8 +100,7 @@ int main(int argc, char *argv[]) {
 	free(buffer.items);
 	buffer.items = NULL;
 
-	close(shutdown_fd);
-
+	close(data_update_fd);
 	delwin(main_window.window);
 	endwin();
 

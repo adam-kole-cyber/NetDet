@@ -14,12 +14,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/epoll.h>
+#include <sys/eventfd.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
 
 atomic_bool end_listen_loop = false;
+int32_t shutdown_fd;
 
 static void network_init(int32_t *socket_fd, struct network_thread_args *args) {
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
@@ -122,6 +124,7 @@ static void set_device_data(device *device_data, unsigned char *processed_frame,
 }
 
 void *network_routine(void *args) {
+	shutdown_fd = eventfd(0, 0);
 	int32_t socket_fd;
 	hash_map map;
 
@@ -206,5 +209,6 @@ void *network_routine(void *args) {
 
 	close(epoll_fd);
 	close(socket_fd);
+	close(shutdown_fd);
 	return NULL;
 }
