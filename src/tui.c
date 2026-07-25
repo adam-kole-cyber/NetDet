@@ -73,9 +73,11 @@ static void print_network_row(WINDOW *window, int32_t row, int32_t column, const
 	return;
 }
 
-static inline void sync_display_limit(void) { buffer.display_limit = (buffer.display_row < buffer.size) ? buffer.display_row : buffer.size; }
+static inline void sync_display_limit(sliding_window_buffer *buffer) {
+	buffer->display_limit = (buffer->display_row < buffer->size) ? buffer->display_row : buffer->size;
+}
 
-static void resize_handler(window_data *window_data) {
+static void resize_handler(window_data *window_data, sliding_window_buffer *buffer) {
 	int32_t new_height = LINES - (WINDOW_OUTER_INDENT * 2);
 	int32_t new_width = COLS - (WINDOW_OUTER_INDENT * 2);
 
@@ -91,7 +93,7 @@ static void resize_handler(window_data *window_data) {
 	int32_t computed_limit = (window_data->height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) - 1;
 
 	pthread_mutex_lock(&device_data_structures_mutex);
-	buffer.display_row = (computed_limit) < 0 ? 0 : computed_limit;
+	buffer->display_row = (computed_limit) < 0 ? 0 : computed_limit;
 	pthread_mutex_unlock(&device_data_structures_mutex);
 
 	wnoutrefresh(window_data->window);
@@ -103,22 +105,22 @@ static void resize_handler(window_data *window_data) {
 	return;
 }
 
-static void cursor_move(int32_t direction) {
+static void cursor_move(sliding_window_buffer *buffer, int32_t direction) {
 	int32_t new_position = cursor_position + direction;
 
 	pthread_mutex_lock(&device_data_structures_mutex);
-	sync_display_limit();
+	sync_display_limit(buffer);
 
 	if (new_position < 0) {
-		if (buffer.head > 0) {
-			buffer.head--;
+		if (buffer->head > 0) {
+			buffer->head--;
 		}
 		cursor_position = 0;
-	} else if ((uint32_t)new_position >= buffer.display_limit && (buffer.head + buffer.display_limit) < buffer.count) {
-		buffer.head++;
-		cursor_position = buffer.display_limit - 1;
+	} else if ((uint32_t)new_position >= buffer->display_limit && (buffer->head + buffer->display_limit) < buffer->count) {
+		buffer->head++;
+		cursor_position = buffer->display_limit - 1;
 	} else {
-		if (buffer.head + (uint32_t)new_position >= buffer.count) {
+		if (buffer->head + (uint32_t)new_position >= buffer->count) {
 			pthread_mutex_unlock(&device_data_structures_mutex);
 			return;
 		}
@@ -183,16 +185,16 @@ void draw_window_frame(window_data *window_data, const char *title) {
 	return;
 }
 
-void input_handler(window_data *window_data, int32_t input) {
+void input_handler(window_data *window_data, int32_t input, sliding_window_buffer *buffer) {
 	switch (input) {
 	case KEY_RESIZE:
-		resize_handler(window_data);
+		resize_handler(window_data, buffer);
 		break;
 	case KEY_DOWN:
-		cursor_move(1);
+		cursor_move(buffer, 1);
 		break;
 	case KEY_UP:
-		cursor_move(-1);
+		cursor_move(buffer, -1);
 		break;
 	default:
 		break;
@@ -209,15 +211,15 @@ void draw_table_header(WINDOW *window) {
 	return;
 }
 
-void print_network_data(WINDOW *window) {
+void print_network_data(WINDOW *window, sliding_window_buffer *buffer) {
 	int32_t display_row_start = 2;
 
 	pthread_mutex_lock(&device_data_structures_mutex);
-	sync_display_limit();
+	sync_display_limit(buffer);
 
-	uint32_t limit = buffer.display_limit;
-	if (buffer.head + limit > buffer.count) {
-		limit = buffer.count - buffer.head;
+	uint32_t limit = buffer->display_limit;
+	if (buffer->head + limit > buffer->count) {
+		limit = buffer->count - buffer->head;
 	}
 
 	for (uint32_t i = 0; i < limit; i++) {
@@ -225,7 +227,7 @@ void print_network_data(WINDOW *window) {
 			wattron(window, COLOR_PAIR(3));
 		}
 
-		print_network_row(window, display_row_start + i, 2, buffer.items[buffer.head + i], i == (uint32_t)cursor_position);
+		print_network_row(window, display_row_start + i, 2, buffer->items[buffer->head + i], i == (uint32_t)cursor_position);
 
 		if (i == (uint32_t)cursor_position) {
 			wattroff(window, COLOR_PAIR(3));

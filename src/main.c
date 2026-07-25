@@ -79,12 +79,12 @@ int main(int argc, char *argv[]) {
 			werase(main_window.window);
 			draw_window_frame(&main_window, " NetDet ");
 			draw_table_header(main_window.window);
-			print_network_data(main_window.window);
+			print_network_data(main_window.window, &buffer);
 			wrefresh(main_window.window);
 		}
 
 		input = wgetch(main_window.window);
-		input_handler(&main_window, input);
+		input_handler(&main_window, input, &buffer);
 	}
 
 	pthread_join(network_thread, NULL);
