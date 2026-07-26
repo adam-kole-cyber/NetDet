@@ -1,6 +1,6 @@
 #include "signal_handler.h"
 #include "device.h"
-#include "network.h"
+#include "shared_state.h"
 #include <pthread.h>
 #include <signal.h>
 #include <stdatomic.h>
@@ -30,7 +30,7 @@ void *signal_routine(void *args) {
 		case SIGWINCH:
 			msg.msg_type = UI_RESIZE;
 			msg.data = NULL;
-			write(pipefd[1], &msg, sizeof(msg));
+			write(pipe_fd[1], &msg, sizeof(msg));
 			break;
 		case SIGINT:
 			termination_reason = SIGINT_END;
@@ -47,7 +47,7 @@ void *signal_routine(void *args) {
 	atomic_store(&end_main_loop, true);
 	atomic_store(&end_listen_loop, true);
 
-	write(shutdown_fd, &data, sizeof(data));
+	write(shutdown_network_fd, &data, sizeof(data));
 	write(shutdown_main_fd, &data, sizeof(data));
 	return NULL;
 }

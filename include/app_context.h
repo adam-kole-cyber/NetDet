@@ -1,0 +1,19 @@
+#ifndef APP_CONTEXT_H
+#define APP_CONTEXT_H
+
+#include "device.h"
+#include "tui.h"
+#include <pthread.h>
+#include <stdint.h>
+
+typedef struct {
+	int32_t epoll_fd;
+
+	pthread_t signal_thread;
+	pthread_t network_thread;
+
+	sliding_window_buffer buffer;
+	window_data main_window;
+} app_context;
+
+#endif

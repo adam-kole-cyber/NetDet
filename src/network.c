@@ -1,6 +1,7 @@
 #include "network.h"
 #include "device.h"
 #include "error.h"
+#include "shared_state.h"
 #include <arpa/inet.h>
 #include <errno.h>
 #include <linux/if_ether.h>
@@ -21,7 +22,7 @@
 #include <unistd.h>
 
 atomic_bool end_listen_loop = false;
-int32_t shutdown_fd;
+int32_t shutdown_network_fd;
 
 static void network_init(int32_t *socket_fd, struct network_thread_args *args) {
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
@@ -124,7 +125,7 @@ static void set_device_data(device *device_data, unsigned char *processed_frame,
 }
 
 void *network_routine(void *args) {
-	shutdown_fd = eventfd(0, 0);
+	shutdown_network_fd = eventfd(0, 0);
 	int32_t socket_fd;
 	hash_map map;
 
@@ -138,8 +139,8 @@ void *network_routine(void *args) {
 	map.table = calloc(map.size, sizeof(hash_entry));
 
 	register_event.events = EPOLLIN;
-	register_event.data.fd = shutdown_fd;
-	epoll_ctl(epoll_fd, EPOLL_CTL_ADD, shutdown_fd, &register_event);
+	register_event.data.fd = shutdown_network_fd;
+	epoll_ctl(epoll_fd, EPOLL_CTL_ADD, shutdown_network_fd, &register_event);
 
 	network_init(&socket_fd, (struct network_thread_args *)args);
 
@@ -198,10 +199,10 @@ void *network_routine(void *args) {
 					msg.msg_type = UI_NEW_ENTRY;
 					msg.data = device_data;
 				}
-				write(pipefd[1], &msg, sizeof(msg));
+				write(pipe_fd[1], &msg, sizeof(msg));
 				pthread_mutex_unlock(&device_data_structures_mutex);
 
-			} else if (events[i].data.fd == shutdown_fd) {
+			} else if (events[i].data.fd == shutdown_network_fd) {
 				continue;
 			}
 		}
@@ -212,6 +213,6 @@ void *network_routine(void *args) {
 
 	close(epoll_fd);
 	close(socket_fd);
-	close(shutdown_fd);
+	close(shutdown_network_fd);
 	return NULL;
 }

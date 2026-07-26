@@ -1,6 +1,6 @@
 #include "tui.h"
 #include "device.h"
-#include "network.h"
+#include "shared_state.h"
 #include <bits/pthreadtypes.h>
 #include <locale.h>
 #include <ncurses.h>
@@ -158,8 +158,7 @@ void draw_window_frame(window_data *window_data, const char *title) {
 	return;
 }
 
-void input_handler(window_data *window_data, int32_t input, sliding_window_buffer *buffer) {
-	(void)window_data;
+void input_handler(int32_t input, sliding_window_buffer *buffer) {
 	switch (input) {
 	case KEY_DOWN:
 		cursor_move(buffer, 1);
