@@ -5,6 +5,7 @@
 #include <locale.h>
 #include <ncurses.h>
 #include <pthread.h>
+#include <stdatomic.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -75,7 +76,7 @@ static void print_network_row(WINDOW *window, int32_t row, int32_t column, const
 }
 
 static inline void sync_display_limit(sliding_window_buffer *buffer) {
-	buffer->display_limit = (buffer->display_row < buffer->size) ? buffer->display_row : buffer->size;
+	buffer->display_limit = (atomic_load(&buffer->display_row) < buffer->size) ? buffer->display_row : buffer->size;
 }
 
 static void cursor_move(sliding_window_buffer *buffer, int32_t direction) {
