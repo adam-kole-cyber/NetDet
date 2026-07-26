@@ -87,6 +87,20 @@ int main(int argc, char *argv[]) {
 	pthread_mutex_unlock(&device_data_structures_mutex);
 
 	while (!atomic_load(&end_main_loop)) {
+		int32_t number_of_events = epoll_wait(epoll_fd, events, 3, -1);
+
+		for (int32_t i = 0; i < number_of_events; i++) {
+			if (events[i].data.fd == pipefd[0]) {
+				// TODO update an UI
+			} else if (events[i].data.fd == STDIN_FILENO) {
+				// TODO call input_handler
+			} else if (events[i].data.fd == shutdown_main_fd) {
+				continue;
+			}
+		}
+	}
+
+	/*while (!atomic_load(&end_main_loop)) {
 		if (main_window.height < MIN_HEIGHT || main_window.width < MIN_WIDTH) {
 			werase(stdscr);
 			wattron(stdscr, COLOR_PAIR(4));
@@ -105,7 +119,7 @@ int main(int argc, char *argv[]) {
 
 		input = wgetch(main_window.window);
 		input_handler(&main_window, input, &buffer);
-	}
+	}*/
 
 	pthread_join(network_thread, NULL);
 	pthread_join(signal_thread, NULL);

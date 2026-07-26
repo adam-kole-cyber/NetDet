@@ -35,5 +35,6 @@ void *signal_routine(void *args) {
 	atomic_store(&end_listen_loop, true);
 
 	write(shutdown_fd, &data, sizeof(data));
+	write(shutdown_main_fd, &data, sizeof(data));
 	return NULL;
 }
