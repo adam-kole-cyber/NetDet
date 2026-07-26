@@ -156,6 +156,7 @@ void *network_routine(void *args) {
 				unsigned char processed_frame[FRAME_BUFFER_SIZE];
 				ssize_t frame_length = 0;
 				device *device_data = malloc(sizeof(device) * 1);
+				ui_message msg;
 
 				memset(raw_frame_data, 0, sizeof(raw_frame_data));
 				memset(processed_frame, 0, sizeof(processed_frame));
@@ -182,6 +183,10 @@ void *network_routine(void *args) {
 					exitsing_device->last_seen.hour = device_data->last_seen.hour;
 					exitsing_device->last_seen.minutes = device_data->last_seen.minutes;
 					exitsing_device->last_seen.seconds = device_data->last_seen.seconds;
+
+					msg.msg_type = UI_UPDATE_TABLE;
+					msg.data = NULL;
+
 					free(device_data);
 					device_data = NULL;
 				} else {
@@ -190,12 +195,10 @@ void *network_routine(void *args) {
 						pthread_mutex_unlock(&device_data_structures_mutex);
 					}
 
-					// TODO add an eventfd and send this to the main thread
-					if (slidingwindowbuffer_store_entry(device_data) == -1) {
-						network_error(APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY, &socket_fd, signal_thread);
-						pthread_mutex_unlock(&device_data_structures_mutex);
-					}
+					msg.msg_type = UI_NEW_ENTRY;
+					msg.data = device_data;
 				}
+				write(pipefd[1], &msg, sizeof(msg));
 				pthread_mutex_unlock(&device_data_structures_mutex);
 
 			} else if (events[i].data.fd == shutdown_fd) {

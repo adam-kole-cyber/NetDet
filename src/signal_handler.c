@@ -1,4 +1,6 @@
 #include "signal_handler.h"
+#include "device.h"
+#include "network.h"
 #include <pthread.h>
 #include <signal.h>
 #include <stdatomic.h>
@@ -11,23 +13,34 @@ void *signal_routine(void *args) {
 	(void)args;
 	sigset_t mask;
 	int32_t signal;
+	ui_message msg;
+	bool keep_running = true;
 
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGINT);
+	sigaddset(&mask, SIGWINCH);
 	sigaddset(&mask, SIGUSR1);
 
-	if (sigwait(&mask, &signal) != 0) {
-		return NULL;
-	}
+	while (keep_running) {
+		if (sigwait(&mask, &signal) != 0) {
+			continue;
+		}
 
-	switch (signal) {
-	case SIGINT:
-		termination_reason = SIGINT_END;
-		break;
-
-	case SIGUSR1:
-		termination_reason = SIGUSR1_END;
-		break;
+		switch (signal) {
+		case SIGWINCH:
+			msg.msg_type = UI_RESIZE;
+			msg.data = NULL;
+			write(pipefd[1], &msg, sizeof(msg));
+			break;
+		case SIGINT:
+			termination_reason = SIGINT_END;
+			keep_running = false;
+			break;
+		case SIGUSR1:
+			termination_reason = SIGUSR1_END;
+			keep_running = false;
+			break;
+		}
 	}
 
 	uint64_t data = 1;

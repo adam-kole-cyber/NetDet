@@ -26,5 +26,6 @@ void draw_window_frame(window_data *window_data, const char *title);
 void input_handler(window_data *window_data, int32_t input, sliding_window_buffer *buffer);
 void draw_table_header(WINDOW *window);
 void print_network_data(WINDOW *window, sliding_window_buffer *buffer);
+void draw(window_data *main_window, sliding_window_buffer *buffer);
 
 #endif

@@ -43,6 +43,7 @@ static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t
 
 	return;
 }
+
 static void print_ip(WINDOW *window, const uint8_t *ip) {
 	wprintw(window, "\t%u.%u.%u.%u\t", ip[0], ip[1], ip[2], ip[3]);
 	return;
@@ -75,34 +76,6 @@ static void print_network_row(WINDOW *window, int32_t row, int32_t column, const
 
 static inline void sync_display_limit(sliding_window_buffer *buffer) {
 	buffer->display_limit = (buffer->display_row < buffer->size) ? buffer->display_row : buffer->size;
-}
-
-static void resize_handler(window_data *window_data, sliding_window_buffer *buffer) {
-	int32_t new_height = LINES - (WINDOW_OUTER_INDENT * 2);
-	int32_t new_width = COLS - (WINDOW_OUTER_INDENT * 2);
-
-	for (int32_t i = 0; i < window_data->height; i++) { // cleaning leftovers from old window
-		for (int32_t j = 0; j < window_data->width; j++) {
-			mvwprintw(window_data->window, i, j, " ");
-		}
-	}
-
-	window_data->height = new_height;
-	window_data->width = new_width;
-
-	int32_t computed_limit = (window_data->height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) - 1;
-
-	pthread_mutex_lock(&device_data_structures_mutex);
-	buffer->display_row = (computed_limit) < 0 ? 0 : computed_limit;
-	pthread_mutex_unlock(&device_data_structures_mutex);
-
-	wnoutrefresh(window_data->window);
-	doupdate();
-
-	wresize(window_data->window, new_height, new_width);
-	mvwin(window_data->window, WINDOW_OUTER_INDENT, WINDOW_OUTER_INDENT);
-
-	return;
 }
 
 static void cursor_move(sliding_window_buffer *buffer, int32_t direction) {
@@ -186,10 +159,8 @@ void draw_window_frame(window_data *window_data, const char *title) {
 }
 
 void input_handler(window_data *window_data, int32_t input, sliding_window_buffer *buffer) {
+	(void)window_data;
 	switch (input) {
-	case KEY_RESIZE:
-		resize_handler(window_data, buffer);
-		break;
 	case KEY_DOWN:
 		cursor_move(buffer, 1);
 		break;
@@ -235,4 +206,22 @@ void print_network_data(WINDOW *window, sliding_window_buffer *buffer) {
 	}
 	pthread_mutex_unlock(&device_data_structures_mutex);
 	return;
+}
+
+void draw(window_data *main_window, sliding_window_buffer *buffer) {
+	if (main_window->height < MIN_HEIGHT || main_window->width < MIN_WIDTH) {
+		werase(stdscr);
+		wattron(stdscr, COLOR_PAIR(4));
+		mvwprintw(stdscr, 0, 0, "Window is too small!");
+		wattroff(stdscr, COLOR_PAIR(4));
+		wrefresh(stdscr);
+	} else {
+		werase(stdscr);
+		wnoutrefresh(stdscr);
+		werase(main_window->window);
+		draw_window_frame(main_window, " NetDet ");
+		draw_table_header(main_window->window);
+		print_network_data(main_window->window, buffer);
+		wrefresh(main_window->window);
+	}
 }

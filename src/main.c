@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 
 atomic_bool end_main_loop = false;
@@ -30,6 +31,7 @@ int main(int argc, char *argv[]) {
 
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGINT);
+	sigaddset(&mask, SIGWINCH);
 	sigaddset(&mask, SIGUSR1);
 	pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
@@ -86,40 +88,51 @@ int main(int argc, char *argv[]) {
 		(main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) < 0 ? 0 : (main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) - 1;
 	pthread_mutex_unlock(&device_data_structures_mutex);
 
+	draw(&main_window, &buffer);
 	while (!atomic_load(&end_main_loop)) {
 		int32_t number_of_events = epoll_wait(epoll_fd, events, 3, -1);
 
 		for (int32_t i = 0; i < number_of_events; i++) {
 			if (events[i].data.fd == pipefd[0]) {
-				// TODO update an UI
+				ui_message msg;
+				read(pipefd[0], &msg, sizeof(ui_message));
+
+				if (msg.msg_type == UI_NEW_ENTRY) {
+					slidingwindowbuffer_store_entry(&buffer, msg.data);
+				} else if (msg.msg_type == UI_RESIZE) {
+					if (msg.msg_type == UI_NEW_ENTRY) {
+						slidingwindowbuffer_store_entry(&buffer, msg.data);
+					} else if (msg.msg_type == UI_RESIZE) {
+						struct winsize ws;
+						ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);
+						resizeterm(ws.ws_row, ws.ws_col); // toto aktualizuje LINES/COLS
+
+						main_window.height = LINES - (WINDOW_OUTER_INDENT * 2);
+						main_window.width = COLS - (WINDOW_OUTER_INDENT * 2);
+						wresize(main_window.window, main_window.height, main_window.width);
+						mvwin(main_window.window, main_window.start_y, main_window.start_x);
+
+						pthread_mutex_lock(&device_data_structures_mutex);
+						buffer.display_row = (main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) < 0
+												 ? 0
+												 : (main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) - 1;
+						pthread_mutex_unlock(&device_data_structures_mutex);
+					}
+
+					draw(&main_window, &buffer);
+				}
+
+				draw(&main_window, &buffer);
 			} else if (events[i].data.fd == STDIN_FILENO) {
-				// TODO call input_handler
+				input = wgetch(main_window.window);
+				input_handler(&main_window, input, &buffer);
+
+				draw(&main_window, &buffer);
 			} else if (events[i].data.fd == shutdown_main_fd) {
 				continue;
 			}
 		}
 	}
-
-	/*while (!atomic_load(&end_main_loop)) {
-		if (main_window.height < MIN_HEIGHT || main_window.width < MIN_WIDTH) {
-			werase(stdscr);
-			wattron(stdscr, COLOR_PAIR(4));
-			mvwprintw(stdscr, 0, 0, "Window is too small!");
-			wattroff(stdscr, COLOR_PAIR(4));
-			wrefresh(stdscr);
-		} else {
-			werase(stdscr);
-			wnoutrefresh(stdscr);
-			werase(main_window.window);
-			draw_window_frame(&main_window, " NetDet ");
-			draw_table_header(main_window.window);
-			print_network_data(main_window.window, &buffer);
-			wrefresh(main_window.window);
-		}
-
-		input = wgetch(main_window.window);
-		input_handler(&main_window, input, &buffer);
-	}*/
 
 	pthread_join(network_thread, NULL);
 	pthread_join(signal_thread, NULL);
