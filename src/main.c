@@ -17,14 +17,15 @@
 
 atomic_bool end_main_loop = false;
 atomic_uint_fast32_t termination_reason = PROGRAM_RUNNING;
-int32_t data_update_fd;
+int32_t shutdown_main_fd;
+int32_t pipefd[2];
 pthread_mutex_t device_data_structures_mutex;
 
 int main(int argc, char *argv[]) {
 	sliding_window_buffer buffer;
 	int32_t epoll_fd;
 	struct epoll_event register_event;
-	struct epoll_event events[2];
+	struct epoll_event events[3];
 	sigset_t mask;
 
 	sigemptyset(&mask);
@@ -32,13 +33,18 @@ int main(int argc, char *argv[]) {
 	sigaddset(&mask, SIGUSR1);
 	pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
-	data_update_fd = eventfd(0, 0);
+	shutdown_main_fd = eventfd(0, 0);
+	pipe(pipefd);
 
 	epoll_fd = epoll_create1(0);
 
 	register_event.events = EPOLLIN;
-	register_event.data.fd = data_update_fd;
-	epoll_ctl(epoll_fd, EPOLL_CTL_ADD, data_update_fd, &register_event);
+	register_event.data.fd = shutdown_main_fd;
+	epoll_ctl(epoll_fd, EPOLL_CTL_ADD, shutdown_main_fd, &register_event);
+
+	register_event.events = EPOLLIN;
+	register_event.data.fd = pipefd[0]; // reading end of the pipe
+	epoll_ctl(epoll_fd, EPOLL_CTL_ADD, pipefd[0], &register_event);
 
 	buffer.size = BUFFER_INITIAL_SIZE;
 	buffer.items = calloc(buffer.size, sizeof(device *));
@@ -115,7 +121,9 @@ int main(int argc, char *argv[]) {
 	buffer.items = NULL;
 
 	close(epoll_fd);
-	close(data_update_fd);
+	close(pipefd[0]);
+	close(pipefd[1]);
+	close(shutdown_main_fd);
 	delwin(main_window.window);
 	endwin();
 
