@@ -9,9 +9,9 @@
 #define BUFFER_INITIAL_SIZE 128
 
 typedef struct {
-	uint8_t hour;
-	uint8_t minutes;
-	uint8_t seconds;
+	atomic_uint_least8_t hour;
+	atomic_uint_least8_t minutes;
+	atomic_uint_least8_t seconds;
 } time_struct;
 
 typedef struct {

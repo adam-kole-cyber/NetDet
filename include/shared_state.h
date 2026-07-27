@@ -10,6 +10,5 @@ extern atomic_uint_fast32_t termination_reason;
 extern int32_t shutdown_main_fd;
 extern int32_t shutdown_network_fd;
 extern int32_t pipe_fd[2];
-extern pthread_mutex_t device_data_structures_mutex;
 
 #endif

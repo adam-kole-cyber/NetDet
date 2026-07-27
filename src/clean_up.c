@@ -12,8 +12,6 @@ void main_clean_up(app_context *variables) {
 	pthread_join(variables->network_thread, NULL);
 	pthread_join(variables->signal_thread, NULL);
 
-	pthread_mutex_destroy(&device_data_structures_mutex);
-
 	for (uint32_t i = 0; i < variables->buffer.count; i++) {
 		free(variables->buffer.items[i]);
 		variables->buffer.items[i] = NULL;

@@ -40,7 +40,6 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 	sigaddset(&mask, SIGUSR1);
 	pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
-	pthread_mutex_init(&device_data_structures_mutex, NULL);
 	pthread_create(&variables->signal_thread, NULL, signal_routine, NULL);
 	args->signal_thread = variables->signal_thread;
 	pthread_create(&variables->network_thread, NULL, network_routine, (void *)args);

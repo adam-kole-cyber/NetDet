@@ -53,3 +53,9 @@ void network_error(error_code error, int32_t *socket, pthread_t signal_thread) {
 	pthread_exit(NULL);
 	return;
 }
+
+void main_error(error_code error, pthread_t signal_thread) {
+	set_error(error, errno);
+	pthread_kill(signal_thread, SIGUSR1);
+	return;
+}

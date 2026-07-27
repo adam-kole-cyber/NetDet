@@ -1,6 +1,7 @@
 #include "app_context.h"
 #include "clean_up.h"
 #include "device.h"
+#include "error.h"
 #include "init.h"
 #include "signal_handler.h"
 #include "tui.h"
@@ -18,7 +19,6 @@ atomic_bool end_main_loop = false;
 atomic_uint_fast32_t termination_reason = PROGRAM_RUNNING;
 int32_t shutdown_main_fd;
 int32_t pipe_fd[2];
-pthread_mutex_t device_data_structures_mutex;
 
 int main(int argc, char *argv[]) {
 	app_context variables;
@@ -41,11 +41,13 @@ int main(int argc, char *argv[]) {
 				read(pipe_fd[0], &msg, sizeof(ui_message));
 
 				if (msg.msg_type == UI_NEW_ENTRY) {
-					slidingwindowbuffer_store_entry(&variables.buffer, msg.data);
+					if (slidingwindowbuffer_store_entry(&variables.buffer, msg.data) == -1) {
+						main_error(APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY, variables.signal_thread);
+					}
 				} else if (msg.msg_type == UI_RESIZE) {
 					struct winsize ws;
 					ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);
-					resizeterm(ws.ws_row, ws.ws_col); // toto aktualizuje LINES/COLS
+					resizeterm(ws.ws_row, ws.ws_col);
 
 					variables.main_window.height = LINES - (WINDOW_OUTER_INDENT * 2);
 					variables.main_window.width = COLS - (WINDOW_OUTER_INDENT * 2);

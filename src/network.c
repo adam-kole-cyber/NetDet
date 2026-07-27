@@ -87,9 +87,9 @@ static void set_device_data(device *device_data, unsigned char *processed_frame,
 		return;
 	}
 
-	device_data->last_seen.hour = local_time.tm_hour;
-	device_data->last_seen.minutes = local_time.tm_min;
-	device_data->last_seen.seconds = local_time.tm_sec;
+	atomic_store(&device_data->last_seen.hour, local_time.tm_hour);
+	atomic_store(&device_data->last_seen.minutes, local_time.tm_min);
+	atomic_store(&device_data->last_seen.seconds, local_time.tm_sec);
 
 	return;
 }
@@ -133,12 +133,11 @@ void *network_routine(void *args) {
 
 				set_device_data(device_data, processed_frame, &socket_fd, device_data, signal_thread);
 
-				pthread_mutex_lock(&device_data_structures_mutex);
 				device *exitsing_device = hashmap_check_entry(&map, device_data->mac);
 				if (exitsing_device != NULL) {
-					exitsing_device->last_seen.hour = device_data->last_seen.hour;
-					exitsing_device->last_seen.minutes = device_data->last_seen.minutes;
-					exitsing_device->last_seen.seconds = device_data->last_seen.seconds;
+					atomic_store(&exitsing_device->last_seen.hour, device_data->last_seen.hour);
+					atomic_store(&exitsing_device->last_seen.minutes, device_data->last_seen.minutes);
+					atomic_store(&exitsing_device->last_seen.seconds, device_data->last_seen.seconds);
 
 					msg.msg_type = UI_UPDATE_TABLE;
 					msg.data = NULL;
@@ -148,14 +147,12 @@ void *network_routine(void *args) {
 				} else {
 					if (hashmap_store_entry(&map, device_data) == -1) {
 						network_error(APP_ERR_HASHMAP_SOTRE_ENTRY, &socket_fd, signal_thread);
-						pthread_mutex_unlock(&device_data_structures_mutex);
 					}
 
 					msg.msg_type = UI_NEW_ENTRY;
 					msg.data = device_data;
 				}
 				write(pipe_fd[1], &msg, sizeof(msg));
-				pthread_mutex_unlock(&device_data_structures_mutex);
 
 			} else if (events[i].data.fd == shutdown_network_fd) {
 				continue;

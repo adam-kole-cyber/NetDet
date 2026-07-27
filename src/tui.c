@@ -1,6 +1,5 @@
 #include "tui.h"
 #include "device.h"
-#include "shared_state.h"
 #include <bits/pthreadtypes.h>
 #include <locale.h>
 #include <ncurses.h>
@@ -61,7 +60,7 @@ static void print_dot1q(WINDOW *window, const uint32_t *dot1q_tag) {
 }
 
 static void print_lastseen(WINDOW *window, const time_struct *last_seen) {
-	wprintw(window, "%02u:%02u:%02u", last_seen->hour, last_seen->minutes, last_seen->seconds);
+	wprintw(window, "%02u:%02u:%02u", atomic_load(&last_seen->hour), atomic_load(&last_seen->minutes), atomic_load(&last_seen->seconds));
 	return;
 }
 
@@ -82,7 +81,6 @@ static inline void sync_display_limit(sliding_window_buffer *buffer) {
 static void cursor_move(sliding_window_buffer *buffer, int32_t direction) {
 	int32_t new_position = cursor_position + direction;
 
-	pthread_mutex_lock(&device_data_structures_mutex);
 	sync_display_limit(buffer);
 
 	if (new_position < 0) {
@@ -95,12 +93,10 @@ static void cursor_move(sliding_window_buffer *buffer, int32_t direction) {
 		cursor_position = buffer->display_limit - 1;
 	} else {
 		if (buffer->head + (uint32_t)new_position >= buffer->count) {
-			pthread_mutex_unlock(&device_data_structures_mutex);
 			return;
 		}
 		cursor_position = new_position;
 	}
-	pthread_mutex_unlock(&device_data_structures_mutex);
 
 	return;
 }
@@ -185,7 +181,6 @@ void draw_table_header(WINDOW *window) {
 void print_network_data(WINDOW *window, sliding_window_buffer *buffer) {
 	int32_t display_row_start = 2;
 
-	pthread_mutex_lock(&device_data_structures_mutex);
 	sync_display_limit(buffer);
 
 	uint32_t limit = buffer->display_limit;
@@ -204,7 +199,6 @@ void print_network_data(WINDOW *window, sliding_window_buffer *buffer) {
 			wattroff(window, COLOR_PAIR(3));
 		}
 	}
-	pthread_mutex_unlock(&device_data_structures_mutex);
 	return;
 }
 
