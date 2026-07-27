@@ -1,6 +1,6 @@
 #include "app_context.h"
+#include "clean_up.h"
 #include "device.h"
-#include "error.h"
 #include "init.h"
 #include "signal_handler.h"
 #include "tui.h"
@@ -9,7 +9,6 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <sys/ioctl.h>
@@ -68,26 +67,6 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	pthread_join(variables.network_thread, NULL);
-	pthread_join(variables.signal_thread, NULL);
-
-	pthread_mutex_destroy(&device_data_structures_mutex);
-
-	for (uint32_t i = 0; i < variables.buffer.count; i++) {
-		free(variables.buffer.items[i]);
-		variables.buffer.items[i] = NULL;
-	}
-
-	free(variables.buffer.items);
-	variables.buffer.items = NULL;
-
-	close(variables.epoll_fd);
-	close(pipe_fd[0]);
-	close(pipe_fd[1]);
-	close(shutdown_main_fd);
-	delwin(variables.main_window.window);
-	endwin();
-
-	get_error();
+	main_clean_up(&variables);
 	return 0;
 }

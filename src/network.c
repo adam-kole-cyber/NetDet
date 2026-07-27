@@ -1,4 +1,5 @@
 #include "network.h"
+#include "clean_up.h"
 #include "device.h"
 #include "error.h"
 #include "init.h"
@@ -162,11 +163,6 @@ void *network_routine(void *args) {
 		}
 	}
 
-	free(map.table);
-	map.table = NULL;
-
-	close(epoll_fd);
-	close(socket_fd);
-	close(shutdown_network_fd);
+	network_clean_up(&map, &socket_fd, &epoll_fd);
 	return NULL;
 }
