@@ -23,9 +23,13 @@ pthread_mutex_t device_data_structures_mutex;
 int main(int argc, char *argv[]) {
 	app_context variables;
 	struct epoll_event events[3];
+	struct network_thread_args args;
+
+	args.argc = argc;
+	args.argv = argv;
 
 	ncurses_init();
-	main_init(&variables, argc, argv);
+	main_init(&variables, &args);
 
 	draw(&variables.main_window, &variables.buffer);
 	while (!atomic_load(&end_main_loop)) {

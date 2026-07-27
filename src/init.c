@@ -31,13 +31,8 @@ void epoll_register(int32_t *epoll_fd, int32_t fd_to_register) {
 	return;
 }
 
-void main_init(app_context *variables, int argc, char *argv[]) {
+void main_init(app_context *variables, struct network_thread_args *args) {
 	sigset_t mask;
-	struct network_thread_args args;
-
-	args.argc = argc;
-	args.argv = argv;
-	args.signal_thread = variables->signal_thread;
 
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGINT);
@@ -47,7 +42,8 @@ void main_init(app_context *variables, int argc, char *argv[]) {
 
 	pthread_mutex_init(&device_data_structures_mutex, NULL);
 	pthread_create(&variables->signal_thread, NULL, signal_routine, NULL);
-	pthread_create(&variables->network_thread, NULL, network_routine, (void *)&args);
+	args->signal_thread = variables->signal_thread;
+	pthread_create(&variables->network_thread, NULL, network_routine, (void *)args);
 
 	pipe(pipe_fd);
 

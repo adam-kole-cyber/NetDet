@@ -112,7 +112,7 @@ void *network_routine(void *args) {
 				unsigned char processed_frame[FRAME_BUFFER_SIZE];
 				ssize_t frame_length = 0;
 				device *device_data = malloc(sizeof(device) * 1);
-				ui_message msg;
+				ui_message msg = {0};
 
 				memset(raw_frame_data, 0, sizeof(raw_frame_data));
 				memset(processed_frame, 0, sizeof(processed_frame));

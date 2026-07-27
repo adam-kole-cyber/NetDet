@@ -13,7 +13,7 @@ void *signal_routine(void *args) {
 	(void)args;
 	sigset_t mask;
 	int32_t signal;
-	ui_message msg;
+	ui_message msg = {0};
 	bool keep_running = true;
 
 	sigemptyset(&mask);
