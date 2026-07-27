@@ -1,6 +1,5 @@
 #include "tui.h"
 #include "device.h"
-#include <bits/pthreadtypes.h>
 #include <locale.h>
 #include <ncurses.h>
 #include <pthread.h>

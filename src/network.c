@@ -134,6 +134,7 @@ void *network_routine(void *args) {
 				set_device_data(device_data, processed_frame, &socket_fd, device_data, signal_thread);
 
 				device *exitsing_device = hashmap_check_entry(&map, device_data->mac);
+
 				if (exitsing_device != NULL) {
 					atomic_store(&exitsing_device->last_seen.hour, device_data->last_seen.hour);
 					atomic_store(&exitsing_device->last_seen.minutes, device_data->last_seen.minutes);
@@ -152,8 +153,8 @@ void *network_routine(void *args) {
 					msg.msg_type = UI_NEW_ENTRY;
 					msg.data = device_data;
 				}
-				write(pipe_fd[1], &msg, sizeof(msg));
 
+				write(pipe_fd[1], &msg, sizeof(msg));
 			} else if (events[i].data.fd == shutdown_network_fd) {
 				continue;
 			}
