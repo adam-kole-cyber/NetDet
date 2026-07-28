@@ -4,16 +4,20 @@
 #include "device.h"
 #include "error.h"
 #include "init.h"
+#include <bits/pthreadtypes.h>
 #include <locale.h>
 #include <ncurses.h>
 #include <net/if.h>
 #include <panel.h>
 #include <pthread.h>
 #include <stdatomic.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
-static int32_t cursor_position = 0;
+static int32_t cursor_main_position = 0;
+static int32_t cursor_popup_position = 0;
+static int32_t number_of_records = 0;
 
 static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t *mac, bool highlight_line) {
 	short pair = 0;
@@ -84,7 +88,7 @@ static inline void sync_display_limit(sliding_window_buffer *buffer) {
 }
 
 static void cursor_move(sliding_window_buffer *buffer, int32_t direction) {
-	int32_t new_position = cursor_position + direction;
+	int32_t new_position = cursor_main_position + direction;
 
 	sync_display_limit(buffer);
 
@@ -92,17 +96,31 @@ static void cursor_move(sliding_window_buffer *buffer, int32_t direction) {
 		if (buffer->head > 0) {
 			buffer->head--;
 		}
-		cursor_position = 0;
+		cursor_main_position = 0;
 	} else if ((uint32_t)new_position >= buffer->display_limit && (buffer->head + buffer->display_limit) < buffer->count) {
 		buffer->head++;
-		cursor_position = buffer->display_limit - 1;
+		cursor_main_position = buffer->display_limit - 1;
 	} else {
 		if (buffer->head + (uint32_t)new_position >= buffer->count) {
 			return;
 		}
-		cursor_position = new_position;
+		cursor_main_position = new_position;
 	}
 
+	return;
+}
+
+static void cursor_popup_move(window_data *popup_window, int32_t direction) {
+	int32_t limit = popup_window->height >= number_of_records ? number_of_records : popup_window->height;
+	int32_t new_position = cursor_popup_position + direction;
+
+	if (new_position < 0) {
+		cursor_popup_position = 0;
+	} else if (new_position > limit) {
+		cursor_popup_position = limit;
+	} else {
+		cursor_popup_position = new_position;
+	}
 	return;
 }
 
@@ -163,10 +181,18 @@ void draw_window_frame(window_data *window_data, const char *title) {
 void input_handler(int32_t input, app_context *variables) {
 	switch (input) {
 	case KEY_DOWN:
-		cursor_move(&variables->buffer, 1);
+		if (variables->main_window.is_active) {
+			cursor_move(&variables->buffer, 1);
+		} else {
+			cursor_popup_move(&variables->popup_window, 1);
+		}
 		break;
 	case KEY_UP:
-		cursor_move(&variables->buffer, -1);
+		if (variables->main_window.is_active) {
+			cursor_move(&variables->buffer, -1);
+		} else {
+			cursor_popup_move(&variables->popup_window, -1);
+		}
 		break;
 	case 'b':
 		popup_window_action(&variables->main_window, &variables->popup_window, variables->signal_thread);
@@ -197,21 +223,21 @@ void print_network_data(WINDOW *window, sliding_window_buffer *buffer) {
 	}
 
 	for (uint32_t i = 0; i < limit; i++) {
-		if (i == (uint32_t)cursor_position) {
+		if (i == (uint32_t)cursor_main_position) {
 			wattron(window, COLOR_PAIR(3));
 		}
 
-		print_network_row(window, display_row_start + i, 2, buffer->items[buffer->head + i], i == (uint32_t)cursor_position);
+		print_network_row(window, display_row_start + i, 2, buffer->items[buffer->head + i], i == (uint32_t)cursor_main_position);
 
-		if (i == (uint32_t)cursor_position) {
+		if (i == (uint32_t)cursor_main_position) {
 			wattroff(window, COLOR_PAIR(3));
 		}
 	}
 	return;
 }
 
-void draw(window_data *main_window, sliding_window_buffer *buffer) {
-	if (main_window->height < MIN_HEIGHT || main_window->width < MIN_WIDTH) {
+void draw(app_context *variables) {
+	if (variables->main_window.height < MIN_HEIGHT || variables->main_window.width < MIN_WIDTH) {
 		werase(stdscr);
 		wattron(stdscr, COLOR_PAIR(4));
 		mvwprintw(stdscr, 0, 0, "Window is too small!");
@@ -221,10 +247,15 @@ void draw(window_data *main_window, sliding_window_buffer *buffer) {
 	} else {
 		werase(stdscr);
 		wnoutrefresh(stdscr);
-		werase(main_window->window);
-		draw_window_frame(main_window, " NetDet ");
-		draw_table_header(main_window->window);
-		print_network_data(main_window->window, buffer);
+		werase(variables->main_window.window);
+		draw_window_frame(&variables->main_window, " NetDet ");
+		draw_table_header(variables->main_window.window);
+		print_network_data(variables->main_window.window, &variables->buffer);
+
+		if (variables->popup_window.is_active) {
+			draw_popup(&variables->popup_window, variables->signal_thread);
+		}
+
 		update_panels();
 		doupdate();
 	}
@@ -236,30 +267,54 @@ void popup_window_action(window_data *main_window, window_data *popup_window, pt
 	is_visible = !is_visible;
 
 	if (is_visible) {
-		struct if_nameindex *interfaces;
-		int32_t i = 0;
-
+		main_window->is_active = false;
 		popup_init(popup_window, main_window);
-		draw_window_frame(popup_window, NULL);
-
-		interfaces = if_nameindex();
-		if (interfaces == NULL) {
-			if_freenameindex(interfaces);
-			main_error(APP_ERR_IF_NAMEINDEX, signal_thread);
-			return;
-		}
-
-		mvwprintw(popup_window->window, 1, 2, "Available interfaces:");
-
-		while (interfaces[i].if_index != 0) {
-			mvwprintw(popup_window->window, 2 + i, 2, "[ ] - %s", interfaces[i].if_name);
-			i++;
-		}
-
-		if_freenameindex(interfaces);
+		draw_window_frame(popup_window, " Available interfaces ");
+		draw_popup(popup_window, signal_thread);
 	} else {
+		main_window->is_active = true;
 		popup_clean_up(popup_window);
 	}
 
+	return;
+}
+
+void draw_popup(window_data *popup_window, pthread_t signal_thread) {
+	struct if_nameindex *interfaces;
+	int32_t i = 0;
+
+	interfaces = if_nameindex();
+	if (interfaces == NULL) {
+		if_freenameindex(interfaces);
+		main_error(APP_ERR_IF_NAMEINDEX, signal_thread);
+		return;
+	}
+
+	while (interfaces[i].if_index != 0) {
+		if (cursor_popup_position == i) {
+			wattron(popup_window->window, COLOR_PAIR(3));
+		}
+
+		mvwprintw(popup_window->window, 1 + i, 2, "[ ] - %s", interfaces[i].if_name);
+
+		if (cursor_popup_position == i) {
+			wattroff(popup_window->window, COLOR_PAIR(3));
+		}
+		i++;
+	}
+
+	if (cursor_popup_position == i) {
+		wattron(popup_window->window, COLOR_PAIR(3));
+	}
+
+	mvwprintw(popup_window->window, 1 + i, 2, "[ ] - all");
+
+	if (cursor_popup_position == i) {
+		wattroff(popup_window->window, COLOR_PAIR(3));
+	}
+
+	number_of_records = i;
+
+	if_freenameindex(interfaces);
 	return;
 }

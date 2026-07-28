@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
 	ncurses_init();
 	main_init(&variables, &args);
 
-	draw(&variables.main_window, &variables.buffer);
+	draw(&variables);
 	while (!atomic_load(&end_main_loop)) {
 		int32_t number_of_events = epoll_wait(variables.epoll_fd, events, 3, -1);
 
@@ -62,12 +62,12 @@ int main(int argc, char *argv[]) {
 					atomic_store(&variables.buffer.display_row, i);
 				}
 
-				draw(&variables.main_window, &variables.buffer);
+				draw(&variables);
 			} else if (events[i].data.fd == STDIN_FILENO) {
 				int32_t input = wgetch(variables.main_window.window);
 				input_handler(input, &variables);
 
-				draw(&variables.main_window, &variables.buffer);
+				draw(&variables);
 			} else if (events[i].data.fd == shutdown_main_fd) {
 				continue;
 			}

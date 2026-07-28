@@ -15,6 +15,7 @@
 #include <panel.h>
 #include <signal.h>
 #include <stdatomic.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -55,6 +56,7 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 	epoll_register(&variables->epoll_fd, pipe_fd[0]);
 	epoll_register(&variables->epoll_fd, STDIN_FILENO);
 
+	variables->main_window.is_active = true;
 	variables->main_window.start_x = WINDOW_OUTER_INDENT;
 	variables->main_window.start_y = WINDOW_OUTER_INDENT;
 	variables->main_window.height = LINES - (WINDOW_OUTER_INDENT * 2);
@@ -64,6 +66,7 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 	variables->main_window.panel = new_panel(variables->main_window.window);
 	keypad(variables->main_window.window, TRUE);
 
+	variables->popup_window.is_active = false;
 	variables->popup_window.start_x = 0;
 	variables->popup_window.start_y = 0;
 	variables->popup_window.width = 0;
@@ -125,6 +128,7 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 }
 
 void popup_init(window_data *popup_window, const window_data *main_window) {
+	popup_window->is_active = true;
 	popup_window->start_x = main_window->start_x + 5;
 	popup_window->start_y = main_window->start_y + 5;
 	popup_window->height = main_window->height - 10;
