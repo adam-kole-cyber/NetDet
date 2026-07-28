@@ -6,7 +6,7 @@
 #include <pthread.h>
 #include <stdint.h>
 
-typedef struct {
+typedef struct app_context {
 	int32_t epoll_fd;
 
 	pthread_t signal_thread;

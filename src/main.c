@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
 				draw(&variables.main_window, &variables.buffer);
 			} else if (events[i].data.fd == STDIN_FILENO) {
 				int32_t input = wgetch(variables.main_window.window);
-				input_handler(input, &variables.buffer, &variables.main_window, &variables.popup_window);
+				input_handler(input, &variables);
 
 				draw(&variables.main_window, &variables.buffer);
 			} else if (events[i].data.fd == shutdown_main_fd) {

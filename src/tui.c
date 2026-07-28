@@ -1,9 +1,12 @@
 #include "tui.h"
+#include "app_context.h"
 #include "clean_up.h"
 #include "device.h"
+#include "error.h"
 #include "init.h"
 #include <locale.h>
 #include <ncurses.h>
+#include <net/if.h>
 #include <panel.h>
 #include <pthread.h>
 #include <stdatomic.h>
@@ -157,16 +160,16 @@ void draw_window_frame(window_data *window_data, const char *title) {
 	return;
 }
 
-void input_handler(int32_t input, sliding_window_buffer *buffer, window_data *main_window, window_data *popup_window) {
+void input_handler(int32_t input, app_context *variables) {
 	switch (input) {
 	case KEY_DOWN:
-		cursor_move(buffer, 1);
+		cursor_move(&variables->buffer, 1);
 		break;
 	case KEY_UP:
-		cursor_move(buffer, -1);
+		cursor_move(&variables->buffer, -1);
 		break;
 	case 'b':
-		popup_window_action(main_window, popup_window);
+		popup_window_action(&variables->main_window, &variables->popup_window, variables->signal_thread);
 		break;
 	default:
 		break;
@@ -227,14 +230,33 @@ void draw(window_data *main_window, sliding_window_buffer *buffer) {
 	}
 }
 
-void popup_window_action(window_data *main_window, window_data *popup_window) {
+void popup_window_action(window_data *main_window, window_data *popup_window, pthread_t signal_thread) {
 	static bool is_visible = false;
 
 	is_visible = !is_visible;
 
 	if (is_visible) {
+		struct if_nameindex *interfaces;
+		int32_t i = 0;
+
 		popup_init(popup_window, main_window);
 		draw_window_frame(popup_window, NULL);
+
+		interfaces = if_nameindex();
+		if (interfaces == NULL) {
+			if_freenameindex(interfaces);
+			main_error(APP_ERR_IF_NAMEINDEX, signal_thread);
+			return;
+		}
+
+		mvwprintw(popup_window->window, 1, 2, "Available interfaces:");
+
+		while (interfaces[i].if_index != 0) {
+			mvwprintw(popup_window->window, 2 + i, 2, "[ ] - %s", interfaces[i].if_name);
+			i++;
+		}
+
+		if_freenameindex(interfaces);
 	} else {
 		popup_clean_up(popup_window);
 	}
