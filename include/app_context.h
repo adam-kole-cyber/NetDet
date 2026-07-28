@@ -14,6 +14,7 @@ typedef struct {
 
 	sliding_window_buffer buffer;
 	window_data main_window;
+	window_data popup_window;
 } app_context;
 
 #endif

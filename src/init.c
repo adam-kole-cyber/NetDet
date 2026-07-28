@@ -5,6 +5,7 @@
 #include "network.h"
 #include "shared_state.h"
 #include "signal_handler.h"
+#include "tui.h"
 #include <errno.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
@@ -63,6 +64,13 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 	variables->main_window.panel = new_panel(variables->main_window.window);
 	keypad(variables->main_window.window, TRUE);
 
+	variables->popup_window.start_x = 0;
+	variables->popup_window.start_y = 0;
+	variables->popup_window.width = 0;
+	variables->popup_window.height = 0;
+	variables->popup_window.window = NULL;
+	variables->popup_window.panel = NULL;
+
 	uint32_t i = (variables->main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) < 0
 					 ? 0
 					 : (variables->main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) - 1;
@@ -113,5 +121,16 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 	*epoll_fd = epoll_create1(0);
 	epoll_register(epoll_fd, shutdown_network_fd);
 	epoll_register(epoll_fd, *socket_fd);
+	return;
+}
+
+void popup_init(window_data *popup_window, const window_data *main_window) {
+	popup_window->start_x = main_window->start_x + 5;
+	popup_window->start_y = main_window->start_y + 5;
+	popup_window->height = main_window->height - 10;
+	popup_window->width = main_window->width - 10;
+	popup_window->window = newwin(popup_window->height, popup_window->width, popup_window->start_y, popup_window->start_x);
+	popup_window->panel = new_panel(popup_window->window);
+
 	return;
 }

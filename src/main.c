@@ -22,7 +22,7 @@ int32_t shutdown_main_fd;
 int32_t pipe_fd[2];
 
 int main(int argc, char *argv[]) {
-	app_context variables;
+	app_context variables = {0};
 	struct epoll_event events[3];
 	struct network_thread_args args;
 
@@ -54,7 +54,6 @@ int main(int argc, char *argv[]) {
 					variables.main_window.width = COLS - (WINDOW_OUTER_INDENT * 2);
 					wresize(variables.main_window.window, variables.main_window.height, variables.main_window.width);
 					move_panel(variables.main_window.panel, variables.main_window.start_y, variables.main_window.start_x);
-					// mvwin(variables.main_window.window, variables.main_window.start_y, variables.main_window.start_x);
 
 					uint32_t i = (variables.main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) < 0
 									 ? 0
@@ -66,7 +65,7 @@ int main(int argc, char *argv[]) {
 				draw(&variables.main_window, &variables.buffer);
 			} else if (events[i].data.fd == STDIN_FILENO) {
 				int32_t input = wgetch(variables.main_window.window);
-				input_handler(input, &variables.buffer);
+				input_handler(input, &variables.buffer, &variables.main_window, &variables.popup_window);
 
 				draw(&variables.main_window, &variables.buffer);
 			} else if (events[i].data.fd == shutdown_main_fd) {

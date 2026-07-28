@@ -1,5 +1,7 @@
 #include "tui.h"
+#include "clean_up.h"
 #include "device.h"
+#include "init.h"
 #include <locale.h>
 #include <ncurses.h>
 #include <panel.h>
@@ -155,13 +157,16 @@ void draw_window_frame(window_data *window_data, const char *title) {
 	return;
 }
 
-void input_handler(int32_t input, sliding_window_buffer *buffer) {
+void input_handler(int32_t input, sliding_window_buffer *buffer, window_data *main_window, window_data *popup_window) {
 	switch (input) {
 	case KEY_DOWN:
 		cursor_move(buffer, 1);
 		break;
 	case KEY_UP:
 		cursor_move(buffer, -1);
+		break;
+	case 'b':
+		popup_window_action(main_window, popup_window);
 		break;
 	default:
 		break;
@@ -210,7 +215,6 @@ void draw(window_data *main_window, sliding_window_buffer *buffer) {
 		wattroff(stdscr, COLOR_PAIR(4));
 		wnoutrefresh(stdscr);
 		doupdate();
-		// wrefresh(stdscr);
 	} else {
 		werase(stdscr);
 		wnoutrefresh(stdscr);
@@ -218,8 +222,22 @@ void draw(window_data *main_window, sliding_window_buffer *buffer) {
 		draw_window_frame(main_window, " NetDet ");
 		draw_table_header(main_window->window);
 		print_network_data(main_window->window, buffer);
-		// wrefresh(main_window->window);
 		update_panels();
 		doupdate();
 	}
+}
+
+void popup_window_action(window_data *main_window, window_data *popup_window) {
+	static bool is_visible = false;
+
+	is_visible = !is_visible;
+
+	if (is_visible) {
+		popup_init(popup_window, main_window);
+		draw_window_frame(popup_window, NULL);
+	} else {
+		popup_clean_up(popup_window);
+	}
+
+	return;
 }

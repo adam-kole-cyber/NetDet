@@ -26,6 +26,11 @@ void main_clean_up(app_context *variables) {
 	close(pipe_fd[1]);
 	close(shutdown_main_fd);
 
+	if (variables->popup_window.panel != NULL) {
+		del_panel(variables->popup_window.panel);
+		delwin(variables->popup_window.window);
+	}
+
 	del_panel(variables->main_window.panel);
 	delwin(variables->main_window.window);
 	endwin();
@@ -43,4 +48,18 @@ void network_clean_up(hash_map *map, int32_t *socket_fd, int32_t *epoll_fd) {
 	close(*epoll_fd);
 	close(*socket_fd);
 	close(shutdown_network_fd);
+}
+
+void popup_clean_up(window_data *popup_window) {
+	popup_window->start_x = 0;
+	popup_window->start_y = 0;
+	popup_window->height = 0;
+	popup_window->width = 0;
+
+	del_panel(popup_window->panel);
+	delwin(popup_window->window);
+	popup_window->panel = NULL;
+	popup_window->window = NULL;
+
+	return;
 }
