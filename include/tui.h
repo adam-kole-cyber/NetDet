@@ -3,6 +3,7 @@
 
 #include "device.h"
 #include <ncurses.h>
+#include <panel.h>
 #include <pthread.h>
 #include <stdint.h>
 
@@ -17,6 +18,7 @@ typedef struct {
 	int32_t start_x;
 	int32_t start_y;
 	WINDOW *window;
+	PANEL *panel;
 } window_data;
 
 void ncurses_init(void);

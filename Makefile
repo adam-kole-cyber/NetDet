@@ -12,7 +12,7 @@ VG_CFLAGS := -g3 -O0 \
              -fno-omit-frame-pointer \
              -DDEBUG
 
-BASE_LDFLAGS := -lncursesw -lpthread
+BASE_LDFLAGS := -lpanelw -lncursesw -lpthread
 DEBUG_LDFLAGS := -fsanitize=address,undefined,leak
 
 SRC_DIR := src

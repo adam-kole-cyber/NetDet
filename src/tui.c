@@ -2,6 +2,7 @@
 #include "device.h"
 #include <locale.h>
 #include <ncurses.h>
+#include <panel.h>
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdint.h>
@@ -207,7 +208,9 @@ void draw(window_data *main_window, sliding_window_buffer *buffer) {
 		wattron(stdscr, COLOR_PAIR(4));
 		mvwprintw(stdscr, 0, 0, "Window is too small!");
 		wattroff(stdscr, COLOR_PAIR(4));
-		wrefresh(stdscr);
+		wnoutrefresh(stdscr);
+		doupdate();
+		// wrefresh(stdscr);
 	} else {
 		werase(stdscr);
 		wnoutrefresh(stdscr);
@@ -215,6 +218,8 @@ void draw(window_data *main_window, sliding_window_buffer *buffer) {
 		draw_window_frame(main_window, " NetDet ");
 		draw_table_header(main_window->window);
 		print_network_data(main_window->window, buffer);
-		wrefresh(main_window->window);
+		// wrefresh(main_window->window);
+		update_panels();
+		doupdate();
 	}
 }

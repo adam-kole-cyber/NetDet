@@ -11,6 +11,7 @@
 #include <net/ethernet.h>
 #include <net/if.h>
 #include <netinet/in.h>
+#include <panel.h>
 #include <signal.h>
 #include <stdatomic.h>
 #include <stdint.h>
@@ -59,6 +60,7 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 	variables->main_window.width = COLS - (WINDOW_OUTER_INDENT * 2);
 	variables->main_window.window =
 		newwin(variables->main_window.height, variables->main_window.width, variables->main_window.start_y, variables->main_window.start_x);
+	variables->main_window.panel = new_panel(variables->main_window.window);
 	keypad(variables->main_window.window, TRUE);
 
 	uint32_t i = (variables->main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) < 0

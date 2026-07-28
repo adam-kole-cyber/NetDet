@@ -6,6 +6,7 @@
 #include "signal_handler.h"
 #include "tui.h"
 #include <ncurses.h>
+#include <panel.h>
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -52,7 +53,8 @@ int main(int argc, char *argv[]) {
 					variables.main_window.height = LINES - (WINDOW_OUTER_INDENT * 2);
 					variables.main_window.width = COLS - (WINDOW_OUTER_INDENT * 2);
 					wresize(variables.main_window.window, variables.main_window.height, variables.main_window.width);
-					mvwin(variables.main_window.window, variables.main_window.start_y, variables.main_window.start_x);
+					move_panel(variables.main_window.panel, variables.main_window.start_y, variables.main_window.start_x);
+					// mvwin(variables.main_window.window, variables.main_window.start_y, variables.main_window.start_x);
 
 					uint32_t i = (variables.main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) < 0
 									 ? 0

@@ -3,6 +3,7 @@
 #include "error.h"
 #include "shared_state.h"
 #include <ncurses.h>
+#include <panel.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -24,6 +25,8 @@ void main_clean_up(app_context *variables) {
 	close(pipe_fd[0]);
 	close(pipe_fd[1]);
 	close(shutdown_main_fd);
+
+	del_panel(variables->main_window.panel);
 	delwin(variables->main_window.window);
 	endwin();
 
