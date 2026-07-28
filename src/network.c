@@ -23,6 +23,7 @@
 
 atomic_bool end_listen_loop = false;
 int32_t shutdown_network_fd;
+int32_t interface_index = -1; // -1 means that no interface has been selected yet
 
 static void process_raw_arp_frame(unsigned char *raw_frame_data, unsigned char *processed_frame, ssize_t *frame_length) {
 	// Since the IEEE standards do not specify what it means when the fields for 802.1Q and 802.1ad tags are set to 0,

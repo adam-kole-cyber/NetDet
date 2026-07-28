@@ -115,6 +115,8 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 			network_error(APP_ERR_BIND, socket_fd, args->signal_thread);
 			return;
 		}
+
+		interface_index = sll.sll_ifindex;
 	}
 
 	map->size = BUFFER_INITIAL_SIZE;

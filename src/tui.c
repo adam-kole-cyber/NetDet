@@ -4,6 +4,7 @@
 #include "device.h"
 #include "error.h"
 #include "init.h"
+#include "shared_state.h"
 #include <bits/pthreadtypes.h>
 #include <locale.h>
 #include <ncurses.h>
@@ -197,6 +198,12 @@ void input_handler(int32_t input, app_context *variables) {
 	case 'b':
 		popup_window_action(&variables->main_window, &variables->popup_window, variables->signal_thread);
 		break;
+	case '\n':
+		if (variables->popup_window.is_active) {
+			interface_index = cursor_popup_position + 1;
+			popup_window_action(&variables->main_window, &variables->popup_window, variables->signal_thread);
+		}
+		break;
 	default:
 		break;
 	}
@@ -295,7 +302,7 @@ void draw_popup(window_data *popup_window, pthread_t signal_thread) {
 			wattron(popup_window->window, COLOR_PAIR(3));
 		}
 
-		mvwprintw(popup_window->window, 1 + i, 2, "[ ] - %s", interfaces[i].if_name);
+		mvwprintw(popup_window->window, 1 + i, 2, "[%c] - %s", ((interface_index - 1) == i) ? '*' : ' ', interfaces[i].if_name);
 
 		if (cursor_popup_position == i) {
 			wattroff(popup_window->window, COLOR_PAIR(3));
@@ -307,7 +314,7 @@ void draw_popup(window_data *popup_window, pthread_t signal_thread) {
 		wattron(popup_window->window, COLOR_PAIR(3));
 	}
 
-	mvwprintw(popup_window->window, 1 + i, 2, "[ ] - all");
+	mvwprintw(popup_window->window, 1 + i, 2, "[%c] - all", ((interface_index - 1) == i) ? '*' : ' ');
 
 	if (cursor_popup_position == i) {
 		wattroff(popup_window->window, COLOR_PAIR(3));
