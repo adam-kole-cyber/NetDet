@@ -2,7 +2,6 @@
 #include "app_context.h"
 #include "clean_up.h"
 #include "device.h"
-#include "error.h"
 #include "init.h"
 #include "shared_state.h"
 #include <bits/pthreadtypes.h>
@@ -14,12 +13,13 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 static int32_t cursor_main_position = 0;
 static int32_t cursor_popup_position = 0;
 static int32_t number_of_records = 0;
-static struct if_nameindex *interfaces;
+struct if_nameindex *interfaces;
 
 static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t *mac, bool highlight_line) {
 	short pair = 0;
@@ -283,18 +283,12 @@ void popup_window_action(window_data *main_window, window_data *popup_window, pt
 
 	if (is_visible) {
 		main_window->is_active = false;
-		popup_init(popup_window, main_window);
-
-		interfaces = if_nameindex();
-		if (interfaces == NULL) {
-			main_error(APP_ERR_IF_NAMEINDEX, signal_thread);
-			return;
-		}
+		popup_init(popup_window, main_window, signal_thread);
 
 		draw_window_frame(popup_window, " Available interfaces ");
 		draw_popup(popup_window);
+
 	} else {
-		if_freenameindex(interfaces);
 		main_window->is_active = true;
 		popup_clean_up(popup_window);
 	}
@@ -305,7 +299,7 @@ void popup_window_action(window_data *main_window, window_data *popup_window, pt
 void draw_popup(window_data *popup_window) {
 	uint32_t i = 0;
 
-	while (interfaces[i].if_index != 0) {
+	while (interfaces[i].if_name != NULL) {
 		if ((uint32_t)cursor_popup_position == i) {
 			wattron(popup_window->window, COLOR_PAIR(3));
 		}
@@ -319,16 +313,6 @@ void draw_popup(window_data *popup_window) {
 		i++;
 	}
 
-	if ((uint32_t)cursor_popup_position == i) {
-		wattron(popup_window->window, COLOR_PAIR(3));
-	}
-
-	mvwprintw(popup_window->window, 1 + i, 2, "[%c] - all", (binded_interface.if_index == 0) ? '*' : ' ');
-
-	if ((uint32_t)cursor_popup_position == i) {
-		wattroff(popup_window->window, COLOR_PAIR(3));
-	}
-
-	number_of_records = i;
+	number_of_records = i - 1;
 	return;
 }

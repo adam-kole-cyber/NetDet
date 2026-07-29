@@ -130,7 +130,11 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 	return;
 }
 
-void popup_init(window_data *popup_window, const window_data *main_window) {
+void popup_init(window_data *popup_window, const window_data *main_window, pthread_t signal_thread) {
+	struct if_nameindex *kernel_interface = {0};
+	int32_t count = 0;
+	int32_t i = 0;
+
 	popup_window->is_active = true;
 	popup_window->start_x = main_window->start_x + 5;
 	popup_window->start_y = main_window->start_y + 5;
@@ -138,6 +142,32 @@ void popup_init(window_data *popup_window, const window_data *main_window) {
 	popup_window->width = main_window->width - 10;
 	popup_window->window = newwin(popup_window->height, popup_window->width, popup_window->start_y, popup_window->start_x);
 	popup_window->panel = new_panel(popup_window->window);
+
+	kernel_interface = if_nameindex();
+	if (kernel_interface == NULL) {
+		main_error(APP_ERR_IF_NAMEINDEX, signal_thread);
+		return;
+	}
+
+	while (kernel_interface[count].if_index != 0) {
+		// is used to determine how many records an array contains
+		count++;
+	}
+
+	interfaces = calloc(count + 2, sizeof(struct if_nameindex));
+	if (interfaces == NULL) {
+		main_error(APP_ERR_IF_NAMEINDEX, signal_thread);
+		return;
+	}
+
+	for (i = 0; i < count; i++) {
+		interfaces[i].if_index = kernel_interface[i].if_index;
+		interfaces[i].if_name = strdup(kernel_interface[i].if_name);
+	}
+	if_freenameindex(kernel_interface);
+
+	interfaces[count].if_index = 0;
+	interfaces[count].if_name = strdup("all");
 
 	return;
 }
