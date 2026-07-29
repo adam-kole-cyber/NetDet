@@ -19,6 +19,7 @@
 static int32_t cursor_main_position = 0;
 static int32_t cursor_popup_position = 0;
 static int32_t number_of_records = 0;
+static struct if_nameindex *interfaces;
 
 static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t *mac, bool highlight_line) {
 	short pair = 0;
@@ -200,7 +201,14 @@ void input_handler(int32_t input, app_context *variables) {
 		break;
 	case '\n':
 		if (variables->popup_window.is_active) {
-			interface_index = cursor_popup_position + 1;
+			if ((uint32_t)cursor_popup_position == (uint32_t)number_of_records) {
+				binded_interface.if_index = 0;
+				binded_interface.if_name = NULL;
+			} else {
+				binded_interface.if_index = interfaces[cursor_popup_position].if_index;
+				binded_interface.if_name = interfaces[cursor_popup_position].if_name;
+			}
+
 			popup_window_action(&variables->main_window, &variables->popup_window, variables->signal_thread);
 		}
 		break;
@@ -260,7 +268,7 @@ void draw(app_context *variables) {
 		print_network_data(variables->main_window.window, &variables->buffer);
 
 		if (variables->popup_window.is_active) {
-			draw_popup(&variables->popup_window, variables->signal_thread);
+			draw_popup(&variables->popup_window);
 		}
 
 		update_panels();
@@ -276,9 +284,17 @@ void popup_window_action(window_data *main_window, window_data *popup_window, pt
 	if (is_visible) {
 		main_window->is_active = false;
 		popup_init(popup_window, main_window);
+
+		interfaces = if_nameindex();
+		if (interfaces == NULL) {
+			main_error(APP_ERR_IF_NAMEINDEX, signal_thread);
+			return;
+		}
+
 		draw_window_frame(popup_window, " Available interfaces ");
-		draw_popup(popup_window, signal_thread);
+		draw_popup(popup_window);
 	} else {
+		if_freenameindex(interfaces);
 		main_window->is_active = true;
 		popup_clean_up(popup_window);
 	}
@@ -286,45 +302,33 @@ void popup_window_action(window_data *main_window, window_data *popup_window, pt
 	return;
 }
 
-void draw_popup(window_data *popup_window, pthread_t signal_thread) {
-	struct if_nameindex *interfaces;
-	int32_t i = 0;
-
-	interfaces = if_nameindex();
-	if (interfaces == NULL) {
-		if_freenameindex(interfaces);
-		main_error(APP_ERR_IF_NAMEINDEX, signal_thread);
-		return;
-	}
+void draw_popup(window_data *popup_window) {
+	uint32_t i = 0;
 
 	while (interfaces[i].if_index != 0) {
-		if (cursor_popup_position == i) {
+		if ((uint32_t)cursor_popup_position == i) {
 			wattron(popup_window->window, COLOR_PAIR(3));
 		}
 
-		mvwprintw(popup_window->window, 1 + i, 2, "[%c] - %s", ((interface_index - 1) == i) ? '*' : ' ', interfaces[i].if_name);
+		mvwprintw(popup_window->window, 1 + i, 2, "[%c] - %s", (binded_interface.if_index == interfaces[i].if_index) ? '*' : ' ',
+				  interfaces[i].if_name);
 
-		if (cursor_popup_position == i) {
+		if ((uint32_t)cursor_popup_position == i) {
 			wattroff(popup_window->window, COLOR_PAIR(3));
 		}
 		i++;
 	}
 
-	if (cursor_popup_position == i) {
+	if ((uint32_t)cursor_popup_position == i) {
 		wattron(popup_window->window, COLOR_PAIR(3));
 	}
 
-	mvwprintw(popup_window->window, 1 + i, 2, "[%c] - all", ((interface_index - 1) == i) ? '*' : ' ');
+	mvwprintw(popup_window->window, 1 + i, 2, "[%c] - all", (binded_interface.if_index == 0) ? '*' : ' ');
 
-	if (cursor_popup_position == i) {
+	if ((uint32_t)cursor_popup_position == i) {
 		wattroff(popup_window->window, COLOR_PAIR(3));
 	}
 
-	if (interface_index == -1) {
-		interface_index = i + 1;
-	}
 	number_of_records = i;
-
-	if_freenameindex(interfaces);
 	return;
 }
