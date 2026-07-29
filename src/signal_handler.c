@@ -1,5 +1,6 @@
 #include "signal_handler.h"
 #include "device.h"
+#include "init.h"
 #include "shared_state.h"
 #include <pthread.h>
 #include <signal.h>
@@ -16,10 +17,7 @@ void *signal_routine(void *args) {
 	ui_message msg = {0};
 	bool keep_running = true;
 
-	sigemptyset(&mask);
-	sigaddset(&mask, SIGINT);
-	sigaddset(&mask, SIGWINCH);
-	sigaddset(&mask, SIGUSR1);
+	signal_init(&mask);
 
 	while (keep_running) {
 		if (sigwait(&mask, &signal) != 0) {

@@ -196,3 +196,12 @@ void ncurses_init(void) {
 
 	return;
 }
+
+void signal_init(sigset_t *mask) {
+	sigemptyset(mask);
+	sigaddset(mask, SIGINT);
+	sigaddset(mask, SIGWINCH);
+	sigaddset(mask, SIGUSR1);
+
+	return;
+}
