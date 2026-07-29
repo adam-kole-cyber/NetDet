@@ -320,6 +320,9 @@ void draw_popup(window_data *popup_window, pthread_t signal_thread) {
 		wattroff(popup_window->window, COLOR_PAIR(3));
 	}
 
+	if (interface_index == -1) {
+		interface_index = i + 1;
+	}
 	number_of_records = i;
 
 	if_freenameindex(interfaces);
