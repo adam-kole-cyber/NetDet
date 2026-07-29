@@ -59,8 +59,10 @@ void network_clean_up(hash_map *map, int32_t *socket_fd, int32_t *epoll_fd) {
 void popup_clean_up(window_data *popup_window) {
 	for (int32_t i = 0; interfaces[i].if_name != NULL; i++) {
 		free(interfaces[i].if_name);
+		interfaces[i].if_name = NULL;
 	}
 	free(interfaces);
+	interfaces = NULL;
 
 	popup_window->is_active = false;
 	popup_window->start_x = 0;

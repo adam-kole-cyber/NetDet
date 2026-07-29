@@ -24,7 +24,6 @@ typedef struct {
 	PANEL *panel;
 } window_data;
 
-void ncurses_init(void);
 void draw_window_frame(window_data *window_data, const char *title);
 void input_handler(int32_t input, app_context *variables);
 void draw_table_header(WINDOW *window);

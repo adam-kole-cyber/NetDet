@@ -13,7 +13,6 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 
 static int32_t cursor_main_position = 0;
@@ -123,30 +122,6 @@ static void cursor_popup_move(window_data *popup_window, int32_t direction) {
 	} else {
 		cursor_popup_position = new_position;
 	}
-	return;
-}
-
-void ncurses_init(void) {
-	setlocale(LC_ALL, "");
-	initscr();
-	noecho();
-	cbreak();
-	keypad(stdscr, TRUE);
-	curs_set(0);
-
-	if (has_colors()) { // enables colors in terminal
-		start_color();
-		use_default_colors();
-		init_pair(1, COLOR_GREEN, -1);
-		init_pair(2, COLOR_YELLOW, -1);
-		init_pair(3, -1, COLOR_BLACK);
-		init_pair(4, COLOR_RED, -1);
-		init_pair(5, COLOR_CYAN, -1);
-		init_pair(6, COLOR_RED, COLOR_BLACK);
-		init_pair(7, COLOR_YELLOW, COLOR_BLACK);
-		init_pair(8, COLOR_GREEN, COLOR_BLACK);
-	}
-
 	return;
 }
 
