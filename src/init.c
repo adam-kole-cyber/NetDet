@@ -100,6 +100,9 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 		return;
 	}
 
+	binded_interface.if_index = UINT32_MAX;
+	binded_interface.if_name = "all";
+
 	if (args->argc > 1) {
 		struct sockaddr_ll sll;
 		memset(&sll, 0, sizeof(sll));

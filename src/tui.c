@@ -14,7 +14,7 @@
 #include <string.h>
 
 static int32_t cursor_main_position = 0;
-static int32_t cursor_popup_position = 0;
+int32_t cursor_popup_position = 0;
 int32_t number_of_records = 0;
 static int32_t interfaces_head = 0;
 int32_t visible_records = 0;
@@ -111,9 +111,16 @@ static void cursor_move(sliding_window_buffer *buffer, int32_t direction) {
 	return;
 }
 
-static void cursor_popup_move(int32_t direction) {
+static void cursor_popup_move(window_data *popup_window, int32_t direction) {
+	(void)popup_window;
+
 	if (number_of_records == 0)
 		return;
+
+	int32_t records_on_screen = number_of_records - interfaces_head;
+
+	if (records_on_screen > visible_records)
+		records_on_screen = visible_records;
 
 	int32_t new_position = cursor_popup_position + direction;
 
@@ -121,19 +128,22 @@ static void cursor_popup_move(int32_t direction) {
 		if (interfaces_head > 0) {
 			interfaces_head--;
 		}
+
 		cursor_popup_position = 0;
 		return;
 	}
 
-	if (new_position >= visible_records) {
-		if (interfaces_head + visible_records < number_of_records) {
+	if (new_position >= records_on_screen) {
+		if (interfaces_head + records_on_screen < number_of_records) {
 			interfaces_head++;
 		}
-		cursor_popup_position = visible_records - 1;
+
+		cursor_popup_position = records_on_screen - 1;
 		return;
 	}
 
 	cursor_popup_position = new_position;
+	return;
 }
 
 void draw_window_frame(window_data *window_data, const char *title) {
@@ -172,14 +182,14 @@ void input_handler(int32_t input, app_context *variables) {
 		if (variables->main_window.is_active) {
 			cursor_move(&variables->buffer, 1);
 		} else {
-			cursor_popup_move(1);
+			cursor_popup_move(&variables->popup_window, 1);
 		}
 		break;
 	case KEY_UP:
 		if (variables->main_window.is_active) {
 			cursor_move(&variables->buffer, -1);
 		} else {
-			cursor_popup_move(-1);
+			cursor_popup_move(&variables->popup_window, -1);
 		}
 		break;
 	case 'b':
@@ -266,6 +276,7 @@ void draw(app_context *variables) {
 		update_panels();
 		doupdate();
 	}
+	return;
 }
 
 void popup_window_action(window_data *main_window, window_data *popup_window, pthread_t signal_thread) {
