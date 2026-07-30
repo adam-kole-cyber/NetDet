@@ -15,9 +15,9 @@
 
 static int32_t cursor_main_position = 0;
 static int32_t cursor_popup_position = 0;
-static int32_t number_of_records = 0;
+int32_t number_of_records = 0;
 static int32_t interfaces_head = 0;
-static int32_t visible_records = 0;
+int32_t visible_records = 0;
 struct if_nameindex *interfaces;
 
 static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t *mac, bool highlight_line) {
@@ -111,7 +111,7 @@ static void cursor_move(sliding_window_buffer *buffer, int32_t direction) {
 	return;
 }
 
-static void cursor_popup_move(window_data *popup_window, int32_t direction) {
+static void cursor_popup_move(int32_t direction) {
 	if (number_of_records == 0)
 		return;
 
@@ -172,14 +172,14 @@ void input_handler(int32_t input, app_context *variables) {
 		if (variables->main_window.is_active) {
 			cursor_move(&variables->buffer, 1);
 		} else {
-			cursor_popup_move(&variables->popup_window, 1);
+			cursor_popup_move(1);
 		}
 		break;
 	case KEY_UP:
 		if (variables->main_window.is_active) {
 			cursor_move(&variables->buffer, -1);
 		} else {
-			cursor_popup_move(&variables->popup_window, -1);
+			cursor_popup_move(-1);
 		}
 		break;
 	case 'b':

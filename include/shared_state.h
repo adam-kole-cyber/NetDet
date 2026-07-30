@@ -13,5 +13,8 @@ extern int32_t shutdown_network_fd;
 extern int32_t pipe_fd[2];
 extern struct if_nameindex binded_interface;
 extern struct if_nameindex *interfaces;
+extern int32_t number_of_records;
+extern int32_t visible_records;
+extern struct if_nameindex *interfaces;
 
 #endif

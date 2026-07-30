@@ -3,6 +3,7 @@
 #include "device.h"
 #include "error.h"
 #include "init.h"
+#include "shared_state.h"
 #include "signal_handler.h"
 #include "tui.h"
 #include <ncurses.h>
@@ -73,6 +74,18 @@ int main(int argc, char *argv[]) {
 							variables.popup_window.width = variables.main_window.width;
 							variables.popup_window.height = variables.main_window.height;
 						}
+
+						number_of_records = 0;
+						while (interfaces[number_of_records].if_index != 0) {
+							number_of_records++;
+						}
+
+						visible_records = variables.popup_window.height - 2;
+
+						if (visible_records > number_of_records) {
+							visible_records = number_of_records;
+						}
+
 						wresize(variables.popup_window.window, variables.popup_window.height, variables.popup_window.width);
 						move_panel(variables.popup_window.panel, variables.popup_window.start_y, variables.popup_window.start_x);
 					}
