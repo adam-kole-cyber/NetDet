@@ -4,7 +4,6 @@
 #include "device.h"
 #include "init.h"
 #include "shared_state.h"
-#include <bits/pthreadtypes.h>
 #include <ncurses.h>
 #include <net/if.h>
 #include <panel.h>
@@ -17,6 +16,8 @@
 static int32_t cursor_main_position = 0;
 static int32_t cursor_popup_position = 0;
 static int32_t number_of_records = 0;
+static int32_t interfaces_head = 0;
+static int32_t visible_records = 0;
 struct if_nameindex *interfaces;
 
 static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t *mac, bool highlight_line) {
@@ -111,17 +112,28 @@ static void cursor_move(sliding_window_buffer *buffer, int32_t direction) {
 }
 
 static void cursor_popup_move(window_data *popup_window, int32_t direction) {
-	int32_t limit = popup_window->height >= number_of_records ? number_of_records : popup_window->height;
+	if (number_of_records == 0)
+		return;
+
 	int32_t new_position = cursor_popup_position + direction;
 
 	if (new_position < 0) {
+		if (interfaces_head > 0) {
+			interfaces_head--;
+		}
 		cursor_popup_position = 0;
-	} else if (new_position > limit) {
-		cursor_popup_position = limit;
-	} else {
-		cursor_popup_position = new_position;
+		return;
 	}
-	return;
+
+	if (new_position >= visible_records) {
+		if (interfaces_head + visible_records < number_of_records) {
+			interfaces_head++;
+		}
+		cursor_popup_position = visible_records - 1;
+		return;
+	}
+
+	cursor_popup_position = new_position;
 }
 
 void draw_window_frame(window_data *window_data, const char *title) {
@@ -175,13 +187,15 @@ void input_handler(int32_t input, app_context *variables) {
 		break;
 	case '\n':
 		if (variables->popup_window.is_active) {
-			if ((uint32_t)cursor_popup_position == (uint32_t)number_of_records) {
-				binded_interface.if_index = 0;
-				binded_interface.if_name = NULL;
-			} else {
-				binded_interface.if_index = interfaces[cursor_popup_position].if_index;
-				binded_interface.if_name = interfaces[cursor_popup_position].if_name;
-			}
+			int32_t selected = interfaces_head + cursor_popup_position;
+
+			if (selected >= number_of_records)
+				break;
+			if (interfaces[selected].if_index == 0)
+				break;
+
+			binded_interface.if_index = interfaces[selected].if_index;
+			binded_interface.if_name = interfaces[selected].if_name;
 
 			popup_window_action(&variables->main_window, &variables->popup_window, variables->signal_thread);
 		}
@@ -261,11 +275,25 @@ void popup_window_action(window_data *main_window, window_data *popup_window, pt
 
 	if (is_visible) {
 		main_window->is_active = false;
+
 		popup_init(popup_window, main_window, signal_thread);
+
+		number_of_records = 0;
+		while (interfaces[number_of_records].if_index != 0) {
+			number_of_records++;
+		}
+
+		visible_records = popup_window->height - 2;
+
+		if (visible_records > number_of_records) {
+			visible_records = number_of_records;
+		}
+
+		interfaces_head = 0;
+		cursor_popup_position = 0;
 
 		draw_window_frame(popup_window, " Available interfaces ");
 		draw_popup(popup_window);
-
 	} else {
 		main_window->is_active = true;
 		popup_clean_up(popup_window);
@@ -275,22 +303,24 @@ void popup_window_action(window_data *main_window, window_data *popup_window, pt
 }
 
 void draw_popup(window_data *popup_window) {
-	uint32_t i = 0;
+	for (int32_t i = 0; i < visible_records; i++) {
+		int32_t index = interfaces_head + i;
 
-	while (interfaces[i].if_name != NULL) {
-		if ((uint32_t)cursor_popup_position == i) {
+		if (index >= number_of_records) {
+			break;
+		}
+
+		if (cursor_popup_position == i) {
 			wattron(popup_window->window, COLOR_PAIR(3));
 		}
 
-		mvwprintw(popup_window->window, 1 + i, 2, "[%c] - %s", (binded_interface.if_index == interfaces[i].if_index) ? '*' : ' ',
-				  interfaces[i].if_name);
+		mvwprintw(popup_window->window, 1 + i, 2, "[%c] - %s", (binded_interface.if_index == interfaces[index].if_index) ? '*' : ' ',
+				  interfaces[index].if_name);
 
-		if ((uint32_t)cursor_popup_position == i) {
+		if (cursor_popup_position == i) {
 			wattroff(popup_window->window, COLOR_PAIR(3));
 		}
-		i++;
 	}
 
-	number_of_records = i - 1;
 	return;
 }

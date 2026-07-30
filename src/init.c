@@ -132,13 +132,13 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 }
 
 void popup_init(window_data *popup_window, const window_data *main_window, pthread_t signal_thread) {
-	struct if_nameindex *kernel_interface = {0};
+	struct if_nameindex *kernel_interface = NULL;
 	int32_t count = 0;
 	int32_t i = 0;
 
 	popup_window->is_active = true;
 
-	if ((main_window->height - 10) > 3) {
+	if ((main_window->height - 10) >= 3) {
 		popup_window->start_x = main_window->start_x + 5;
 		popup_window->start_y = main_window->start_y + 5;
 		popup_window->width = main_window->width - 10;
@@ -176,7 +176,7 @@ void popup_init(window_data *popup_window, const window_data *main_window, pthre
 	}
 	if_freenameindex(kernel_interface);
 
-	interfaces[count].if_index = 0;
+	interfaces[count].if_index = UINT32_MAX;
 	interfaces[count].if_name = strdup("all");
 
 	return;

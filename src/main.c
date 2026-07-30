@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
 					atomic_store(&variables.buffer.display_row, i);
 
 					if (variables.popup_window.is_active) {
-						if ((variables.main_window.height - 10) > 3) {
+						if ((variables.main_window.height - 10) >= 3) {
 							variables.popup_window.start_x = variables.main_window.start_x + 5;
 							variables.popup_window.start_y = variables.main_window.start_y + 5;
 							variables.popup_window.width = variables.main_window.width - 10;
