@@ -60,6 +60,22 @@ int main(int argc, char *argv[]) {
 									 : (variables.main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) - 1;
 
 					atomic_store(&variables.buffer.display_row, i);
+
+					if (variables.popup_window.is_active) {
+						if ((variables.main_window.height - 10) > 3) {
+							variables.popup_window.start_x = variables.main_window.start_x + 5;
+							variables.popup_window.start_y = variables.main_window.start_y + 5;
+							variables.popup_window.width = variables.main_window.width - 10;
+							variables.popup_window.height = variables.main_window.height - 10;
+						} else {
+							variables.popup_window.start_x = variables.main_window.start_x;
+							variables.popup_window.start_y = variables.main_window.start_y;
+							variables.popup_window.width = variables.main_window.width;
+							variables.popup_window.height = variables.main_window.height;
+						}
+						wresize(variables.popup_window.window, variables.popup_window.height, variables.popup_window.width);
+						move_panel(variables.popup_window.panel, variables.popup_window.start_y, variables.popup_window.start_x);
+					}
 				}
 
 				draw(&variables);

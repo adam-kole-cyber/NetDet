@@ -244,6 +244,8 @@ void draw(app_context *variables) {
 				  variables->popup_window.width, variables->popup_window.height);
 
 		if (variables->popup_window.is_active) {
+			werase(variables->popup_window.window);
+			draw_window_frame(&variables->popup_window, " Available interfaces ");
 			draw_popup(&variables->popup_window);
 		}
 
