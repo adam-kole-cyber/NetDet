@@ -137,10 +137,19 @@ void popup_init(window_data *popup_window, const window_data *main_window, pthre
 	int32_t i = 0;
 
 	popup_window->is_active = true;
-	popup_window->start_x = main_window->start_x + 5;
-	popup_window->start_y = main_window->start_y + 5;
-	popup_window->height = main_window->height - 10;
-	popup_window->width = main_window->width - 10;
+
+	if ((main_window->height - 10) > 3) {
+		popup_window->start_x = main_window->start_x + 5;
+		popup_window->start_y = main_window->start_y + 5;
+		popup_window->width = main_window->width - 10;
+		popup_window->height = main_window->height - 10;
+	} else {
+		popup_window->start_x = main_window->start_x;
+		popup_window->start_y = main_window->start_y;
+		popup_window->width = main_window->width;
+		popup_window->height = main_window->height;
+	}
+
 	popup_window->window = newwin(popup_window->height, popup_window->width, popup_window->start_y, popup_window->start_x);
 	popup_window->panel = new_panel(popup_window->window);
 
