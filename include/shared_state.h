@@ -4,6 +4,7 @@
 #include <net/if.h>
 #include <pthread.h>
 #include <stdatomic.h>
+#include <stdint.h>
 
 extern atomic_bool end_main_loop;
 extern atomic_bool end_listen_loop;
@@ -16,5 +17,6 @@ extern struct if_nameindex *interfaces;
 extern int32_t number_of_records;
 extern int32_t visible_records;
 extern struct if_nameindex *interfaces;
+extern int32_t bind_update_fd;
 
 #endif

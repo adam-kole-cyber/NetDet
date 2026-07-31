@@ -51,6 +51,9 @@ void network_clean_up(hash_map *map, int32_t *socket_fd, int32_t *epoll_fd) {
 	free(map->table);
 	map->table = NULL;
 
+	free(binded_interface.if_name);
+
+	close(bind_update_fd);
 	close(*epoll_fd);
 	close(*socket_fd);
 	close(shutdown_network_fd);

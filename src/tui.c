@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 
 static int32_t cursor_main_position = 0;
 int32_t cursor_popup_position = 0;
@@ -205,7 +206,10 @@ void input_handler(int32_t input, app_context *variables) {
 				break;
 
 			binded_interface.if_index = interfaces[selected].if_index;
-			binded_interface.if_name = interfaces[selected].if_name;
+			binded_interface.if_name = strdup(interfaces[selected].if_name);
+
+			uint64_t event_updated_bind = 1;
+			write(bind_update_fd, &event_updated_bind, sizeof(event_updated_bind));
 
 			popup_window_action(&variables->main_window, &variables->popup_window, variables->signal_thread);
 		}

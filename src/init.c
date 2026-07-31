@@ -91,6 +91,7 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 
 void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map *map, int32_t *epoll_fd) {
 	shutdown_network_fd = eventfd(0, 0);
+	bind_update_fd = eventfd(0, 0);
 
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (*socket_fd == -1) {
@@ -101,7 +102,7 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 	}
 
 	binded_interface.if_index = UINT32_MAX;
-	binded_interface.if_name = "all";
+	binded_interface.if_name = strdup("all");
 
 	if (args->argc > 1) {
 		struct sockaddr_ll sll;
@@ -121,7 +122,7 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 		}
 
 		binded_interface.if_index = sll.sll_ifindex;
-		binded_interface.if_name = args->argv[1];
+		binded_interface.if_name = strdup(args->argv[1]);
 	}
 
 	map->size = BUFFER_INITIAL_SIZE;
@@ -129,6 +130,7 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 	map->table = calloc(map->size, sizeof(hash_entry));
 
 	*epoll_fd = epoll_create1(0);
+	epoll_register(epoll_fd, bind_update_fd);
 	epoll_register(epoll_fd, shutdown_network_fd);
 	epoll_register(epoll_fd, *socket_fd);
 	return;
