@@ -11,7 +11,9 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 static int32_t cursor_main_position = 0;
@@ -205,8 +207,11 @@ void input_handler(int32_t input, app_context *variables) {
 			if (interfaces[selected].if_index == 0)
 				break;
 
+			pthread_mutex_lock(&binded_interface_mutex);
 			binded_interface.if_index = interfaces[selected].if_index;
+			free(binded_interface.if_name);
 			binded_interface.if_name = strdup(interfaces[selected].if_name);
+			pthread_mutex_unlock(&binded_interface_mutex);
 
 			uint64_t event_updated_bind = 1;
 			write(bind_update_fd, &event_updated_bind, sizeof(event_updated_bind));
@@ -327,8 +332,10 @@ void draw_popup(window_data *popup_window) {
 			wattron(popup_window->window, COLOR_PAIR(3));
 		}
 
+		pthread_mutex_lock(&binded_interface_mutex);
 		mvwprintw(popup_window->window, 1 + i, 2, "[%c] - %s", (binded_interface.if_index == interfaces[index].if_index) ? '*' : ' ',
 				  interfaces[index].if_name);
+		pthread_mutex_unlock(&binded_interface_mutex);
 
 		if (cursor_popup_position == i) {
 			wattroff(popup_window->window, COLOR_PAIR(3));

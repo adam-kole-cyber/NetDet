@@ -4,6 +4,7 @@
 #include "shared_state.h"
 #include <ncurses.h>
 #include <panel.h>
+#include <pthread.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -51,7 +52,11 @@ void network_clean_up(hash_map *map, int32_t *socket_fd, int32_t *epoll_fd) {
 	free(map->table);
 	map->table = NULL;
 
+	pthread_mutex_lock(&binded_interface_mutex);
 	free(binded_interface.if_name);
+	pthread_mutex_unlock(&binded_interface_mutex);
+
+	pthread_mutex_destroy(&binded_interface_mutex);
 
 	close(bind_update_fd);
 	close(*epoll_fd);

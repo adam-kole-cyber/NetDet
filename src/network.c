@@ -5,6 +5,7 @@
 #include "init.h"
 #include "shared_state.h"
 #include <arpa/inet.h>
+#include <bits/pthreadtypes.h>
 #include <errno.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
@@ -26,8 +27,12 @@ atomic_bool end_listen_loop = false;
 int32_t shutdown_network_fd;
 int32_t bind_update_fd;
 struct if_nameindex binded_interface = {0};
+pthread_mutex_t binded_interface_mutex;
 
 static void change_bind(int32_t *socket_fd, int32_t *epoll, pthread_t signal_thread) {
+	struct sockaddr_ll sll;
+	memset(&sll, 0, sizeof(sll));
+
 	epoll_ctl(*epoll, EPOLL_CTL_DEL, *socket_fd, NULL);
 	close(*socket_fd);
 
@@ -39,16 +44,17 @@ static void change_bind(int32_t *socket_fd, int32_t *epoll, pthread_t signal_thr
 		return;
 	}
 
+	pthread_mutex_lock(&binded_interface_mutex);
 	if (binded_interface.if_index == UINT32_MAX && strcmp(binded_interface.if_name, "all") == 0) {
 		epoll_register(epoll, *socket_fd);
+		pthread_mutex_unlock(&binded_interface_mutex);
 		return;
 	}
+	sll.sll_ifindex = binded_interface.if_index;
+	pthread_mutex_unlock(&binded_interface_mutex);
 
-	struct sockaddr_ll sll;
-	memset(&sll, 0, sizeof(sll));
 	sll.sll_family = AF_PACKET;
 	sll.sll_protocol = htons(ETH_P_ALL);
-	sll.sll_ifindex = binded_interface.if_index;
 
 	if (sll.sll_ifindex == 0) {
 		network_error(APP_ERR_IF_NAMETOINDEX, socket_fd, signal_thread);
