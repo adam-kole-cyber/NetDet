@@ -47,48 +47,7 @@ int main(int argc, char *argv[]) {
 						main_error(APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY, variables.signal_thread);
 					}
 				} else if (msg.msg_type == UI_RESIZE) {
-					struct winsize ws;
-					ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);
-					resizeterm(ws.ws_row, ws.ws_col);
-
-					variables.main_window.height = LINES - (WINDOW_OUTER_INDENT * 2);
-					variables.main_window.width = COLS - (WINDOW_OUTER_INDENT * 2);
-					wresize(variables.main_window.window, variables.main_window.height, variables.main_window.width);
-					move_panel(variables.main_window.panel, variables.main_window.start_y, variables.main_window.start_x);
-
-					uint32_t i = (variables.main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) < 0
-									 ? 0
-									 : (variables.main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) - 1;
-
-					atomic_store(&variables.buffer.display_row, i);
-
-					if (variables.popup_window.is_active) {
-						if ((variables.main_window.height - 10) >= 3) {
-							variables.popup_window.start_x = variables.main_window.start_x + 5;
-							variables.popup_window.start_y = variables.main_window.start_y + 5;
-							variables.popup_window.width = variables.main_window.width - 10;
-							variables.popup_window.height = variables.main_window.height - 10;
-						} else {
-							variables.popup_window.start_x = variables.main_window.start_x;
-							variables.popup_window.start_y = variables.main_window.start_y;
-							variables.popup_window.width = variables.main_window.width;
-							variables.popup_window.height = variables.main_window.height;
-						}
-
-						number_of_records = 0;
-						while (interfaces[number_of_records].if_index != 0) {
-							number_of_records++;
-						}
-
-						visible_records = variables.popup_window.height - 2;
-
-						if (visible_records > number_of_records) {
-							visible_records = number_of_records;
-						}
-
-						wresize(variables.popup_window.window, variables.popup_window.height, variables.popup_window.width);
-						move_panel(variables.popup_window.panel, variables.popup_window.start_y, variables.popup_window.start_x);
-					}
+					resize_handler(&variables);
 				}
 
 				draw(&variables);

@@ -31,5 +31,6 @@ void print_network_data(WINDOW *window, sliding_window_buffer *buffer);
 void draw(app_context *variables);
 void popup_window_action(window_data *main_window, window_data *popup_window, pthread_t signal_thread);
 void draw_popup(window_data *popup_window);
+void resize_handler(app_context *variables);
 
 #endif
