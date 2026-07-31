@@ -115,18 +115,15 @@ static void cursor_move(sliding_window_buffer *buffer, int32_t direction) {
 	return;
 }
 
-static void cursor_popup_move(window_data *popup_window, int32_t direction) {
-	(void)popup_window;
-
+static void cursor_popup_move(int32_t direction) {
 	if (number_of_records == 0)
 		return;
 
 	int32_t records_on_screen = number_of_records - interfaces_head;
+	int32_t new_position = cursor_popup_position + direction;
 
 	if (records_on_screen > visible_records)
 		records_on_screen = visible_records;
-
-	int32_t new_position = cursor_popup_position + direction;
 
 	if (new_position < 0) {
 		if (interfaces_head > 0) {
@@ -186,14 +183,14 @@ void input_handler(int32_t input, app_context *variables) {
 		if (variables->main_window.is_active) {
 			cursor_move(&variables->buffer, 1);
 		} else {
-			cursor_popup_move(&variables->popup_window, 1);
+			cursor_popup_move(1);
 		}
 		break;
 	case KEY_UP:
 		if (variables->main_window.is_active) {
 			cursor_move(&variables->buffer, -1);
 		} else {
-			cursor_popup_move(&variables->popup_window, -1);
+			cursor_popup_move(-1);
 		}
 		break;
 	case 'b':
