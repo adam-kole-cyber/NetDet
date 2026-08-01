@@ -1,6 +1,7 @@
 #include "init.h"
 #include "app_context.h"
 #include "device.h"
+#include "epoll_utils.h"
 #include "error.h"
 #include "network.h"
 #include "shared_state.h"
@@ -26,16 +27,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-void epoll_register(int32_t *epoll_fd, int32_t fd_to_register) {
-	struct epoll_event register_event;
-
-	register_event.events = EPOLLIN;
-	register_event.data.fd = fd_to_register;
-	epoll_ctl(*epoll_fd, EPOLL_CTL_ADD, fd_to_register, &register_event);
-
-	return;
-}
-
 void main_init(app_context *variables, struct network_thread_args *args) {
 	sigset_t mask;
 
@@ -54,9 +45,9 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 	shutdown_main_fd = eventfd(0, 0);
 
 	variables->epoll_fd = epoll_create1(0);
-	epoll_register(&variables->epoll_fd, shutdown_main_fd);
-	epoll_register(&variables->epoll_fd, pipe_fd[0]);
-	epoll_register(&variables->epoll_fd, STDIN_FILENO);
+	epoll_register(variables->epoll_fd, shutdown_main_fd);
+	epoll_register(variables->epoll_fd, pipe_fd[0]);
+	epoll_register(variables->epoll_fd, STDIN_FILENO);
 
 	variables->main_window.is_active = true;
 	variables->main_window.start_x = WINDOW_OUTER_INDENT;
@@ -138,9 +129,9 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 	map->table = calloc(map->size, sizeof(hash_entry));
 
 	*epoll_fd = epoll_create1(0);
-	epoll_register(epoll_fd, bind_update_fd);
-	epoll_register(epoll_fd, shutdown_network_fd);
-	epoll_register(epoll_fd, *socket_fd);
+	epoll_register(*epoll_fd, bind_update_fd);
+	epoll_register(*epoll_fd, shutdown_network_fd);
+	epoll_register(*epoll_fd, *socket_fd);
 	return;
 }
 

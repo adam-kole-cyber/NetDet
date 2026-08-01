@@ -13,6 +13,5 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 void popup_init(window_data *popup_window, const window_data *main_window, pthread_t signal_thread);
 void ncurses_init(void);
 void signal_init(sigset_t *mask);
-void epoll_register(int32_t *epoll_fd, int32_t fd_to_register);
 
 #endif

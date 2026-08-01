@@ -1,6 +1,7 @@
 #include "network.h"
 #include "clean_up.h"
 #include "device.h"
+#include "epoll_utils.h"
 #include "error.h"
 #include "init.h"
 #include "shared_state.h"
@@ -33,7 +34,7 @@ static void change_bind(int32_t *socket_fd, int32_t *epoll, pthread_t signal_thr
 	struct sockaddr_ll sll;
 	memset(&sll, 0, sizeof(sll));
 
-	epoll_ctl(*epoll, EPOLL_CTL_DEL, *socket_fd, NULL);
+	epoll_unregister(*epoll, *socket_fd);
 	close(*socket_fd);
 
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
@@ -46,7 +47,7 @@ static void change_bind(int32_t *socket_fd, int32_t *epoll, pthread_t signal_thr
 
 	pthread_mutex_lock(&binded_interface_mutex);
 	if (binded_interface.if_index == UINT32_MAX && strcmp(binded_interface.if_name, "all") == 0) {
-		epoll_register(epoll, *socket_fd);
+		epoll_register(*epoll, *socket_fd);
 		pthread_mutex_unlock(&binded_interface_mutex);
 		return;
 	}
@@ -66,7 +67,7 @@ static void change_bind(int32_t *socket_fd, int32_t *epoll, pthread_t signal_thr
 		return;
 	}
 
-	epoll_register(epoll, *socket_fd);
+	epoll_register(*epoll, *socket_fd);
 
 	return;
 }
