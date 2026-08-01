@@ -1,0 +1,104 @@
+#include "tui_app.h"
+#include "device.h"
+#include <ncurses.h>
+
+static inline void sync_display_limit(sliding_window_buffer *buffer) {
+	buffer->view.visible =
+		(atomic_load(&buffer->view.viewport_capacity) < buffer->size) ? atomic_load(&buffer->view.viewport_capacity) : buffer->size;
+}
+
+static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t *mac, bool highlight_line) {
+	short pair = 0;
+
+	if (highlight_line) {
+		if ((mac[0] & 0x03) == 0x03)
+			pair = 6;
+		else if ((mac[0] & 0x02) == 0x02)
+			pair = 7;
+		else if ((mac[0] & 0x01) == 0x01)
+			pair = 8;
+		else
+			pair = 3;
+	} else {
+		if ((mac[0] & 0x03) == 0x03)
+			pair = 4;
+		else if ((mac[0] & 0x02) == 0x02)
+			pair = 2;
+		else if ((mac[0] & 0x01) == 0x01)
+			pair = 1;
+		else
+			pair = 0;
+	}
+
+	wattrset(window, pair ? COLOR_PAIR(pair) : A_NORMAL);
+	mvwprintw(window, row, column, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	wattrset(window, A_NORMAL);
+
+	if (highlight_line) {
+		wattron(window, COLOR_PAIR(3));
+	}
+
+	return;
+}
+
+static void print_ip(WINDOW *window, const uint8_t *ip) {
+	wprintw(window, "\t%u.%u.%u.%u\t", ip[0], ip[1], ip[2], ip[3]);
+	return;
+}
+
+static void print_qinq(WINDOW *window, const uint32_t *qinq_tag) {
+	wprintw(window, "%u\t\t", (*qinq_tag & 0xfff));
+	return;
+}
+
+static void print_dot1q(WINDOW *window, const uint32_t *dot1q_tag) {
+	wprintw(window, "%u\t\t", (*dot1q_tag & 0xfff));
+	return;
+}
+
+static void print_lastseen(WINDOW *window, const time_struct *last_seen) {
+	wprintw(window, "%02u:%02u:%02u", atomic_load(&last_seen->hour), atomic_load(&last_seen->minutes), atomic_load(&last_seen->seconds));
+	return;
+}
+
+static void print_network_row(WINDOW *window, int32_t row, int32_t column, const device *device_data, bool highlight_line) {
+	print_mac(window, row, column, device_data->mac, highlight_line);
+	print_ip(window, device_data->ip);
+	print_qinq(window, &device_data->qinq_tag);
+	print_dot1q(window, &device_data->dot1q_tag);
+	print_lastseen(window, &device_data->last_seen);
+
+	return;
+}
+
+void draw_table_header(WINDOW *window) {
+	wattron(window, COLOR_PAIR(2));
+	mvwprintw(window, 1, 2, "MAC\t\t\tIP\t\t802.1ad\t\t802.1Q\t\tLast seen");
+	wattroff(window, COLOR_PAIR(2));
+
+	return;
+}
+
+void print_network_data(WINDOW *window, sliding_window_buffer *buffer) {
+	int32_t display_row_start = 2;
+
+	sync_display_limit(buffer);
+
+	uint32_t limit = buffer->view.visible;
+	if (buffer->view.head + limit > buffer->view.count) {
+		limit = buffer->view.count - buffer->view.head;
+	}
+
+	for (uint32_t i = 0; i < limit; i++) {
+		if (i == (uint32_t)buffer->view.cursor) {
+			wattron(window, COLOR_PAIR(3));
+		}
+
+		print_network_row(window, display_row_start + i, 2, buffer->items[buffer->view.head + i], i == (uint32_t)buffer->view.cursor);
+
+		if (i == (uint32_t)buffer->view.cursor) {
+			wattroff(window, COLOR_PAIR(3));
+		}
+	}
+	return;
+}
