@@ -14,7 +14,7 @@ void main_clean_up(app_context *variables) {
 	pthread_join(variables->network_thread, NULL);
 	pthread_join(variables->signal_thread, NULL);
 
-	for (uint32_t i = 0; i < variables->buffer.count; i++) {
+	for (uint32_t i = 0; i < variables->buffer.view.count; i++) {
 		free(variables->buffer.items[i]);
 		variables->buffer.items[i] = NULL;
 	}
@@ -31,11 +31,11 @@ void main_clean_up(app_context *variables) {
 		del_panel(variables->popup_window.panel);
 		delwin(variables->popup_window.window);
 	}
-	if (interfaces != NULL) {
-		for (int32_t i = 0; interfaces[i].if_name != NULL; i++) {
-			free(interfaces[i].if_name);
+	if (popup_list.items != NULL) {
+		for (int32_t i = 0; popup_list.items[i].if_name != NULL; i++) {
+			free(popup_list.items[i].if_name);
 		}
-		free(interfaces);
+		free(popup_list.items);
 	}
 
 	del_panel(variables->main_window.panel);
@@ -65,12 +65,12 @@ void network_clean_up(hash_map *map, int32_t *socket_fd, int32_t *epoll_fd) {
 }
 
 void popup_clean_up(window_data *popup_window) {
-	for (int32_t i = 0; interfaces[i].if_name != NULL; i++) {
-		free(interfaces[i].if_name);
-		interfaces[i].if_name = NULL;
+	for (int32_t i = 0; popup_list.items[i].if_name != NULL; i++) {
+		free(popup_list.items[i].if_name);
+		popup_list.items[i].if_name = NULL;
 	}
-	free(interfaces);
-	interfaces = NULL;
+	free(popup_list.items);
+	popup_list.items = NULL;
 
 	popup_window->is_active = false;
 	popup_window->start_x = 0;

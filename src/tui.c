@@ -17,12 +17,12 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-static int32_t cursor_main_position = 0;
-static int32_t cursor_popup_position = 0;
-static int32_t number_of_records = 0;
-static int32_t interfaces_head = 0;
-static int32_t visible_records = 0;
-struct if_nameindex *interfaces;
+interfaces_list popup_list = {0};
+// static int32_t popup_list.view.cursor = 0;
+// static int32_t popup_list.view.count = 0;
+// static int32_t popup_list.view.head = 0;
+// static int32_t popup_list.view.visible = 0;
+// struct if_nameindex *interfaces;
 
 static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t *mac, bool highlight_line) {
 	short pair = 0;
@@ -89,61 +89,62 @@ static void print_network_row(WINDOW *window, int32_t row, int32_t column, const
 }
 
 static inline void sync_display_limit(sliding_window_buffer *buffer) {
-	buffer->display_limit = (atomic_load(&buffer->display_row) < buffer->size) ? buffer->display_row : buffer->size;
+	buffer->view.visible =
+		(atomic_load(&buffer->view.viewport_capacity) < buffer->size) ? atomic_load(&buffer->view.viewport_capacity) : buffer->size;
 }
 
 static void cursor_move(sliding_window_buffer *buffer, int32_t direction) {
-	int32_t new_position = cursor_main_position + direction;
+	int32_t new_position = buffer->view.cursor + direction;
 
 	sync_display_limit(buffer);
 
 	if (new_position < 0) {
-		if (buffer->head > 0) {
-			buffer->head--;
+		if (buffer->view.head > 0) {
+			buffer->view.head--;
 		}
-		cursor_main_position = 0;
-	} else if ((uint32_t)new_position >= buffer->display_limit && (buffer->head + buffer->display_limit) < buffer->count) {
-		buffer->head++;
-		cursor_main_position = buffer->display_limit - 1;
+		buffer->view.cursor = 0;
+	} else if ((uint32_t)new_position >= buffer->view.visible && (buffer->view.head + buffer->view.visible) < buffer->view.count) {
+		buffer->view.head++;
+		buffer->view.cursor = buffer->view.visible - 1;
 	} else {
-		if (buffer->head + (uint32_t)new_position >= buffer->count) {
+		if (buffer->view.head + (uint32_t)new_position >= buffer->view.count) {
 			return;
 		}
-		cursor_main_position = new_position;
+		buffer->view.cursor = new_position;
 	}
 
 	return;
 }
 
 static void cursor_popup_move(int32_t direction) {
-	if (number_of_records == 0)
+	if (popup_list.view.count == 0)
 		return;
 
-	int32_t records_on_screen = number_of_records - interfaces_head;
-	int32_t new_position = cursor_popup_position + direction;
+	int32_t records_on_screen = popup_list.view.count - popup_list.view.head;
+	int32_t new_position = popup_list.view.cursor + direction;
 
-	if (records_on_screen > visible_records)
-		records_on_screen = visible_records;
+	if ((uint32_t)records_on_screen > popup_list.view.visible)
+		records_on_screen = popup_list.view.visible;
 
 	if (new_position < 0) {
-		if (interfaces_head > 0) {
-			interfaces_head--;
+		if (popup_list.view.head > 0) {
+			popup_list.view.head--;
 		}
 
-		cursor_popup_position = 0;
+		popup_list.view.cursor = 0;
 		return;
 	}
 
 	if (new_position >= records_on_screen) {
-		if (interfaces_head + records_on_screen < number_of_records) {
-			interfaces_head++;
+		if (popup_list.view.head + records_on_screen < popup_list.view.count) {
+			popup_list.view.head++;
 		}
 
-		cursor_popup_position = records_on_screen - 1;
+		popup_list.view.cursor = records_on_screen - 1;
 		return;
 	}
 
-	cursor_popup_position = new_position;
+	popup_list.view.cursor = new_position;
 	return;
 }
 
@@ -198,17 +199,17 @@ void input_handler(int32_t input, app_context *variables) {
 		break;
 	case '\n':
 		if (variables->popup_window.is_active) {
-			int32_t selected = interfaces_head + cursor_popup_position;
+			int32_t selected = popup_list.view.head + popup_list.view.cursor;
 
-			if (selected >= number_of_records)
+			if ((uint32_t)selected >= popup_list.view.count)
 				break;
-			if (interfaces[selected].if_index == 0)
+			if (popup_list.items[selected].if_index == 0)
 				break;
 
 			pthread_mutex_lock(&binded_interface_mutex);
-			binded_interface.if_index = interfaces[selected].if_index;
+			binded_interface.if_index = popup_list.items[selected].if_index;
 			free(binded_interface.if_name);
-			binded_interface.if_name = strdup(interfaces[selected].if_name);
+			binded_interface.if_name = strdup(popup_list.items[selected].if_name);
 			pthread_mutex_unlock(&binded_interface_mutex);
 
 			uint64_t event_updated_bind = 1;
@@ -237,19 +238,19 @@ void print_network_data(WINDOW *window, sliding_window_buffer *buffer) {
 
 	sync_display_limit(buffer);
 
-	uint32_t limit = buffer->display_limit;
-	if (buffer->head + limit > buffer->count) {
-		limit = buffer->count - buffer->head;
+	uint32_t limit = buffer->view.visible;
+	if (buffer->view.head + limit > buffer->view.count) {
+		limit = buffer->view.count - buffer->view.head;
 	}
 
 	for (uint32_t i = 0; i < limit; i++) {
-		if (i == (uint32_t)cursor_main_position) {
+		if (i == (uint32_t)buffer->view.cursor) {
 			wattron(window, COLOR_PAIR(3));
 		}
 
-		print_network_row(window, display_row_start + i, 2, buffer->items[buffer->head + i], i == (uint32_t)cursor_main_position);
+		print_network_row(window, display_row_start + i, 2, buffer->items[buffer->view.head + i], i == (uint32_t)buffer->view.cursor);
 
-		if (i == (uint32_t)cursor_main_position) {
+		if (i == (uint32_t)buffer->view.cursor) {
 			wattroff(window, COLOR_PAIR(3));
 		}
 	}
@@ -294,19 +295,19 @@ void popup_window_action(window_data *main_window, window_data *popup_window, pt
 
 		popup_init(popup_window, main_window, signal_thread);
 
-		number_of_records = 0;
-		while (interfaces[number_of_records].if_index != 0) {
-			number_of_records++;
+		popup_list.view.count = 0;
+		while (popup_list.items[popup_list.view.count].if_index != 0) {
+			popup_list.view.count++;
 		}
 
-		visible_records = popup_window->height - 2;
+		popup_list.view.visible = popup_window->height - 2;
 
-		if (visible_records > number_of_records) {
-			visible_records = number_of_records;
+		if (popup_list.view.visible > popup_list.view.count) {
+			popup_list.view.visible = popup_list.view.count;
 		}
 
-		interfaces_head = 0;
-		cursor_popup_position = 0;
+		popup_list.view.head = 0;
+		popup_list.view.cursor = 0;
 
 		draw_window_frame(popup_window, " Available interfaces ");
 		draw_popup(popup_window);
@@ -319,23 +320,23 @@ void popup_window_action(window_data *main_window, window_data *popup_window, pt
 }
 
 void draw_popup(window_data *popup_window) {
-	for (int32_t i = 0; i < visible_records; i++) {
-		int32_t index = interfaces_head + i;
+	for (uint32_t i = 0; i < popup_list.view.visible; i++) {
+		int32_t index = popup_list.view.head + i;
 
-		if (index >= number_of_records) {
+		if ((uint32_t)index >= popup_list.view.count) {
 			break;
 		}
 
-		if (cursor_popup_position == i) {
+		if ((uint32_t)popup_list.view.cursor == i) {
 			wattron(popup_window->window, COLOR_PAIR(3));
 		}
 
 		pthread_mutex_lock(&binded_interface_mutex);
-		mvwprintw(popup_window->window, 1 + i, 2, "[%c] - %s", (binded_interface.if_index == interfaces[index].if_index) ? '*' : ' ',
-				  interfaces[index].if_name);
+		mvwprintw(popup_window->window, 1 + i, 2, "[%c] - %s", (binded_interface.if_index == popup_list.items[index].if_index) ? '*' : ' ',
+				  popup_list.items[index].if_name);
 		pthread_mutex_unlock(&binded_interface_mutex);
 
-		if (cursor_popup_position == i) {
+		if ((uint32_t)popup_list.view.cursor == i) {
 			wattroff(popup_window->window, COLOR_PAIR(3));
 		}
 	}
@@ -357,7 +358,7 @@ void resize_handler(app_context *variables) {
 					 ? 0
 					 : (variables->main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) - 1;
 
-	atomic_store(&variables->buffer.display_row, i);
+	atomic_store(&variables->buffer.view.viewport_capacity, i);
 
 	if (variables->popup_window.is_active) {
 		if ((variables->main_window.height - 10) >= 3) {
@@ -372,15 +373,15 @@ void resize_handler(app_context *variables) {
 			variables->popup_window.height = variables->main_window.height;
 		}
 
-		number_of_records = 0;
-		while (interfaces[number_of_records].if_index != 0) {
-			number_of_records++;
+		popup_list.view.count = 0;
+		while (popup_list.items[popup_list.view.count].if_index != 0) {
+			popup_list.view.count++;
 		}
 
-		visible_records = variables->popup_window.height - 2;
+		popup_list.view.visible = variables->popup_window.height - 2;
 
-		if (visible_records > number_of_records) {
-			visible_records = number_of_records;
+		if (popup_list.view.visible > popup_list.view.count) {
+			popup_list.view.visible = popup_list.view.count;
 		}
 
 		wresize(variables->popup_window.window, variables->popup_window.height, variables->popup_window.width);

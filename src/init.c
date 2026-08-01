@@ -73,10 +73,11 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 
 	variables->buffer.size = BUFFER_INITIAL_SIZE;
 	variables->buffer.items = calloc(variables->buffer.size, sizeof(device *));
-	variables->buffer.count = 0;
-	variables->buffer.display_limit = 0;
-	variables->buffer.head = 0;
-	atomic_store(&variables->buffer.display_row, i);
+	variables->buffer.view.count = 0;
+	variables->buffer.view.visible = 0;
+	variables->buffer.view.head = 0;
+	variables->buffer.view.cursor = 0;
+	atomic_store(&variables->buffer.view.viewport_capacity, i);
 
 	return;
 }
@@ -168,20 +169,20 @@ void popup_init(window_data *popup_window, const window_data *main_window, pthre
 		count++;
 	}
 
-	interfaces = calloc(count + 2, sizeof(struct if_nameindex));
-	if (interfaces == NULL) {
+	popup_list.items = calloc(count + 2, sizeof(struct if_nameindex));
+	if (popup_list.items == NULL) {
 		main_error(APP_ERR_IF_NAMEINDEX, signal_thread);
 		return;
 	}
 
 	for (i = 0; i < count; i++) {
-		interfaces[i].if_index = kernel_interface[i].if_index;
-		interfaces[i].if_name = strdup(kernel_interface[i].if_name);
+		popup_list.items[i].if_index = kernel_interface[i].if_index;
+		popup_list.items[i].if_name = strdup(kernel_interface[i].if_name);
 	}
 	if_freenameindex(kernel_interface);
 
-	interfaces[count].if_index = UINT32_MAX;
-	interfaces[count].if_name = strdup("all");
+	popup_list.items[count].if_index = UINT32_MAX;
+	popup_list.items[count].if_name = strdup("all");
 
 	return;
 }

@@ -111,15 +111,15 @@ int32_t hashmap_store_entry(hash_map *map, device *dev) {
 }
 
 int32_t slidingwindowbuffer_store_entry(sliding_window_buffer *buffer, device *dev) {
-	if ((buffer->count + 1) > (buffer->size * 0.8)) {
+	if ((buffer->view.count + 1) > (buffer->size * 0.8)) {
 		if (slidingwindowbuffer_realloc(buffer) == -1) {
 			return -1;
 		}
 	}
 
-	int32_t index = buffer->count;
+	int32_t index = buffer->view.count;
 
 	buffer->items[index] = dev;
-	buffer->count++;
+	buffer->view.count++;
 	return 0;
 }

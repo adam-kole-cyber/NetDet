@@ -2,7 +2,9 @@
 #define TUI_H
 
 #include "device.h"
+#include "scroll_view.h"
 #include <ncurses.h>
+#include <net/if.h>
 #include <panel.h>
 #include <pthread.h>
 #include <stdint.h>
@@ -23,6 +25,12 @@ typedef struct {
 	WINDOW *window;
 	PANEL *panel;
 } window_data;
+
+typedef struct {
+	struct if_nameindex *items;
+	uint32_t size;
+	scroll_view view;
+} interfaces_list;
 
 void draw_window_frame(window_data *window_data, const char *title);
 void input_handler(int32_t input, app_context *variables);
