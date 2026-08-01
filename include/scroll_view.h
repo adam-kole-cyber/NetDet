@@ -12,4 +12,6 @@ typedef struct {
 	int32_t cursor;							 // cursor position within the visible window
 } scroll_view;
 
+void scroll_move(scroll_view *view, int32_t direction);
+
 #endif

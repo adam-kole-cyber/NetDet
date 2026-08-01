@@ -3,6 +3,7 @@
 #include "clean_up.h"
 #include "device.h"
 #include "init.h"
+#include "scroll_view.h"
 #include "shared_state.h"
 #include <ncurses.h>
 #include <net/if.h>
@@ -18,11 +19,6 @@
 #include <unistd.h>
 
 interfaces_list popup_list = {0};
-// static int32_t popup_list.view.cursor = 0;
-// static int32_t popup_list.view.count = 0;
-// static int32_t popup_list.view.head = 0;
-// static int32_t popup_list.view.visible = 0;
-// struct if_nameindex *interfaces;
 
 static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t *mac, bool highlight_line) {
 	short pair = 0;
@@ -93,61 +89,6 @@ static inline void sync_display_limit(sliding_window_buffer *buffer) {
 		(atomic_load(&buffer->view.viewport_capacity) < buffer->size) ? atomic_load(&buffer->view.viewport_capacity) : buffer->size;
 }
 
-static void cursor_move(sliding_window_buffer *buffer, int32_t direction) {
-	int32_t new_position = buffer->view.cursor + direction;
-
-	sync_display_limit(buffer);
-
-	if (new_position < 0) {
-		if (buffer->view.head > 0) {
-			buffer->view.head--;
-		}
-		buffer->view.cursor = 0;
-	} else if ((uint32_t)new_position >= buffer->view.visible && (buffer->view.head + buffer->view.visible) < buffer->view.count) {
-		buffer->view.head++;
-		buffer->view.cursor = buffer->view.visible - 1;
-	} else {
-		if (buffer->view.head + (uint32_t)new_position >= buffer->view.count) {
-			return;
-		}
-		buffer->view.cursor = new_position;
-	}
-
-	return;
-}
-
-static void cursor_popup_move(int32_t direction) {
-	if (popup_list.view.count == 0)
-		return;
-
-	int32_t records_on_screen = popup_list.view.count - popup_list.view.head;
-	int32_t new_position = popup_list.view.cursor + direction;
-
-	if ((uint32_t)records_on_screen > popup_list.view.visible)
-		records_on_screen = popup_list.view.visible;
-
-	if (new_position < 0) {
-		if (popup_list.view.head > 0) {
-			popup_list.view.head--;
-		}
-
-		popup_list.view.cursor = 0;
-		return;
-	}
-
-	if (new_position >= records_on_screen) {
-		if (popup_list.view.head + records_on_screen < popup_list.view.count) {
-			popup_list.view.head++;
-		}
-
-		popup_list.view.cursor = records_on_screen - 1;
-		return;
-	}
-
-	popup_list.view.cursor = new_position;
-	return;
-}
-
 void draw_window_frame(window_data *window_data, const char *title) {
 	bool title_set = title != NULL;
 	int32_t last_usable_column = window_data->width - 1; // the window width will be reduced due to the frame
@@ -182,16 +123,16 @@ void input_handler(int32_t input, app_context *variables) {
 	switch (input) {
 	case KEY_DOWN:
 		if (variables->main_window.is_active) {
-			cursor_move(&variables->buffer, 1);
+			scroll_move(&variables->buffer.view, 1);
 		} else {
-			cursor_popup_move(1);
+			scroll_move(&popup_list.view, 1);
 		}
 		break;
 	case KEY_UP:
 		if (variables->main_window.is_active) {
-			cursor_move(&variables->buffer, -1);
+			scroll_move(&variables->buffer.view, -1);
 		} else {
-			cursor_popup_move(-1);
+			scroll_move(&popup_list.view, -1);
 		}
 		break;
 	case 'b':
