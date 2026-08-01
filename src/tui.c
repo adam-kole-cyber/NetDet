@@ -18,10 +18,10 @@
 #include <unistd.h>
 
 static int32_t cursor_main_position = 0;
-int32_t cursor_popup_position = 0;
-int32_t number_of_records = 0;
+static int32_t cursor_popup_position = 0;
+static int32_t number_of_records = 0;
 static int32_t interfaces_head = 0;
-int32_t visible_records = 0;
+static int32_t visible_records = 0;
 struct if_nameindex *interfaces;
 
 static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t *mac, bool highlight_line) {
