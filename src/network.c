@@ -194,8 +194,20 @@ void *network_routine(void *args) {
 
 #ifdef TP_STATUS_VLAN_TPID_VALID
 						if (aux->tp_status & TP_STATUS_VLAN_TPID_VALID) {
-							aux->tp_vlan_tpid;
+							switch (ntohs(aux->tp_vlan_tpid)) {
+							case 0x8100:
+								break;
+							case 0x88a8:
+								break;
+							default:
+								network_error(APP_ERR_SETSOCKOPT, &socket_fd, signal_thread);
+								break;
+							}
+						} else {
+							network_error(APP_ERR_SETSOCKOPT, &socket_fd, signal_thread);
 						}
+#else
+						network_error(APP_ERR_SETSOCKOPT, &socket_fd, signal_thread);
 #endif
 					}
 				}
