@@ -7,6 +7,7 @@
 #include "shared_state.h"
 #include <arpa/inet.h>
 #include <bits/pthreadtypes.h>
+#include <bits/types/struct_iovec.h>
 #include <errno.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
@@ -158,12 +159,21 @@ void *network_routine(void *args) {
 			if (events[i].data.fd == socket_fd) {
 				unsigned char raw_frame_data[FRAME_BUFFER_SIZE]; // expect a standard-length frame (as defined by IEEE 802.3)
 				unsigned char processed_frame[FRAME_BUFFER_SIZE];
+				char control[1024];
 				ssize_t frame_length = 0;
 				device *device_data = malloc(sizeof(device) * 1);
 				ui_message msg = {0};
+				struct iovec iov = {.iov_base = raw_frame_data, .iov_len = sizeof(raw_frame_data)};
+				struct msghdr control_msg = {.msg_name = NULL,
+											 .msg_namelen = 0,
+											 .msg_iov = &iov,
+											 .msg_iovlen = 1,
+											 .msg_control = control,
+											 .msg_controllen = sizeof(control_msg)};
 
 				memset(raw_frame_data, 0, sizeof(raw_frame_data));
 				memset(processed_frame, 0, sizeof(processed_frame));
+				memset(control, 0, sizeof(control));
 
 				frame_length = recvfrom(socket_fd, raw_frame_data, sizeof(raw_frame_data), 0, NULL, NULL);
 				if (frame_length < 0) {

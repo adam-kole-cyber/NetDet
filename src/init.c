@@ -83,6 +83,7 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 }
 
 void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map *map, int32_t *epoll_fd) {
+	int32_t enable = 1;
 	shutdown_network_fd = eventfd(0, 0);
 	bind_update_fd = eventfd(0, 0);
 
@@ -93,6 +94,11 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 		set_error(APP_ERR_SOCKET, errno);
 		pthread_kill(args->signal_thread, SIGUSR1);
 		pthread_exit(NULL);
+		return;
+	}
+
+	if (setsockopt(*socket_fd, SOL_PACKET, PACKET_AUXDATA, &enable, sizeof(enable)) == -1) {
+		network_error(APP_ERR_SETSOCKOPT, socket_fd, args->signal_thread);
 		return;
 	}
 
