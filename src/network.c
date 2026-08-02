@@ -182,6 +182,13 @@ void *network_routine(void *args) {
 					break;
 				}
 
+				process_raw_arp_frame(raw_frame_data, processed_frame, &frame_length);
+				if (frame_length <= 0 || (size_t)frame_length < sizeof(struct eth_header) + sizeof(struct arp_header)) {
+					free(device_data);
+					device_data = NULL;
+					continue;
+				}
+
 				for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(&control_msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&control_msg, cmsg)) {
 					if (cmsg->cmsg_level == SOL_PACKET && cmsg->cmsg_type == PACKET_AUXDATA) {
 						struct tpacket_auxdata *aux = (struct tpacket_auxdata *)CMSG_DATA(cmsg);
@@ -210,13 +217,6 @@ void *network_routine(void *args) {
 						network_error(APP_ERR_SETSOCKOPT, &socket_fd, signal_thread);
 #endif
 					}
-				}
-
-				process_raw_arp_frame(raw_frame_data, processed_frame, &frame_length);
-				if (frame_length <= 0 || (size_t)frame_length < sizeof(struct eth_header) + sizeof(struct arp_header)) {
-					free(device_data);
-					device_data = NULL;
-					continue;
 				}
 
 				set_device_data(device_data, processed_frame, &socket_fd, device_data, signal_thread);
