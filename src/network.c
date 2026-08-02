@@ -175,11 +175,29 @@ void *network_routine(void *args) {
 				memset(processed_frame, 0, sizeof(processed_frame));
 				memset(control, 0, sizeof(control));
 
-				frame_length = recvfrom(socket_fd, raw_frame_data, sizeof(raw_frame_data), 0, NULL, NULL);
+				frame_length = recvmsg(socket_fd, &control_msg, 0);
 				if (frame_length < 0) {
 					free(device_data);
 					device_data = NULL;
 					break;
+				}
+
+				for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(&control_msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&control_msg, cmsg)) {
+					if (cmsg->cmsg_level == SOL_PACKET && cmsg->cmsg_type == PACKET_AUXDATA) {
+						struct tpacket_auxdata *aux = (struct tpacket_auxdata *)CMSG_DATA(cmsg);
+
+						if (aux->tp_vlan_tci != 0) {
+							uint16_t vid = aux->tp_vlan_tci & 0x0fff;
+							uint8_t pcp = (aux->tp_vlan_tci >> 13) & 0x7;
+							uint8_t dei = (aux->tp_vlan_tci >> 12) & 0x1;
+						}
+
+#ifdef TP_STATUS_VLAN_TPID_VALID
+						if (aux->tp_status & TP_STATUS_VLAN_TPID_VALID) {
+							aux->tp_vlan_tpid;
+						}
+#endif
+					}
 				}
 
 				process_raw_arp_frame(raw_frame_data, processed_frame, &frame_length);
