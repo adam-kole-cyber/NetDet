@@ -31,23 +31,24 @@ int32_t bind_update_fd;
 struct if_nameindex binded_interface = {0};
 pthread_mutex_t binded_interface_mutex;
 
-static void get_vlan_info(struct msghdr *control_msg, int32_t *socket_fd, pthread_t signal_thread) {
+static void get_vlan_info(struct msghdr *control_msg, unsigned char *processed_frame, int32_t *socket_fd, pthread_t signal_thread) {
 
 	for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(control_msg); cmsg != NULL; cmsg = CMSG_NXTHDR(control_msg, cmsg)) {
 		if (cmsg->cmsg_level == SOL_PACKET && cmsg->cmsg_type == PACKET_AUXDATA) {
 			struct tpacket_auxdata *aux = (struct tpacket_auxdata *)CMSG_DATA(cmsg);
 
 #ifdef TP_STATUS_VLAN_TPID_VALID
-			if ((aux->tp_status & TP_STATUS_VLAN_TPID_VALID) && (aux->tp_status & TP_STATUS_VLAN_VALID)) {
-				uint16_t vid = aux->tp_vlan_tci & 0x0fff;
-				uint8_t pcp = (aux->tp_vlan_tci >> 13) & 0x7;
-				uint8_t dei = (aux->tp_vlan_tci >> 12) & 0x1;
+			if (aux->tp_status & TP_STATUS_VLAN_VALID) {		  // VLAN tag is present
+				if (aux->tp_status & TP_STATUS_VLAN_TPID_VALID) { // TPID is available
+					memcpy(&processed_frame[12], &aux->tp_vlan_tpid, sizeof(aux->tp_vlan_tpid));
+					memcpy(&processed_frame[14], &aux->tp_vlan_tci, sizeof(aux->tp_vlan_tci));
+				} else { // TPID is unavailable (most likely due to RX VLAN OFFLOAD)
+				}
 
-			} else {
-				network_error(APP_ERR_SETSOCKOPT, socket_fd, signal_thread);
+			} else { // frame was not tagged continue
 			}
 #else
-			network_error(APP_ERR_SETSOCKOPT, socket_fd, signal_thread);
+			// rx offload off or rebuild against newer Linux headers
 #endif
 		}
 	}
@@ -213,7 +214,7 @@ void *network_routine(void *args) {
 					continue;
 				}
 
-				get_vlan_info(&control_msg, &socket_fd, signal_thread);
+				get_vlan_info(&control_msg, processed_frame, &socket_fd, signal_thread);
 
 				set_device_data(device_data, processed_frame, &socket_fd, device_data, signal_thread);
 
