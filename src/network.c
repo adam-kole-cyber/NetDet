@@ -31,6 +31,30 @@ int32_t bind_update_fd;
 struct if_nameindex binded_interface = {0};
 pthread_mutex_t binded_interface_mutex;
 
+static void get_vlan_info(struct msghdr *control_msg, int32_t *socket_fd, pthread_t signal_thread) {
+
+	for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(control_msg); cmsg != NULL; cmsg = CMSG_NXTHDR(control_msg, cmsg)) {
+		if (cmsg->cmsg_level == SOL_PACKET && cmsg->cmsg_type == PACKET_AUXDATA) {
+			struct tpacket_auxdata *aux = (struct tpacket_auxdata *)CMSG_DATA(cmsg);
+
+#ifdef TP_STATUS_VLAN_TPID_VALID
+			if ((aux->tp_status & TP_STATUS_VLAN_TPID_VALID) && (aux->tp_status & TP_STATUS_VLAN_VALID)) {
+				uint16_t vid = aux->tp_vlan_tci & 0x0fff;
+				uint8_t pcp = (aux->tp_vlan_tci >> 13) & 0x7;
+				uint8_t dei = (aux->tp_vlan_tci >> 12) & 0x1;
+
+			} else {
+				network_error(APP_ERR_SETSOCKOPT, socket_fd, signal_thread);
+			}
+#else
+			network_error(APP_ERR_SETSOCKOPT, socket_fd, signal_thread);
+#endif
+		}
+	}
+
+	return;
+}
+
 static void change_bind(int32_t *socket_fd, int32_t *epoll, pthread_t signal_thread) {
 	struct sockaddr_ll sll;
 	memset(&sll, 0, sizeof(sll));
@@ -189,35 +213,7 @@ void *network_routine(void *args) {
 					continue;
 				}
 
-				for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(&control_msg); cmsg != NULL; cmsg = CMSG_NXTHDR(&control_msg, cmsg)) {
-					if (cmsg->cmsg_level == SOL_PACKET && cmsg->cmsg_type == PACKET_AUXDATA) {
-						struct tpacket_auxdata *aux = (struct tpacket_auxdata *)CMSG_DATA(cmsg);
-
-						if (aux->tp_vlan_tci != 0) {
-							uint16_t vid = aux->tp_vlan_tci & 0x0fff;
-							uint8_t pcp = (aux->tp_vlan_tci >> 13) & 0x7;
-							uint8_t dei = (aux->tp_vlan_tci >> 12) & 0x1;
-						}
-
-#ifdef TP_STATUS_VLAN_TPID_VALID
-						if (aux->tp_status & TP_STATUS_VLAN_TPID_VALID) {
-							switch (ntohs(aux->tp_vlan_tpid)) {
-							case 0x8100:
-								break;
-							case 0x88a8:
-								break;
-							default:
-								network_error(APP_ERR_SETSOCKOPT, &socket_fd, signal_thread);
-								break;
-							}
-						} else {
-							network_error(APP_ERR_SETSOCKOPT, &socket_fd, signal_thread);
-						}
-#else
-						network_error(APP_ERR_SETSOCKOPT, &socket_fd, signal_thread);
-#endif
-					}
-				}
+				get_vlan_info(&control_msg, &socket_fd, signal_thread);
 
 				set_device_data(device_data, processed_frame, &socket_fd, device_data, signal_thread);
 
