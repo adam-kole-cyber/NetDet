@@ -72,6 +72,7 @@ static void get_vlan_info(struct msghdr *control_msg, unsigned char *processed_f
 }
 
 static void change_bind(int32_t *socket_fd, int32_t *epoll, pthread_t signal_thread) {
+	int32_t enable = 1;
 	struct sockaddr_ll sll;
 	memset(&sll, 0, sizeof(sll));
 
@@ -83,6 +84,11 @@ static void change_bind(int32_t *socket_fd, int32_t *epoll, pthread_t signal_thr
 		set_error(APP_ERR_SOCKET, errno);
 		pthread_kill(signal_thread, SIGUSR1);
 		pthread_exit(NULL);
+		return;
+	}
+
+	if (setsockopt(*socket_fd, SOL_PACKET, PACKET_AUXDATA, &enable, sizeof(enable)) == -1) {
+		network_error(APP_ERR_SETSOCKOPT, socket_fd, signal_thread);
 		return;
 	}
 
