@@ -40,15 +40,30 @@ static void get_vlan_info(struct msghdr *control_msg, unsigned char *processed_f
 #ifdef TP_STATUS_VLAN_TPID_VALID
 			if (aux->tp_status & TP_STATUS_VLAN_VALID) {		  // VLAN tag is present
 				if (aux->tp_status & TP_STATUS_VLAN_TPID_VALID) { // TPID is available
-					memcpy(&processed_frame[12], &aux->tp_vlan_tpid, sizeof(aux->tp_vlan_tpid));
-					memcpy(&processed_frame[14], &aux->tp_vlan_tci, sizeof(aux->tp_vlan_tci));
+					uint16_t offset = 0;
+					uint16_t tpid = ntohs(aux->tp_vlan_tpid);
+
+					if (tpid == 0x88a8) {
+						offset = 12;
+					} else if (tpid == 0x8100) {
+						offset = 16;
+					} else {
+						return;
+					}
+
+					memcpy(&processed_frame[offset], &aux->tp_vlan_tpid, sizeof(aux->tp_vlan_tpid));
+					memcpy(&processed_frame[offset + 2], &aux->tp_vlan_tci, sizeof(aux->tp_vlan_tci));
 				} else { // TPID is unavailable (most likely due to RX VLAN OFFLOAD)
+					network_error(APP_ERR_ANCILLARY_DATA, socket_fd, signal_thread);
+					return;
 				}
 
 			} else { // frame was not tagged continue
+				continue;
 			}
 #else
 			// rx offload off or rebuild against newer Linux headers
+			network_error(APP_ERR_ANCILLARY_DATA, socket_fd, signal_thread);
 #endif
 		}
 	}

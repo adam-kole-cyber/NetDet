@@ -20,7 +20,7 @@ static const char *error_code_to_text(error_code err) {
 	case APP_ERR_SETSOCKOPT:
 		return "setsockopt() failed";
 	case APP_ERR_ANCILLARY_DATA:
-		return "Ancillary data are not available.";
+		return "Ancillary data are not available. Try disabling RX VLAN offload for that interface, or rebuild against newer Linux headers.";
 	case APP_ERR_IF_NAMEINDEX:
 		return "if_nameindex() failed";
 	case APP_ERR_IF_NAMETOINDEX:
