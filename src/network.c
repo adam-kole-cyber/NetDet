@@ -12,10 +12,12 @@
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <net/if.h>
+#include <netinet/in.h>
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/epoll.h>
@@ -36,12 +38,12 @@ static void get_vlan_info(struct msghdr *control_msg, unsigned char *processed_f
 	for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(control_msg); cmsg != NULL; cmsg = CMSG_NXTHDR(control_msg, cmsg)) {
 		if (cmsg->cmsg_level == SOL_PACKET && cmsg->cmsg_type == PACKET_AUXDATA) {
 			struct tpacket_auxdata *aux = (struct tpacket_auxdata *)CMSG_DATA(cmsg);
-
+			fprintf(stderr, "tp_status=0x%x vlan_tci=0x%x vlan_tpid=0x%x\n", aux->tp_status, aux->tp_vlan_tci, ntohs(aux->tp_vlan_tpid));
 #ifdef TP_STATUS_VLAN_TPID_VALID
 			if (aux->tp_status & TP_STATUS_VLAN_VALID) {		  // VLAN tag is present
 				if (aux->tp_status & TP_STATUS_VLAN_TPID_VALID) { // TPID is available
 					uint16_t offset = 0;
-					uint16_t tpid = ntohs(aux->tp_vlan_tpid);
+					uint16_t tpid = aux->tp_vlan_tpid;
 
 					if (tpid == 0x88a8) {
 						offset = 12;
@@ -51,8 +53,11 @@ static void get_vlan_info(struct msghdr *control_msg, unsigned char *processed_f
 						return;
 					}
 
-					memcpy(&processed_frame[offset], &aux->tp_vlan_tpid, sizeof(aux->tp_vlan_tpid));
-					memcpy(&processed_frame[offset + 2], &aux->tp_vlan_tci, sizeof(aux->tp_vlan_tci));
+					uint16_t tpid_network_orded = htons(tpid);
+					uint16_t tci_network_order = htons(aux->tp_vlan_tci);
+
+					memcpy(&processed_frame[offset], &tpid_network_orded, sizeof(tpid_network_orded));
+					memcpy(&processed_frame[offset + 2], &tci_network_order, sizeof(tci_network_order));
 				} else { // TPID is unavailable (most likely due to RX VLAN OFFLOAD)
 					network_error(APP_ERR_ANCILLARY_DATA, socket_fd, signal_thread);
 					return;
@@ -210,18 +215,16 @@ void *network_routine(void *args) {
 				device *device_data = malloc(sizeof(device) * 1);
 				ui_message msg = {0};
 				struct iovec iov = {.iov_base = raw_frame_data, .iov_len = sizeof(raw_frame_data)};
-				struct msghdr control_msg = {.msg_name = NULL,
-											 .msg_namelen = 0,
-											 .msg_iov = &iov,
-											 .msg_iovlen = 1,
-											 .msg_control = control,
-											 .msg_controllen = sizeof(control_msg)};
+				struct msghdr control_msg = {
+					.msg_name = NULL, .msg_namelen = 0, .msg_iov = &iov, .msg_iovlen = 1, .msg_control = control, .msg_controllen = sizeof(control)};
 
 				memset(raw_frame_data, 0, sizeof(raw_frame_data));
 				memset(processed_frame, 0, sizeof(processed_frame));
 				memset(control, 0, sizeof(control));
 
 				frame_length = recvmsg(socket_fd, &control_msg, 0);
+				fprintf(stderr, "raw[12-17]: %02x %02x %02x %02x %02x %02x\n", raw_frame_data[12], raw_frame_data[13], raw_frame_data[14],
+						raw_frame_data[15], raw_frame_data[16], raw_frame_data[17]);
 				if (frame_length < 0) {
 					free(device_data);
 					device_data = NULL;
