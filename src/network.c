@@ -38,7 +38,7 @@ static void get_vlan_info(struct msghdr *control_msg, unsigned char *processed_f
 	for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(control_msg); cmsg != NULL; cmsg = CMSG_NXTHDR(control_msg, cmsg)) {
 		if (cmsg->cmsg_level == SOL_PACKET && cmsg->cmsg_type == PACKET_AUXDATA) {
 			struct tpacket_auxdata *aux = (struct tpacket_auxdata *)CMSG_DATA(cmsg);
-			fprintf(stderr, "tp_status=0x%x vlan_tci=0x%x vlan_tpid=0x%x\n", aux->tp_status, aux->tp_vlan_tci, ntohs(aux->tp_vlan_tpid));
+
 #ifdef TP_STATUS_VLAN_TPID_VALID
 			if (aux->tp_status & TP_STATUS_VLAN_VALID) {		  // VLAN tag is present
 				if (aux->tp_status & TP_STATUS_VLAN_TPID_VALID) { // TPID is available
@@ -223,8 +223,6 @@ void *network_routine(void *args) {
 				memset(control, 0, sizeof(control));
 
 				frame_length = recvmsg(socket_fd, &control_msg, 0);
-				fprintf(stderr, "raw[12-17]: %02x %02x %02x %02x %02x %02x\n", raw_frame_data[12], raw_frame_data[13], raw_frame_data[14],
-						raw_frame_data[15], raw_frame_data[16], raw_frame_data[17]);
 				if (frame_length < 0) {
 					free(device_data);
 					device_data = NULL;
