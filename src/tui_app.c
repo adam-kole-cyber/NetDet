@@ -10,6 +10,9 @@ static inline void sync_display_limit(sliding_window_buffer *buffer) {
 
 static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t *mac, bool highlight_line) {
 	short pair = 0;
+	char mac_string[18];
+
+	snprintf(mac_string, sizeof(mac_string), "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
 	if (highlight_line) {
 		if ((mac[0] & 0x03) == 0x03)
@@ -32,7 +35,7 @@ static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t
 	}
 
 	wattrset(window, pair ? COLOR_PAIR(pair) : A_NORMAL);
-	mvwprintw(window, row, column, "%02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	mvwprintw(window, row, column, "%-*s", 22, mac_string);
 	wattrset(window, A_NORMAL);
 
 	if (highlight_line) {
@@ -46,22 +49,32 @@ static void print_ip(WINDOW *window, const uint8_t *ip) {
 	char ip_string[16];
 
 	snprintf(ip_string, sizeof(ip_string), "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
-	wprintw(window, "\t%-*s", 16, ip_string);
+	wprintw(window, "%-*s", 16, ip_string);
 	return;
 }
 
 static void print_qinq(WINDOW *window, const uint32_t *qinq_tag) {
-	wprintw(window, "%u\t\t", (*qinq_tag & 0xfff));
+	char qinq_string[5];
+
+	snprintf(qinq_string, sizeof(qinq_string), "%u", (*qinq_tag & 0xfff));
+	wprintw(window, "%-*s", 25, qinq_string);
 	return;
 }
 
 static void print_dot1q(WINDOW *window, const uint32_t *dot1q_tag) {
-	wprintw(window, "%u\t\t", (*dot1q_tag & 0xfff));
+	char dot1q_string[5];
+
+	snprintf(dot1q_string, sizeof(dot1q_string), "%u", (*dot1q_tag & 0xfff));
+	wprintw(window, "%-*s", 25, dot1q_string);
 	return;
 }
 
 static void print_lastseen(WINDOW *window, const time_struct *last_seen) {
-	wprintw(window, "%02u:%02u:%02u", atomic_load(&last_seen->hour), atomic_load(&last_seen->minutes), atomic_load(&last_seen->seconds));
+	char last_seen_string[9];
+
+	snprintf(last_seen_string, sizeof(last_seen_string), "%02u:%02u:%02u", atomic_load(&last_seen->hour), atomic_load(&last_seen->minutes),
+			 atomic_load(&last_seen->seconds));
+	wprintw(window, "%-*s", 2, last_seen_string);
 	return;
 }
 
