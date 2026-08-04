@@ -18,6 +18,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+int32_t col_width = 0;
+
 void draw_window_frame(window_data *window_data, const char *title) {
 	bool title_set = title != NULL;
 	int32_t last_usable_column = window_data->width - 1; // the window width will be reduced due to the frame
@@ -108,8 +110,8 @@ void draw(app_context *variables) {
 		wnoutrefresh(stdscr);
 		werase(variables->main_window.window);
 		draw_window_frame(&variables->main_window, " NetDet ");
-		draw_table_header(variables->main_window.window);
-		print_network_data(variables->main_window.window, &variables->buffer);
+		draw_table_header(variables->main_window.window, col_width);
+		print_network_data(variables->main_window.window, &variables->buffer, col_width);
 
 		if (variables->popup_window.is_active) {
 			werase(variables->popup_window.window);
@@ -132,6 +134,8 @@ void resize_handler(app_context *variables) {
 	variables->main_window.width = COLS - (WINDOW_OUTER_INDENT * 2);
 	wresize(variables->main_window.window, variables->main_window.height, variables->main_window.width);
 	move_panel(variables->main_window.panel, variables->main_window.start_y, variables->main_window.start_x);
+
+	col_width = (variables->main_window.width - 4) / 5;
 
 	uint32_t i = (variables->main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) < 0
 					 ? 0

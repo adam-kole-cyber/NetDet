@@ -1,6 +1,7 @@
 #include "tui_app.h"
 #include "device.h"
 #include <ncurses.h>
+#include <stdint.h>
 #include <stdio.h>
 
 static inline void sync_display_limit(sliding_window_buffer *buffer) {
@@ -8,7 +9,7 @@ static inline void sync_display_limit(sliding_window_buffer *buffer) {
 		(atomic_load(&buffer->view.viewport_capacity) < buffer->size) ? atomic_load(&buffer->view.viewport_capacity) : buffer->size;
 }
 
-static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t *mac, bool highlight_line) {
+static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t *mac, bool highlight_line, int32_t col_width) {
 	short pair = 0;
 	char mac_string[18];
 
@@ -35,7 +36,7 @@ static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t
 	}
 
 	wattrset(window, pair ? COLOR_PAIR(pair) : A_NORMAL);
-	mvwprintw(window, row, column, "%-*s", 22, mac_string);
+	mvwprintw(window, row, column, "%-*s", col_width, mac_string);
 	wattrset(window, A_NORMAL);
 
 	if (highlight_line) {
@@ -45,58 +46,60 @@ static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t
 	return;
 }
 
-static void print_ip(WINDOW *window, const uint8_t *ip) {
+static void print_ip(WINDOW *window, const uint8_t *ip, int32_t col_width) {
 	char ip_string[16];
 
 	snprintf(ip_string, sizeof(ip_string), "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
-	wprintw(window, "%-*s", 16, ip_string);
+	wprintw(window, "%-*s", col_width, ip_string);
 	return;
 }
 
-static void print_qinq(WINDOW *window, const uint32_t *qinq_tag) {
+static void print_qinq(WINDOW *window, const uint32_t *qinq_tag, int32_t col_width) {
 	char qinq_string[5];
 
 	snprintf(qinq_string, sizeof(qinq_string), "%u", (*qinq_tag & 0xfff));
-	wprintw(window, "%-*s", 25, qinq_string);
+	wprintw(window, "%-*s", col_width, qinq_string);
 	return;
 }
 
-static void print_dot1q(WINDOW *window, const uint32_t *dot1q_tag) {
+static void print_dot1q(WINDOW *window, const uint32_t *dot1q_tag, int32_t col_width) {
 	char dot1q_string[5];
 
 	snprintf(dot1q_string, sizeof(dot1q_string), "%u", (*dot1q_tag & 0xfff));
-	wprintw(window, "%-*s", 25, dot1q_string);
+	wprintw(window, "%-*s", col_width, dot1q_string);
 	return;
 }
 
-static void print_lastseen(WINDOW *window, const time_struct *last_seen) {
+static void print_lastseen(WINDOW *window, const time_struct *last_seen, int32_t col_width) {
 	char last_seen_string[9];
 
 	snprintf(last_seen_string, sizeof(last_seen_string), "%02u:%02u:%02u", atomic_load(&last_seen->hour), atomic_load(&last_seen->minutes),
 			 atomic_load(&last_seen->seconds));
-	wprintw(window, "%-*s", 2, last_seen_string);
+	wprintw(window, "%-*s", col_width, last_seen_string);
 	return;
 }
 
-static void print_network_row(WINDOW *window, int32_t row, int32_t column, const device *device_data, bool highlight_line) {
-	print_mac(window, row, column, device_data->mac, highlight_line);
-	print_ip(window, device_data->ip);
-	print_qinq(window, &device_data->qinq_tag);
-	print_dot1q(window, &device_data->dot1q_tag);
-	print_lastseen(window, &device_data->last_seen);
+static void print_network_row(WINDOW *window, int32_t row, int32_t column, const device *device_data, bool highlight_line, int32_t col_width) {
+	print_mac(window, row, column, device_data->mac, highlight_line, col_width);
+	print_ip(window, device_data->ip, col_width);
+	print_qinq(window, &device_data->qinq_tag, col_width);
+	print_dot1q(window, &device_data->dot1q_tag, col_width);
+	print_lastseen(window, &device_data->last_seen, col_width);
 
 	return;
 }
 
-void draw_table_header(WINDOW *window) {
+void draw_table_header(WINDOW *window, int32_t col_width) {
 	wattron(window, COLOR_PAIR(2));
-	mvwprintw(window, 1, 2, "MAC\t\t\tIP\t\t802.1ad\t\t802.1Q\t\tLast seen");
+	// mvwprintw(window, 1, 2, "MAC\t\t\tIP\t\t802.1ad\t\t802.1Q\t\tLast seen");
+	mvwprintw(window, 1, 2, "%-*s%-*s%-*s%-*s%-*s", col_width, "MAC", col_width, "IP", col_width, "802.1ad", col_width, "802.1Q", col_width,
+			  "Last seen");
 	wattroff(window, COLOR_PAIR(2));
 
 	return;
 }
 
-void print_network_data(WINDOW *window, sliding_window_buffer *buffer) {
+void print_network_data(WINDOW *window, sliding_window_buffer *buffer, int32_t col_width) {
 	int32_t display_row_start = 2;
 
 	sync_display_limit(buffer);
@@ -111,7 +114,7 @@ void print_network_data(WINDOW *window, sliding_window_buffer *buffer) {
 			wattron(window, COLOR_PAIR(3));
 		}
 
-		print_network_row(window, display_row_start + i, 2, buffer->items[buffer->view.head + i], i == (uint32_t)buffer->view.cursor);
+		print_network_row(window, display_row_start + i, 2, buffer->items[buffer->view.head + i], i == (uint32_t)buffer->view.cursor, col_width);
 
 		if (i == (uint32_t)buffer->view.cursor) {
 			wattroff(window, COLOR_PAIR(3));

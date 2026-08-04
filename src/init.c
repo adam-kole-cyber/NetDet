@@ -59,6 +59,8 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 	variables->main_window.panel = new_panel(variables->main_window.window);
 	keypad(variables->main_window.window, TRUE);
 
+	col_width = (variables->main_window.width - 4) / 5;
+
 	variables->popup_window.is_active = false;
 	variables->popup_window.start_x = 0;
 	variables->popup_window.start_y = 0;
