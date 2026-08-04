@@ -1,6 +1,7 @@
 #include "tui_app.h"
 #include "device.h"
 #include <ncurses.h>
+#include <stdio.h>
 
 static inline void sync_display_limit(sliding_window_buffer *buffer) {
 	buffer->view.visible =
@@ -42,7 +43,11 @@ static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t
 }
 
 static void print_ip(WINDOW *window, const uint8_t *ip) {
-	wprintw(window, "\t%u.%u.%u.%u\t", ip[0], ip[1], ip[2], ip[3]);
+	char ip_string[16];
+
+	snprintf(ip_string, sizeof(ip_string), "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
+	// wprintw(window, "\t%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
+	wprintw(window, "\t%-*s", 16, ip_string);
 	return;
 }
 
