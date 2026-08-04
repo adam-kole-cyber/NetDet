@@ -46,7 +46,6 @@ static void print_ip(WINDOW *window, const uint8_t *ip) {
 	char ip_string[16];
 
 	snprintf(ip_string, sizeof(ip_string), "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
-	// wprintw(window, "\t%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
 	wprintw(window, "\t%-*s", 16, ip_string);
 	return;
 }
