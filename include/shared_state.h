@@ -18,5 +18,6 @@ extern interfaces_list popup_list;
 extern int32_t bind_update_fd;
 extern pthread_mutex_t binded_interface_mutex;
 extern int32_t col_width;
+extern int32_t col_width_remainder;
 
 #endif

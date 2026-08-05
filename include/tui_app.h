@@ -5,7 +5,7 @@
 #include <ncurses.h>
 #include <stdint.h>
 
-void draw_table_header(WINDOW *window, int32_t col_width);
-void print_network_data(WINDOW *window, sliding_window_buffer *buffer, int32_t col_width);
+void draw_table_header(WINDOW *window);
+void print_network_data(WINDOW *window, sliding_window_buffer *buffer);
 
 #endif

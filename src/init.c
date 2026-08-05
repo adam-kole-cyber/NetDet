@@ -60,6 +60,7 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 	keypad(variables->main_window.window, TRUE);
 
 	col_width = (variables->main_window.width - 4) / 4;
+	col_width_remainder = (variables->main_window.width - 4) % 4;
 
 	variables->popup_window.is_active = false;
 	variables->popup_window.start_x = 0;

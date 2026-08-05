@@ -19,6 +19,7 @@
 #include <unistd.h>
 
 int32_t col_width = 0;
+int32_t col_width_remainder = 0;
 
 void draw_window_frame(window_data *window_data, const char *title) {
 	bool title_set = title != NULL;
@@ -110,8 +111,8 @@ void draw(app_context *variables) {
 		wnoutrefresh(stdscr);
 		werase(variables->main_window.window);
 		draw_window_frame(&variables->main_window, " NetDet ");
-		draw_table_header(variables->main_window.window, col_width);
-		print_network_data(variables->main_window.window, &variables->buffer, col_width);
+		draw_table_header(variables->main_window.window);
+		print_network_data(variables->main_window.window, &variables->buffer);
 
 		if (variables->popup_window.is_active) {
 			werase(variables->popup_window.window);
@@ -136,6 +137,7 @@ void resize_handler(app_context *variables) {
 	move_panel(variables->main_window.panel, variables->main_window.start_y, variables->main_window.start_x);
 
 	col_width = (variables->main_window.width - 4) / 4;
+	col_width_remainder = (variables->main_window.width - 4) % 4;
 
 	uint32_t i = (variables->main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) < 0
 					 ? 0
