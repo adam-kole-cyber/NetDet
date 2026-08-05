@@ -75,7 +75,7 @@ static void print_lastseen(WINDOW *window, const time_struct *last_seen, int32_t
 
 	snprintf(last_seen_string, sizeof(last_seen_string), "%02u:%02u:%02u", atomic_load(&last_seen->hour), atomic_load(&last_seen->minutes),
 			 atomic_load(&last_seen->seconds));
-	wprintw(window, "%-*s", col_width, last_seen_string);
+	wprintw(window, "%*s", col_width, last_seen_string);
 	return;
 }
 
@@ -83,17 +83,17 @@ static void print_network_row(WINDOW *window, int32_t row, int32_t column, const
 	print_mac(window, row, column, device_data->mac, highlight_line, col_width);
 	print_ip(window, device_data->ip, col_width);
 	print_qinq(window, &device_data->qinq_tag, col_width);
-	print_dot1q(window, &device_data->dot1q_tag, col_width);
-	print_lastseen(window, &device_data->last_seen, col_width);
+	print_dot1q(window, &device_data->dot1q_tag, (col_width / 2));
+	print_lastseen(window, &device_data->last_seen, (col_width / 2));
 
 	return;
 }
 
 void draw_table_header(WINDOW *window, int32_t col_width) {
 	wattron(window, COLOR_PAIR(2));
-	// mvwprintw(window, 1, 2, "MAC\t\t\tIP\t\t802.1ad\t\t802.1Q\t\tLast seen");
-	mvwprintw(window, 1, 2, "%-*s%-*s%-*s%-*s%-*s", col_width, "MAC", col_width, "IP", col_width, "802.1ad", col_width, "802.1Q", col_width,
-			  "Last seen");
+
+	mvwprintw(window, 1, 2, "%-*s%-*s%-*s%-*s%*s", col_width, "MAC", col_width, "IP", col_width, "802.1ad", (col_width / 2), "802.1Q",
+			  (col_width / 2), "Last seen");
 	wattroff(window, COLOR_PAIR(2));
 
 	return;

@@ -135,7 +135,7 @@ void resize_handler(app_context *variables) {
 	wresize(variables->main_window.window, variables->main_window.height, variables->main_window.width);
 	move_panel(variables->main_window.panel, variables->main_window.start_y, variables->main_window.start_x);
 
-	col_width = (variables->main_window.width - 4) / 5;
+	col_width = (variables->main_window.width - 4) / 4;
 
 	uint32_t i = (variables->main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) < 0
 					 ? 0
