@@ -113,7 +113,6 @@ void draw(app_context *variables) {
 		draw_window_frame(&variables->main_window, " NetDet ");
 		draw_table_header(variables->main_window.window);
 		print_network_data(variables->main_window.window, &variables->buffer);
-		mvwprintw(variables->main_window.window, 0, 10, "%d %d", variables->main_window.width, variables->main_window.height);
 
 		if (variables->popup_window.is_active) {
 			werase(variables->popup_window.window);
