@@ -56,7 +56,7 @@ static void print_ip(WINDOW *window, const uint8_t *ip) {
 }
 
 static void print_qinq(WINDOW *window, const uint32_t *qinq_tag, bool highlight_line) {
-	if (((*qinq_tag & 0xfff) != 0) || ((*qinq_tag & 0xf000) != 0)) {
+	if ((*qinq_tag & 0xffff) != 0) {
 		char qinq_string[5];
 
 		snprintf(qinq_string, sizeof(qinq_string), "%u", (*qinq_tag & 0xfff));
@@ -81,7 +81,7 @@ static void print_qinq(WINDOW *window, const uint32_t *qinq_tag, bool highlight_
 }
 
 static void print_dot1q(WINDOW *window, const uint32_t *dot1q_tag, bool highlight_line) {
-	if (((*dot1q_tag & 0xfff) != 0) || ((*dot1q_tag & 0xf000) != 0)) {
+	if ((*dot1q_tag & 0xffff) != 0) {
 		char dot1q_string[5];
 
 		snprintf(dot1q_string, sizeof(dot1q_string), "%u", (*dot1q_tag & 0xfff));
