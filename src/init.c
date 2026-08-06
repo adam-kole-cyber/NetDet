@@ -11,6 +11,7 @@
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <locale.h>
+#include <ncurses.h>
 #include <net/ethernet.h>
 #include <net/if.h>
 #include <netinet/in.h>
@@ -215,6 +216,7 @@ void ncurses_init(void) {
 		init_pair(6, COLOR_RED, COLOR_BLACK);
 		init_pair(7, COLOR_YELLOW, COLOR_BLACK);
 		init_pair(8, COLOR_GREEN, COLOR_BLACK);
+		init_pair(9, COLOR_CYAN, COLOR_BLACK);
 	}
 
 	return;

@@ -60,7 +60,26 @@ static void print_qinq(WINDOW *window, const uint32_t *qinq_tag, bool highlight_
 		char qinq_string[5];
 
 		snprintf(qinq_string, sizeof(qinq_string), "%u", (*qinq_tag & 0xfff));
+
+		if ((*qinq_tag & 0xf000) != 0) {
+			int32_t pair = 0;
+
+			if (highlight_line) {
+				pair = 9;
+			} else {
+				pair = 5;
+			}
+
+			wattrset(window, COLOR_PAIR(pair));
+		}
+
 		wprintw(window, "%-*s", col_width, qinq_string);
+		wattrset(window, A_NORMAL);
+
+		if (highlight_line) {
+			wattron(window, COLOR_PAIR(3));
+		}
+
 	} else {
 		int32_t pair = 0;
 		if (highlight_line) {
@@ -85,7 +104,25 @@ static void print_dot1q(WINDOW *window, const uint32_t *dot1q_tag, bool highligh
 		char dot1q_string[5];
 
 		snprintf(dot1q_string, sizeof(dot1q_string), "%u", (*dot1q_tag & 0xfff));
+
+		if ((*dot1q_tag & 0xf000) != 0) {
+			int32_t pair = 0;
+
+			if (highlight_line) {
+				pair = 9;
+			} else {
+				pair = 5;
+			}
+
+			wattrset(window, COLOR_PAIR(pair));
+		}
+
 		wprintw(window, "%-*s", (col_width / 2), dot1q_string);
+		wattrset(window, A_NORMAL);
+
+		if (highlight_line) {
+			wattron(window, COLOR_PAIR(3));
+		}
 	} else {
 		int32_t pair = 0;
 		if (highlight_line) {
