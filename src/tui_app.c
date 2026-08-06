@@ -55,26 +55,52 @@ static void print_ip(WINDOW *window, const uint8_t *ip) {
 	return;
 }
 
-static void print_qinq(WINDOW *window, const uint32_t *qinq_tag) {
+static void print_qinq(WINDOW *window, const uint32_t *qinq_tag, bool highlight_line) {
 	if (((*qinq_tag & 0xfff) != 0) || ((*qinq_tag & 0xf000) != 0)) {
 		char qinq_string[5];
 
 		snprintf(qinq_string, sizeof(qinq_string), "%u", (*qinq_tag & 0xfff));
 		wprintw(window, "%-*s", col_width, qinq_string);
 	} else {
+		int32_t pair = 0;
+		if (highlight_line) {
+			pair = 6;
+		} else {
+			pair = 4;
+		}
+
+		wattrset(window, COLOR_PAIR(pair));
 		wprintw(window, "%-*s", col_width, "-");
+		wattrset(window, A_NORMAL);
+
+		if (highlight_line) {
+			wattron(window, COLOR_PAIR(3));
+		}
 	}
 	return;
 }
 
-static void print_dot1q(WINDOW *window, const uint32_t *dot1q_tag) {
+static void print_dot1q(WINDOW *window, const uint32_t *dot1q_tag, bool highlight_line) {
 	if (((*dot1q_tag & 0xfff) != 0) || ((*dot1q_tag & 0xf000) != 0)) {
 		char dot1q_string[5];
 
 		snprintf(dot1q_string, sizeof(dot1q_string), "%u", (*dot1q_tag & 0xfff));
 		wprintw(window, "%-*s", (col_width / 2), dot1q_string);
 	} else {
+		int32_t pair = 0;
+		if (highlight_line) {
+			pair = 6;
+		} else {
+			pair = 4;
+		}
+
+		wattrset(window, COLOR_PAIR(pair));
 		wprintw(window, "%-*s", (col_width / 2), "-");
+		wattrset(window, A_NORMAL);
+
+		if (highlight_line) {
+			wattron(window, COLOR_PAIR(3));
+		}
 	}
 	return;
 }
@@ -91,8 +117,8 @@ static void print_lastseen(WINDOW *window, const time_struct *last_seen) {
 static void print_network_row(WINDOW *window, int32_t row, int32_t column, const device *device_data, bool highlight_line) {
 	print_mac(window, row, column, device_data->mac, highlight_line);
 	print_ip(window, device_data->ip);
-	print_qinq(window, &device_data->qinq_tag);
-	print_dot1q(window, &device_data->dot1q_tag);
+	print_qinq(window, &device_data->qinq_tag, highlight_line);
+	print_dot1q(window, &device_data->dot1q_tag, highlight_line);
 	print_lastseen(window, &device_data->last_seen);
 
 	return;
