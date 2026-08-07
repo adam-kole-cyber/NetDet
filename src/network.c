@@ -198,6 +198,7 @@ void *network_routine(void *args) {
 	int32_t epoll_fd;
 	int32_t socket_fd;
 	int32_t timer_fd;
+	int32_t timer_ticks = 0;
 	hash_map map;
 	pthread_t signal_thread = ((struct network_thread_args *)args)->signal_thread;
 	struct epoll_event events[4];
@@ -268,6 +269,10 @@ void *network_routine(void *args) {
 				read(bind_update_fd, &read_event, sizeof(read_event)); // resets counter
 
 				change_bind(&socket_fd, &epoll_fd, signal_thread);
+			} else if (events[i].data.fd == timer_fd) {
+				read(timer_fd, &timer_ticks, sizeof(timer_ticks));
+
+				// TODO update devices
 			} else if (events[i].data.fd == shutdown_network_fd) {
 				continue;
 			}
