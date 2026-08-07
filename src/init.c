@@ -7,6 +7,8 @@
 #include "shared_state.h"
 #include "signal_handler.h"
 #include "tui.h"
+#include <bits/time.h>
+#include <bits/types/struct_itimerspec.h>
 #include <errno.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
@@ -26,6 +28,7 @@
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <sys/socket.h>
+#include <sys/timerfd.h>
 #include <unistd.h>
 
 void main_init(app_context *variables, struct network_thread_args *args) {
@@ -86,8 +89,9 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 	return;
 }
 
-void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map *map, int32_t *epoll_fd) {
+void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map *map, int32_t *epoll_fd, int32_t *timer_fd) {
 	int32_t enable = 1;
+	struct itimerspec timer = {.it_value = {.tv_sec = 1, .tv_nsec = 0}, .it_interval = {.tv_sec = 1, .tv_nsec = 0}};
 	shutdown_network_fd = eventfd(0, 0);
 	bind_update_fd = eventfd(0, 0);
 
@@ -139,10 +143,14 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 	map->count = 0;
 	map->table = calloc(map->size, sizeof(hash_entry));
 
+	*timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
+	timerfd_settime(*timer_fd, 0, &timer, NULL);
+
 	*epoll_fd = epoll_create1(0);
 	epoll_register(*epoll_fd, bind_update_fd);
 	epoll_register(*epoll_fd, shutdown_network_fd);
 	epoll_register(*epoll_fd, *socket_fd);
+	epoll_register(*epoll_fd, *timer_fd);
 	return;
 }
 

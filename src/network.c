@@ -197,11 +197,12 @@ static void set_device_data(device *device_data, unsigned char *processed_frame,
 void *network_routine(void *args) {
 	int32_t epoll_fd;
 	int32_t socket_fd;
+	int32_t timer_fd;
 	hash_map map;
 	pthread_t signal_thread = ((struct network_thread_args *)args)->signal_thread;
-	struct epoll_event events[3];
+	struct epoll_event events[4];
 
-	network_init(&socket_fd, (struct network_thread_args *)args, &map, &epoll_fd);
+	network_init(&socket_fd, (struct network_thread_args *)args, &map, &epoll_fd, &timer_fd);
 
 	while (!atomic_load(&end_listen_loop)) {
 		int32_t number_of_events = epoll_wait(epoll_fd, events, 3, -1);
@@ -273,6 +274,6 @@ void *network_routine(void *args) {
 		}
 	}
 
-	network_clean_up(&map, &socket_fd, &epoll_fd);
+	network_clean_up(&map, &socket_fd, &epoll_fd, &timer_fd);
 	return NULL;
 }

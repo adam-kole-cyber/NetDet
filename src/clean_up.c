@@ -47,7 +47,7 @@ void main_clean_up(app_context *variables) {
 	return;
 }
 
-void network_clean_up(hash_map *map, int32_t *socket_fd, int32_t *epoll_fd) {
+void network_clean_up(hash_map *map, int32_t *socket_fd, int32_t *epoll_fd, int32_t *timer_fd) {
 
 	free(map->table);
 	map->table = NULL;
@@ -61,6 +61,7 @@ void network_clean_up(hash_map *map, int32_t *socket_fd, int32_t *epoll_fd) {
 	close(bind_update_fd);
 	close(*epoll_fd);
 	close(*socket_fd);
+	close(*timer_fd);
 	close(shutdown_network_fd);
 }
 
