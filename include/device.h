@@ -27,6 +27,8 @@ typedef struct {
 	uint8_t ip[4];
 	uint32_t qinq_tag;
 	uint32_t dot1q_tag;
+	uint32_t previsou_frames;
+	uint32_t total_frames;
 	time_struct last_seen;
 	rate_history graph;
 } device;
