@@ -8,6 +8,13 @@
 #include <stdint.h>
 
 #define BUFFER_INITIAL_SIZE 128
+#define RATE_HISTORY_SIZE 60
+
+typedef struct {
+	uint32_t data[RATE_HISTORY_SIZE];
+	int32_t head;
+	int32_t count;
+} rate_history;
 
 typedef struct {
 	atomic_uint_least8_t hour;
@@ -21,6 +28,7 @@ typedef struct {
 	uint32_t qinq_tag;
 	uint32_t dot1q_tag;
 	time_struct last_seen;
+	rate_history graph;
 } device;
 
 typedef struct {
