@@ -16,6 +16,7 @@
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -269,9 +270,17 @@ void *network_routine(void *args) {
 					if (hashmap_store_entry(&map, device_data) == -1) {
 						network_error(APP_ERR_HASHMAP_SOTRE_ENTRY, &socket_fd, signal_thread);
 					}
+					size_t size = sizeof(device_data->graph.data);
 
 					atomic_store(&device_data->previsou_frames, 0);
 					atomic_store(&device_data->total_frames, 1); // 1 because this frame, through which we discovered this device, also counts
+
+					device_data->graph.head = 0;
+					device_data->graph.count = 0;
+
+					for (uint32_t i = 0; i < size; i++) {
+						atomic_store(&device_data->graph.data[i], 0);
+					}
 
 					msg.msg_type = UI_NEW_ENTRY;
 					msg.data = device_data;
@@ -286,7 +295,20 @@ void *network_routine(void *args) {
 			} else if (events[i].data.fd == timer_fd) {
 				read(timer_fd, &timer_ticks, sizeof(timer_ticks));
 
-				// TODO update devices
+				for (uint32_t i = 0; i < map.size; i++) {
+					if (map.table[i].device == NULL) {
+						continue;
+					}
+
+					device *device_to_update = map.table[i].device;
+					uint32_t rate = atomic_load(&device_to_update->total_frames) - atomic_load(&device_to_update->previsou_frames);
+
+					atomic_store(&device_to_update->graph.data[device_to_update->graph.head], rate);
+					atomic_store(&device_to_update->previsou_frames, atomic_load(&device_to_update->total_frames));
+
+					device_to_update->graph.head++;
+				}
+
 			} else if (events[i].data.fd == shutdown_network_fd) {
 				continue;
 			}
