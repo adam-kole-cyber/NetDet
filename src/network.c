@@ -212,6 +212,7 @@ void *network_routine(void *args) {
 	int32_t timer_ticks = 0;
 	hash_map map;
 	pthread_t signal_thread = ((struct network_thread_args *)args)->signal_thread;
+	ui_message msg = {0};
 	struct epoll_event events[4];
 
 	network_init(&socket_fd, (struct network_thread_args *)args, &map, &epoll_fd, &timer_fd);
@@ -226,7 +227,6 @@ void *network_routine(void *args) {
 				char control[1024];
 				ssize_t frame_length = 0;
 				device *device_data = malloc(sizeof(device) * 1);
-				ui_message msg = {0};
 				struct iovec iov = {.iov_base = raw_frame_data, .iov_len = sizeof(raw_frame_data)};
 				struct msghdr control_msg = {
 					.msg_name = NULL, .msg_namelen = 0, .msg_iov = &iov, .msg_iovlen = 1, .msg_control = control, .msg_controllen = sizeof(control)};
@@ -262,7 +262,7 @@ void *network_routine(void *args) {
 					atomic_store(&exitsing_device->last_seen.seconds, device_data->last_seen.seconds);
 
 					msg.msg_type = UI_UPDATE_TABLE;
-					msg.data = NULL;
+					msg.data = NULL; // this can be used when optimizing TUI
 
 					free(device_data);
 					device_data = NULL;
@@ -309,6 +309,9 @@ void *network_routine(void *args) {
 					device_to_update->graph.head++;
 				}
 
+				/*msg.msg_type = UI_UPDATE_TABLE;
+				msg.data = NULL;
+				write(pipe_fd[1], &msg, sizeof(msg));*/
 			} else if (events[i].data.fd == shutdown_network_fd) {
 				continue;
 			}

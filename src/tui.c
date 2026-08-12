@@ -70,6 +70,9 @@ void input_handler(int32_t input, app_context *variables) {
 	case 'b':
 		popup_window_action(&variables->main_window, &variables->popup_window, variables->signal_thread);
 		break;
+	case 'i':
+		popup_window_action(&variables->main_window, &variables->popup_window, variables->signal_thread);
+		break;
 	case '\n':
 		if (variables->popup_window.is_active) {
 			int32_t selected = popup_list.view.head + popup_list.view.cursor;
@@ -90,6 +93,7 @@ void input_handler(int32_t input, app_context *variables) {
 
 			popup_window_action(&variables->main_window, &variables->popup_window, variables->signal_thread);
 		}
+
 		break;
 	default:
 		break;

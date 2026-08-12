@@ -7,8 +7,6 @@
 #include "shared_state.h"
 #include "signal_handler.h"
 #include "tui.h"
-#include <bits/time.h>
-#include <bits/types/struct_itimerspec.h>
 #include <errno.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
@@ -176,6 +174,7 @@ void popup_init(window_data *popup_window, const window_data *main_window, pthre
 	popup_window->window = newwin(popup_window->height, popup_window->width, popup_window->start_y, popup_window->start_x);
 	popup_window->panel = new_panel(popup_window->window);
 
+	// until this part, function is universal
 	kernel_interface = if_nameindex();
 	if (kernel_interface == NULL) {
 		main_error(APP_ERR_IF_NAMEINDEX, signal_thread);
