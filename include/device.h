@@ -11,7 +11,7 @@
 #define RATE_HISTORY_SIZE 60
 
 typedef struct {
-	uint32_t data[RATE_HISTORY_SIZE];
+	atomic_uint_least32_t data[RATE_HISTORY_SIZE];
 	int32_t head;
 	int32_t count;
 } rate_history;
@@ -27,8 +27,8 @@ typedef struct {
 	uint8_t ip[4];
 	uint32_t qinq_tag;
 	uint32_t dot1q_tag;
-	uint32_t previsou_frames;
-	uint32_t total_frames;
+	atomic_uint_least64_t previsou_frames;
+	atomic_uint_least64_t total_frames;
 	time_struct last_seen;
 	rate_history graph;
 } device;

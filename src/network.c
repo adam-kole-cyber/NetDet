@@ -194,6 +194,16 @@ static void set_device_data(device *device_data, unsigned char *processed_frame,
 	return;
 }
 
+static void raise_frame_count(device *device_to_update) {
+	if (device_to_update == NULL) {
+		return;
+	}
+
+	atomic_store(&device_to_update->total_frames, atomic_load(&device_to_update->total_frames) + 1);
+
+	return;
+}
+
 void *network_routine(void *args) {
 	int32_t epoll_fd;
 	int32_t socket_fd;
@@ -231,6 +241,8 @@ void *network_routine(void *args) {
 					break;
 				}
 
+				raise_frame_count(hashmap_check_entry(&map, &raw_frame_data[6])); // TODO consider increasing the frame rate and saving the device
+
 				process_raw_arp_frame(raw_frame_data, processed_frame, &frame_length);
 				if (frame_length <= 0 || (size_t)frame_length < sizeof(struct eth_header) + sizeof(struct arp_header)) {
 					free(device_data);
@@ -239,7 +251,6 @@ void *network_routine(void *args) {
 				}
 
 				get_vlan_info(&control_msg, processed_frame, &socket_fd, signal_thread);
-
 				set_device_data(device_data, processed_frame, &socket_fd, device_data, signal_thread);
 
 				device *exitsing_device = hashmap_check_entry(&map, device_data->mac);
@@ -258,6 +269,9 @@ void *network_routine(void *args) {
 					if (hashmap_store_entry(&map, device_data) == -1) {
 						network_error(APP_ERR_HASHMAP_SOTRE_ENTRY, &socket_fd, signal_thread);
 					}
+
+					atomic_store(&device_data->previsou_frames, 0);
+					atomic_store(&device_data->total_frames, 1); // 1 because this frame, through which we discovered this device, also counts
 
 					msg.msg_type = UI_NEW_ENTRY;
 					msg.data = device_data;
