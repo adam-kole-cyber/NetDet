@@ -3,12 +3,14 @@
 
 #include "tui.h"
 #include <pthread.h>
+#include <stdint.h>
 
 typedef struct {
 	const char *string;
 	union {
-		int (*get_int)(void);
 		char (*get_char)(void);
+		uint32_t (*get_vlan_tag)(void *arg);
+		uint32_t (*get_atomic_int)(void *arg);
 		const char *(*get_ip)(void *arg);
 		const char *(*get_str)(void);
 	} getter;
