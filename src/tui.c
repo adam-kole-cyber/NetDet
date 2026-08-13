@@ -12,6 +12,7 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -68,10 +69,14 @@ void input_handler(int32_t input, app_context *variables) {
 		}
 		break;
 	case 'b':
-		popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, variables->signal_thread);
+		popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL, variables->signal_thread);
 		break;
 	case 'i':
-		popup_window_action(&variables->main_window, &variables->popup_window, INSPECT_LIST, variables->signal_thread);
+		fprintf(stderr, "%d - %d\n", variables->buffer.view.head, variables->buffer.view.cursor);
+		device *action_device =
+			variables->buffer.items[variables->buffer.view.head +
+									variables->buffer.view.cursor]; // the way in wich is action device passed to function might be reworked later
+		popup_window_action(&variables->main_window, &variables->popup_window, INSPECT_LIST, action_device, variables->signal_thread);
 		break;
 	case '\n':
 		if (variables->popup_window.is_active) {
@@ -93,7 +98,7 @@ void input_handler(int32_t input, app_context *variables) {
 			uint64_t event_updated_bind = 1;
 			write(bind_update_fd, &event_updated_bind, sizeof(event_updated_bind));
 
-			popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, variables->signal_thread);
+			popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL, variables->signal_thread);
 		}
 
 		break;

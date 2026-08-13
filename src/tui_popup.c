@@ -144,7 +144,8 @@ static void interfaces_list_clean_up(void) {
 	return;
 }
 
-void popup_window_action(window_data *main_window, popup_window_data *popup_window, popup_type window_type, pthread_t signal_thread) {
+void popup_window_action(window_data *main_window, popup_window_data *popup_window, popup_type window_type, device *action_device,
+						 pthread_t signal_thread) {
 	static bool is_visible = false;
 
 	is_visible = !is_visible;
