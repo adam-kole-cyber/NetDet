@@ -68,10 +68,10 @@ void input_handler(int32_t input, app_context *variables) {
 		}
 		break;
 	case 'b':
-		popup_window_action(&variables->main_window, &variables->popup_window, variables->signal_thread);
+		popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, variables->signal_thread);
 		break;
 	case 'i':
-		popup_window_action(&variables->main_window, &variables->popup_window, variables->signal_thread);
+		popup_window_action(&variables->main_window, &variables->popup_window, INSPECT_LIST, variables->signal_thread);
 		break;
 	case '\n':
 		if (variables->popup_window.is_active) {
@@ -83,15 +83,17 @@ void input_handler(int32_t input, app_context *variables) {
 				break;
 
 			pthread_mutex_lock(&binded_interface_mutex);
+
 			binded_interface.if_index = popup_list.items[selected].if_index;
 			free(binded_interface.if_name);
 			binded_interface.if_name = strdup(popup_list.items[selected].if_name);
+
 			pthread_mutex_unlock(&binded_interface_mutex);
 
 			uint64_t event_updated_bind = 1;
 			write(bind_update_fd, &event_updated_bind, sizeof(event_updated_bind));
 
-			popup_window_action(&variables->main_window, &variables->popup_window, variables->signal_thread);
+			popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, variables->signal_thread);
 		}
 
 		break;
@@ -120,7 +122,11 @@ void draw(app_context *variables) {
 
 		if (variables->popup_window.is_active) {
 			werase(variables->popup_window.window);
-			draw_window_frame(&variables->popup_window, " Available interfaces ");
+			if (variables->popup_window.popup_type == INTERFACES_LIST) {
+				draw_window_frame((window_data *)&variables->popup_window, " Available interfaces ");
+			} else {
+				draw_window_frame((window_data *)&variables->popup_window, " Inspect ");
+			}
 			draw_popup(&variables->popup_window);
 		}
 

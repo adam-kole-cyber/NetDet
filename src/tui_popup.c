@@ -1,6 +1,7 @@
 #include "tui_popup.h"
 #include "clean_up.h"
 #include "device.h"
+#include "error.h"
 #include "init.h"
 #include "shared_state.h"
 #include "tui.h"
@@ -8,6 +9,7 @@
 #include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static uint8_t *ip;
@@ -79,7 +81,70 @@ const inspect_field_t popup_inspect[] = {{"IP: %s", .getter.get_ip = get_ip, .ar
 										 {"Total frames: %d", .getter.get_atomic_int = get_atomic_int, .arg = &atomic_int_storage},
 										 {"Rate history: %s", .getter.get_graph = get_graph, .arg = &graph}};
 
-void popup_window_action(window_data *main_window, window_data *popup_window, pthread_t signal_thread) {
+static void prepare_interface_list(pthread_t signal_thread) {
+	struct if_nameindex *kernel_interface = NULL;
+	int32_t count = 0;
+	int32_t i = 0;
+
+	kernel_interface = if_nameindex();
+	if (kernel_interface == NULL) {
+		main_error(APP_ERR_IF_NAMEINDEX, signal_thread);
+		return;
+	}
+
+	while (kernel_interface[count].if_index != 0) {
+		// is used to determine how many records an array contains
+		count++;
+	}
+
+	popup_list.items = calloc(count + 2, sizeof(struct if_nameindex));
+	if (popup_list.items == NULL) {
+		main_error(APP_ERR_IF_NAMEINDEX, signal_thread);
+		return;
+	}
+
+	for (i = 0; i < count; i++) {
+		popup_list.items[i].if_index = kernel_interface[i].if_index;
+		popup_list.items[i].if_name = strdup(kernel_interface[i].if_name);
+	}
+	if_freenameindex(kernel_interface);
+
+	popup_list.items[count].if_index = UINT32_MAX;
+	popup_list.items[count].if_name = strdup("all");
+
+	return;
+}
+
+static void prepare_scroll_view(popup_window_data *popup_window) {
+	popup_list.view.count = 0;
+	while (popup_list.items[popup_list.view.count].if_index != 0) { // this is partiali universal
+		popup_list.view.count++;
+	}
+
+	popup_list.view.visible = popup_window->height - 2;
+
+	if (popup_list.view.visible > popup_list.view.count) {
+		popup_list.view.visible = popup_list.view.count;
+	}
+
+	popup_list.view.head = 0;
+	popup_list.view.cursor = 0;
+
+	return;
+}
+
+static void interfaces_list_clean_up(void) {
+	for (int32_t i = 0; popup_list.items[i].if_name != NULL; i++) {
+		free(popup_list.items[i].if_name);
+		popup_list.items[i].if_name = NULL;
+	}
+	free(popup_list.items);
+	popup_list.items = NULL;
+
+	return;
+}
+
+void popup_window_action(window_data *main_window, popup_window_data *popup_window, popup_type window_type, pthread_t signal_thread) {
 	static bool is_visible = false;
 
 	is_visible = !is_visible;
@@ -87,53 +152,63 @@ void popup_window_action(window_data *main_window, window_data *popup_window, pt
 	if (is_visible) {
 		main_window->is_active = false;
 
-		popup_init(popup_window, main_window, signal_thread);
+		popup_init(popup_window, main_window, window_type);
 
-		popup_list.view.count = 0;
-		while (popup_list.items[popup_list.view.count].if_index != 0) { // this is partiali universal
-			popup_list.view.count++;
+		switch (window_type) {
+		case INTERFACES_LIST:
+			prepare_interface_list(signal_thread);
+			prepare_scroll_view(popup_window);
+			draw_window_frame((window_data *)popup_window, " Available interfaces "); // TODO fix this properly
+			draw_popup(popup_window);
+			break;
+		case INSPECT_LIST:
+			draw_window_frame((window_data *)popup_window, " Inspect ");
+			break;
+		default:
+			break;
 		}
 
-		popup_list.view.visible = popup_window->height - 2;
-
-		if (popup_list.view.visible > popup_list.view.count) {
-			popup_list.view.visible = popup_list.view.count;
-		}
-
-		popup_list.view.head = 0;
-		popup_list.view.cursor = 0;
-
-		draw_window_frame(popup_window, " Available interfaces ");
-		draw_popup(popup_window);
 	} else {
 		main_window->is_active = true;
 		popup_clean_up(popup_window);
+
+		switch (popup_window->popup_type) {
+		case INTERFACES_LIST:
+			interfaces_list_clean_up();
+			break;
+		case INSPECT_LIST:
+			break;
+		default:
+			break;
+		}
 	}
 
 	return;
 }
 
-void draw_popup(window_data *popup_window) {
-	for (uint32_t i = 0; i < popup_list.view.visible; i++) {
-		int32_t index = popup_list.view.head + i;
+void draw_popup(popup_window_data *popup_window) {
+	if (popup_window->popup_type == INTERFACES_LIST) {
 
-		if ((uint32_t)index >= popup_list.view.count) {
-			break;
-		}
+		for (uint32_t i = 0; i < popup_list.view.visible; i++) {
+			int32_t index = popup_list.view.head + i;
 
-		if ((uint32_t)popup_list.view.cursor == i) {
-			wattron(popup_window->window, COLOR_PAIR(3));
-		}
+			if ((uint32_t)index >= popup_list.view.count) {
+				break;
+			}
 
-		pthread_mutex_lock(&binded_interface_mutex);
-		mvwprintw(popup_window->window, 1 + i, 2, "[%c] - %s", (binded_interface.if_index == popup_list.items[index].if_index) ? '*' : ' ',
-				  popup_list.items[index].if_name);
-		pthread_mutex_unlock(&binded_interface_mutex);
+			if ((uint32_t)popup_list.view.cursor == i) {
+				wattron(popup_window->window, COLOR_PAIR(3));
+			}
 
-		if ((uint32_t)popup_list.view.cursor == i) {
-			wattroff(popup_window->window, COLOR_PAIR(3));
+			pthread_mutex_lock(&binded_interface_mutex);
+			mvwprintw(popup_window->window, 1 + i, 2, "[%c] - %s", (binded_interface.if_index == popup_list.items[index].if_index) ? '*' : ' ',
+					  popup_list.items[index].if_name);
+			pthread_mutex_unlock(&binded_interface_mutex);
+
+			if ((uint32_t)popup_list.view.cursor == i) {
+				wattroff(popup_window->window, COLOR_PAIR(3));
+			}
 		}
 	}
-
 	return;
 }

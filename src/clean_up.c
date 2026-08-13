@@ -2,6 +2,7 @@
 #include "device.h"
 #include "error.h"
 #include "shared_state.h"
+#include "tui.h"
 #include <ncurses.h>
 #include <panel.h>
 #include <pthread.h>
@@ -65,13 +66,7 @@ void network_clean_up(hash_map *map, int32_t *socket_fd, int32_t *epoll_fd, int3
 	close(shutdown_network_fd);
 }
 
-void popup_clean_up(window_data *popup_window) {
-	for (int32_t i = 0; popup_list.items[i].if_name != NULL; i++) {
-		free(popup_list.items[i].if_name);
-		popup_list.items[i].if_name = NULL;
-	}
-	free(popup_list.items);
-	popup_list.items = NULL;
+void popup_clean_up(popup_window_data *popup_window) {
 
 	popup_window->is_active = false;
 	popup_window->start_x = 0;

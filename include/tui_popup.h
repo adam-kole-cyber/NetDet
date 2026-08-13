@@ -16,7 +16,7 @@ typedef struct {
 	void *arg;
 } inspect_field_t;
 
-void popup_window_action(window_data *main_window, window_data *popup_window, pthread_t signal_thread);
-void draw_popup(window_data *popup_window);
+void popup_window_action(window_data *main_window, popup_window_data *popup_window, popup_type window_tpye, pthread_t signal_thread);
+void draw_popup(popup_window_data *popup_window);
 
 #endif

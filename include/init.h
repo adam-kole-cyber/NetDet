@@ -10,7 +10,7 @@
 
 void main_init(app_context *variables, struct network_thread_args *args);
 void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map *map, int32_t *epoll_fd, int32_t *timer_fd);
-void popup_init(window_data *popup_window, const window_data *main_window, pthread_t signal_thread);
+void popup_init(popup_window_data *popup_window, const window_data *main_window, popup_type window_type);
 void ncurses_init(void);
 void signal_init(sigset_t *mask);
 

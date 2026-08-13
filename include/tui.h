@@ -14,6 +14,7 @@
 #define WINDOW_UNUSABLE_NUMBERS_OF_LINES 2 // they are unusable because of the window frame
 
 typedef struct app_context app_context;
+typedef enum { INTERFACES_LIST, INSPECT_LIST } popup_type;
 
 typedef struct {
 	bool is_active;
@@ -24,6 +25,17 @@ typedef struct {
 	WINDOW *window;
 	PANEL *panel;
 } window_data;
+
+typedef struct {
+	bool is_active;
+	int32_t width;
+	int32_t height;
+	int32_t start_x;
+	int32_t start_y;
+	WINDOW *window;
+	PANEL *panel;
+	popup_type popup_type;
+} popup_window_data;
 
 typedef struct {
 	struct if_nameindex *items;

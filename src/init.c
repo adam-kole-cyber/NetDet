@@ -152,12 +152,9 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 	return;
 }
 
-void popup_init(window_data *popup_window, const window_data *main_window, pthread_t signal_thread) {
-	struct if_nameindex *kernel_interface = NULL;
-	int32_t count = 0;
-	int32_t i = 0;
-
+void popup_init(popup_window_data *popup_window, const window_data *main_window, popup_type window_type) {
 	popup_window->is_active = true;
+	popup_window->popup_type = window_type;
 
 	if ((main_window->height - 10) >= 3) {
 		popup_window->start_x = main_window->start_x + 5;
@@ -173,33 +170,6 @@ void popup_init(window_data *popup_window, const window_data *main_window, pthre
 
 	popup_window->window = newwin(popup_window->height, popup_window->width, popup_window->start_y, popup_window->start_x);
 	popup_window->panel = new_panel(popup_window->window);
-
-	// until this part, function is universal
-	kernel_interface = if_nameindex();
-	if (kernel_interface == NULL) {
-		main_error(APP_ERR_IF_NAMEINDEX, signal_thread);
-		return;
-	}
-
-	while (kernel_interface[count].if_index != 0) {
-		// is used to determine how many records an array contains
-		count++;
-	}
-
-	popup_list.items = calloc(count + 2, sizeof(struct if_nameindex));
-	if (popup_list.items == NULL) {
-		main_error(APP_ERR_IF_NAMEINDEX, signal_thread);
-		return;
-	}
-
-	for (i = 0; i < count; i++) {
-		popup_list.items[i].if_index = kernel_interface[i].if_index;
-		popup_list.items[i].if_name = strdup(kernel_interface[i].if_name);
-	}
-	if_freenameindex(kernel_interface);
-
-	popup_list.items[count].if_index = UINT32_MAX;
-	popup_list.items[count].if_name = strdup("all");
 
 	return;
 }
