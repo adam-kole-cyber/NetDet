@@ -270,7 +270,6 @@ void *network_routine(void *args) {
 					if (hashmap_store_entry(&map, device_data) == -1) {
 						network_error(APP_ERR_HASHMAP_SOTRE_ENTRY, &socket_fd, signal_thread);
 					}
-					size_t size = sizeof(device_data->graph.data);
 
 					atomic_store(&device_data->previsou_frames, 0);
 					atomic_store(&device_data->total_frames, 1); // 1 because this frame, through which we discovered this device, also counts
@@ -278,7 +277,7 @@ void *network_routine(void *args) {
 					device_data->graph.head = 0;
 					device_data->graph.count = 0;
 
-					for (uint32_t i = 0; i < size; i++) {
+					for (uint32_t i = 0; i < RATE_HISTORY_SIZE; i++) {
 						atomic_store(&device_data->graph.data[i], 0);
 					}
 
