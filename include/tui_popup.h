@@ -8,11 +8,10 @@
 typedef struct {
 	const char *string;
 	union {
-		char (*get_char)(void);
 		uint32_t (*get_vlan_tag)(void *arg);
 		uint32_t (*get_atomic_int)(void *arg);
 		const char *(*get_ip)(void *arg);
-		const char *(*get_str)(void);
+		const char *(*get_graph)(void *arg);
 	} getter;
 	void *arg;
 } inspect_field_t;

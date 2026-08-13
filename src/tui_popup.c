@@ -1,17 +1,19 @@
 #include "tui_popup.h"
 #include "clean_up.h"
+#include "device.h"
 #include "init.h"
 #include "shared_state.h"
 #include "tui.h"
+#include <math.h>
 #include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 static uint8_t *ip;
 static uint32_t *vlan_tag;
 static atomic_uint_least64_t *atomic_int_storage;
-
-static const char *get_string(void) { return "hello"; }
+static rate_history *graph;
 
 static const char *get_ip(void *arg) {
 	uint8_t *ip = *(uint8_t **)arg;
@@ -30,12 +32,52 @@ static uint32_t get_atomic_int(void *arg) {
 	return atomic_load(atomic_int_storage);
 }
 
+static const char *get_graph(void *arg) {
+	rate_history *graph = *(rate_history **)arg;
+	static char buffer[RATE_HISTORY_SIZE][4];
+	static char result[RATE_HISTORY_SIZE * 3 + 1] = {0};
+	result[0] = '\0';
+	const char *blocks[] = {
+		"\u2581", // ▁
+		"\u2582", // ▂
+		"\u2583", // ▃
+		"\u2584", // ▄
+		"\u2585", // ▅
+		"\u2586", // ▆
+		"\u2587", // ▇
+		"\u2588", // █
+	};
+
+	uint32_t max = atomic_load(&graph->data[0]);
+	for (uint32_t i = 0; i < RATE_HISTORY_SIZE; i++) {
+		uint32_t current_value = atomic_load(&graph->data[i]);
+		if (current_value > max) {
+			max = current_value;
+		}
+	}
+
+	if (max == 0) {
+		max = 1;
+	}
+
+	for (uint32_t i = 0; i < RATE_HISTORY_SIZE; i++) {
+		uint32_t block_index = (int)round((double)atomic_load(&graph->data[(graph->head + i) % RATE_HISTORY_SIZE]) / max * 7.0);
+		strcpy(buffer[i], blocks[block_index]);
+	}
+
+	for (uint32_t i = 0; i < RATE_HISTORY_SIZE; i++) {
+		strcat(result, buffer[i]);
+	}
+
+	return result;
+}
+
 interfaces_list popup_list = {0};
 const inspect_field_t popup_inspect[] = {{"IP: %s", .getter.get_ip = get_ip, .arg = &ip},
 										 {"802.1ad (QinQ): %d\tCoS: %d\tDEI: %d", .getter.get_vlan_tag = get_vlan_tag, .arg = &vlan_tag},
 										 {"802.1Q (Dot1Q): %d\tCoS: %d\tDEI: %d", .getter.get_vlan_tag = get_vlan_tag, .arg = &vlan_tag},
 										 {"Total frames: %d", .getter.get_atomic_int = get_atomic_int, .arg = &atomic_int_storage},
-										 {"Rate history: %s", .getter.get_str = get_string}};
+										 {"Rate history: %s", .getter.get_graph = get_graph, .arg = &graph}};
 
 void popup_window_action(window_data *main_window, window_data *popup_window, pthread_t signal_thread) {
 	static bool is_visible = false;
