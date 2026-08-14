@@ -305,7 +305,7 @@ void *network_routine(void *args) {
 					atomic_store(&device_to_update->graph.data[device_to_update->graph.head], rate);
 					atomic_store(&device_to_update->previsou_frames, atomic_load(&device_to_update->total_frames));
 
-					device_to_update->graph.head++;
+					device_to_update->graph.head = (device_to_update->graph.head + 1) % RATE_HISTORY_SIZE;
 				}
 
 				/*msg.msg_type = UI_UPDATE_TABLE;
