@@ -209,7 +209,7 @@ void *network_routine(void *args) {
 	int32_t epoll_fd;
 	int32_t socket_fd;
 	int32_t timer_fd;
-	int32_t timer_ticks = 0;
+	uint64_t timer_ticks = 0;
 	hash_map map;
 	pthread_t signal_thread = ((struct network_thread_args *)args)->signal_thread;
 	ui_message msg = {0};
@@ -292,7 +292,11 @@ void *network_routine(void *args) {
 
 				change_bind(&socket_fd, &epoll_fd, signal_thread);
 			} else if (events[i].data.fd == timer_fd) {
-				read(timer_fd, &timer_ticks, sizeof(timer_ticks));
+				ssize_t return_val = read(timer_fd, &timer_ticks, sizeof(timer_ticks));
+
+				if (return_val != sizeof(timer_ticks)) {
+					network_error(APP_ERR_TIMER, &socket_fd, signal_thread);
+				}
 
 				for (uint32_t i = 0; i < map.size; i++) {
 					if (map.table[i].device == NULL) {
@@ -308,9 +312,9 @@ void *network_routine(void *args) {
 					device_to_update->graph.head = (device_to_update->graph.head + 1) % RATE_HISTORY_SIZE;
 				}
 
-				/*msg.msg_type = UI_UPDATE_TABLE;
+				msg.msg_type = UI_UPDATE_TABLE;
 				msg.data = NULL;
-				write(pipe_fd[1], &msg, sizeof(msg));*/
+				write(pipe_fd[1], &msg, sizeof(msg));
 			} else if (events[i].data.fd == shutdown_network_fd) {
 				continue;
 			}

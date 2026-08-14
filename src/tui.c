@@ -71,7 +71,6 @@ void input_handler(int32_t input, app_context *variables) {
 		popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL, variables->signal_thread);
 		break;
 	case 'i': {
-		// fprintf(stderr, "%d - %d\n", variables->buffer.view.head, variables->buffer.view.cursor);
 		device *action_device =
 			variables->buffer.items[variables->buffer.view.head +
 									variables->buffer.view.cursor]; // the way in wich is action device passed to function might be reworked later

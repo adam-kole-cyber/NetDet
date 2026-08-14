@@ -73,7 +73,6 @@ static const char *get_graph(void *arg) {
 		strcat(result, buffer[i]);
 	}
 
-	// fprintf(stderr, "%s\n", result);
 	return result;
 }
 
