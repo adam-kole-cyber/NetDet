@@ -15,7 +15,8 @@
 #include <string.h>
 
 static uint8_t *ip;
-static uint32_t *vlan_tag;
+static uint32_t *qinq_tag;
+static uint32_t *dot1q_tag;
 static atomic_uint_least64_t *atomic_int_storage;
 static rate_history *graph;
 
@@ -78,8 +79,8 @@ static const char *get_graph(void *arg) {
 
 interfaces_list popup_list = {0};
 const inspect_field_t popup_inspect[] = {{"IP: %s", IP, .getter.get_ip = get_ip, .arg = &ip},
-										 {"802.1ad (QinQ): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter.get_vlan_tag = get_vlan_tag, .arg = &vlan_tag},
-										 {"802.1Q (Dot1Q): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter.get_vlan_tag = get_vlan_tag, .arg = &vlan_tag},
+										 {"802.1ad (QinQ): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter.get_vlan_tag = get_vlan_tag, .arg = &qinq_tag},
+										 {"802.1Q (Dot1Q): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter.get_vlan_tag = get_vlan_tag, .arg = &dot1q_tag},
 										 {"Total frames: %d", ATOMIC_INT, .getter.get_atomic_int = get_atomic_int, .arg = &atomic_int_storage},
 										 {"Rate history: %s", GRAPH, .getter.get_graph = get_graph, .arg = &graph}};
 scroll_view inspect_field;
@@ -167,7 +168,8 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 			break;
 		case INSPECT_LIST:
 			ip = action_device->ip;
-			vlan_tag = &action_device->dot1q_tag;
+			qinq_tag = &action_device->qinq_tag;
+			dot1q_tag = &action_device->dot1q_tag;
 			atomic_int_storage = &action_device->previsou_frames;
 			graph = &action_device->graph;
 
@@ -241,15 +243,16 @@ void draw_popup(popup_window_data *popup_window) {
 				wattron(popup_window->window, COLOR_PAIR(3));
 			}
 
-			// mvwprintw(popup_window->window, 1 + i, 2, popup_inspect[index].string, popup_inspect[index].getter);
 			switch (popup_inspect[i].getter_type) {
 			case IP:
 				mvwprintw(popup_window->window, 1 + i, 2, popup_inspect[index].string, popup_inspect[index].getter.get_ip(popup_inspect[index].arg));
 				break;
-			case VLAN_TAG:
-				mvwprintw(popup_window->window, 1 + i, 2, popup_inspect[index].string,
-						  popup_inspect[index].getter.get_vlan_tag(popup_inspect[index].arg));
+			case VLAN_TAG: {
+				uint32_t vlan_tag = popup_inspect[index].getter.get_vlan_tag(popup_inspect[index].arg);
+				mvwprintw(popup_window->window, 1 + i, 2, popup_inspect[index].string, (vlan_tag & 0xfff), (vlan_tag & 0xe000) >> 13,
+						  (vlan_tag & 0x1000) >> 12);
 				break;
+			}
 			case ATOMIC_INT:
 				mvwprintw(popup_window->window, 1 + i, 2, popup_inspect[index].string,
 						  popup_inspect[index].getter.get_atomic_int(popup_inspect[index].arg));
