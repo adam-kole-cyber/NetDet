@@ -6,8 +6,11 @@
 #include <pthread.h>
 #include <stdint.h>
 
+enum union_type { VLAN_TAG, ATOMIC_INT, IP, GRAPH };
+
 typedef struct {
 	const char *string;
+	enum union_type getter_type;
 	union {
 		uint32_t (*get_vlan_tag)(void *arg);
 		uint32_t (*get_atomic_int)(void *arg);

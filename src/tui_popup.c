@@ -3,9 +3,11 @@
 #include "device.h"
 #include "error.h"
 #include "init.h"
+#include "scroll_view.h"
 #include "shared_state.h"
 #include "tui.h"
 #include <math.h>
+#include <ncurses.h>
 #include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -71,15 +73,17 @@ static const char *get_graph(void *arg) {
 		strcat(result, buffer[i]);
 	}
 
+	// fprintf(stderr, "%s\n", result);
 	return result;
 }
 
 interfaces_list popup_list = {0};
-const inspect_field_t popup_inspect[] = {{"IP: %s", .getter.get_ip = get_ip, .arg = &ip},
-										 {"802.1ad (QinQ): %d\tCoS: %d\tDEI: %d", .getter.get_vlan_tag = get_vlan_tag, .arg = &vlan_tag},
-										 {"802.1Q (Dot1Q): %d\tCoS: %d\tDEI: %d", .getter.get_vlan_tag = get_vlan_tag, .arg = &vlan_tag},
-										 {"Total frames: %d", .getter.get_atomic_int = get_atomic_int, .arg = &atomic_int_storage},
-										 {"Rate history: %s", .getter.get_graph = get_graph, .arg = &graph}};
+const inspect_field_t popup_inspect[] = {{"IP: %s", IP, .getter.get_ip = get_ip, .arg = &ip},
+										 {"802.1ad (QinQ): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter.get_vlan_tag = get_vlan_tag, .arg = &vlan_tag},
+										 {"802.1Q (Dot1Q): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter.get_vlan_tag = get_vlan_tag, .arg = &vlan_tag},
+										 {"Total frames: %d", ATOMIC_INT, .getter.get_atomic_int = get_atomic_int, .arg = &atomic_int_storage},
+										 {"Rate history: %s", GRAPH, .getter.get_graph = get_graph, .arg = &graph}};
+scroll_view inspect_field;
 
 static void prepare_interface_list(pthread_t signal_thread) {
 	struct if_nameindex *kernel_interface = NULL;
@@ -163,7 +167,23 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 			draw_popup(popup_window);
 			break;
 		case INSPECT_LIST:
+			ip = action_device->ip;
+			vlan_tag = &action_device->dot1q_tag;
+			atomic_int_storage = &action_device->previsou_frames;
+			graph = &action_device->graph;
+
+			inspect_field.count = sizeof(popup_inspect) / sizeof(popup_inspect[0]);
+			inspect_field.visible = popup_window->height - 2;
+
+			if (inspect_field.visible > inspect_field.count) {
+				inspect_field.visible = inspect_field.count;
+			}
+
+			inspect_field.head = 0;
+			inspect_field.cursor = 0;
+
 			draw_window_frame((window_data *)popup_window, " Inspect ");
+			draw_popup(popup_window);
 			break;
 		default:
 			break;
@@ -207,6 +227,43 @@ void draw_popup(popup_window_data *popup_window) {
 			pthread_mutex_unlock(&binded_interface_mutex);
 
 			if ((uint32_t)popup_list.view.cursor == i) {
+				wattroff(popup_window->window, COLOR_PAIR(3));
+			}
+		}
+	} else {
+		for (uint32_t i = 0; i < inspect_field.visible; i++) {
+			int32_t index = inspect_field.head + i;
+
+			if ((uint32_t)index >= inspect_field.count) {
+				break;
+			}
+
+			if ((uint32_t)inspect_field.cursor == i) {
+				wattron(popup_window->window, COLOR_PAIR(3));
+			}
+
+			// mvwprintw(popup_window->window, 1 + i, 2, popup_inspect[index].string, popup_inspect[index].getter);
+			switch (popup_inspect[i].getter_type) {
+			case IP:
+				mvwprintw(popup_window->window, 1 + i, 2, popup_inspect[index].string, popup_inspect[index].getter.get_ip(popup_inspect[index].arg));
+				break;
+			case VLAN_TAG:
+				mvwprintw(popup_window->window, 1 + i, 2, popup_inspect[index].string,
+						  popup_inspect[index].getter.get_vlan_tag(popup_inspect[index].arg));
+				break;
+			case ATOMIC_INT:
+				mvwprintw(popup_window->window, 1 + i, 2, popup_inspect[index].string,
+						  popup_inspect[index].getter.get_atomic_int(popup_inspect[index].arg));
+				break;
+			case GRAPH:
+				mvwprintw(popup_window->window, 1 + i, 2, popup_inspect[index].string,
+						  popup_inspect[index].getter.get_graph(popup_inspect[index].arg));
+				break;
+			default:
+				break;
+			}
+
+			if ((uint32_t)inspect_field.cursor == i) {
 				wattroff(popup_window->window, COLOR_PAIR(3));
 			}
 		}
