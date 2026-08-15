@@ -57,14 +57,20 @@ void input_handler(int32_t input, app_context *variables) {
 		if (variables->main_window.is_active) {
 			scroll_move(&variables->buffer.view, 1);
 		} else {
-			scroll_move(&popup_list.view, 1);
+			if (variables->popup_window.popup_type == INTERFACES_LIST)
+				scroll_move(&popup_list.view, 1);
+			else
+				scroll_move(&inspect_field, 1);
 		}
 		break;
 	case KEY_UP:
 		if (variables->main_window.is_active) {
 			scroll_move(&variables->buffer.view, -1);
 		} else {
-			scroll_move(&popup_list.view, -1);
+			if (variables->popup_window.popup_type == INTERFACES_LIST)
+				scroll_move(&popup_list.view, -1);
+			else
+				scroll_move(&inspect_field, -1);
 		}
 		break;
 	case 'b':
