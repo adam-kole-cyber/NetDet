@@ -6,7 +6,7 @@
 #include <pthread.h>
 #include <stdint.h>
 
-enum union_type { VLAN_TAG, ATOMIC_INT, IP, GRAPH };
+enum union_type { VLAN_TAG, ATOMIC_INT, IP, GRAPH, NONE };
 
 typedef struct {
 	const char *string;

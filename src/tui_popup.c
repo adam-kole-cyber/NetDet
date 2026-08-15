@@ -78,11 +78,13 @@ static const char *get_graph(void *arg) {
 }
 
 interfaces_list popup_list = {0};
-const inspect_field_t popup_inspect[5] = {{"IP: %s", IP, .getter.get_ip = get_ip, .arg = &ip},
-										  {"802.1ad (QinQ): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter.get_vlan_tag = get_vlan_tag, .arg = &qinq_tag},
-										  {"802.1Q (Dot1Q): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter.get_vlan_tag = get_vlan_tag, .arg = &dot1q_tag},
-										  {"Total frames: %d", ATOMIC_INT, .getter.get_atomic_int = get_atomic_int, .arg = &atomic_int_storage},
-										  {"Rate history: %s", GRAPH, .getter.get_graph = get_graph, .arg = &graph}};
+const inspect_field_t popup_inspect[6] = {
+	{"IP: %s", IP, .getter = {.get_ip = get_ip}, .arg = &ip},
+	{"802.1ad (QinQ): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter = {.get_vlan_tag = get_vlan_tag}, .arg = &qinq_tag},
+	{"802.1Q (Dot1Q): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter = {.get_vlan_tag = get_vlan_tag}, .arg = &dot1q_tag},
+	{"Total frames: %d", ATOMIC_INT, .getter = {.get_atomic_int = get_atomic_int}, .arg = &atomic_int_storage},
+	{"Rate history:", NONE, .getter = {.get_graph = get_graph}, .arg = &graph},
+	{"%s", GRAPH, .getter = {.get_graph = get_graph}, .arg = &graph}};
 scroll_view inspect_field;
 
 static void prepare_interface_list(pthread_t signal_thread) {
@@ -243,7 +245,7 @@ void draw_popup(popup_window_data *popup_window) {
 				wattron(popup_window->window, COLOR_PAIR(3));
 			}
 
-			switch (popup_inspect[i].getter_type) {
+			switch (popup_inspect[index].getter_type) {
 			case IP:
 				mvwprintw(popup_window->window, 1 + i, 2, popup_inspect[index].string, popup_inspect[index].getter.get_ip(popup_inspect[index].arg));
 				break;
@@ -260,6 +262,9 @@ void draw_popup(popup_window_data *popup_window) {
 			case GRAPH:
 				mvwprintw(popup_window->window, 1 + i, 2, popup_inspect[index].string,
 						  popup_inspect[index].getter.get_graph(popup_inspect[index].arg));
+				break;
+			case NONE:
+				mvwprintw(popup_window->window, 1 + i, 2, "%s", popup_inspect[index].string);
 				break;
 			default:
 				break;
