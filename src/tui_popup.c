@@ -105,7 +105,7 @@ static void prepare_interface_list(pthread_t signal_thread) {
 
 	popup_list.items = calloc(count + 2, sizeof(struct if_nameindex));
 	if (popup_list.items == NULL) {
-		main_error(APP_ERR_IF_NAMEINDEX, signal_thread);
+		main_error(APP_ERR_CALLOC, signal_thread);
 		return;
 	}
 

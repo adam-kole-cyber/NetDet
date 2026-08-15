@@ -78,6 +78,10 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 
 	variables->buffer.size = BUFFER_INITIAL_SIZE;
 	variables->buffer.items = calloc(variables->buffer.size, sizeof(device *));
+	if (variables->buffer.items == NULL) {
+		main_error(APP_ERR_CALLOC, variables->signal_thread);
+		return;
+	}
 	variables->buffer.view.count = 0;
 	variables->buffer.view.visible = 0;
 	variables->buffer.view.head = 0;
@@ -140,6 +144,10 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 	map->size = BUFFER_INITIAL_SIZE;
 	map->count = 0;
 	map->table = calloc(map->size, sizeof(hash_entry));
+	if (map->table == NULL) {
+		network_error(APP_ERR_CALLOC, socket_fd, args->signal_thread);
+		return;
+	}
 
 	*timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
 	timerfd_settime(*timer_fd, 0, &timer, NULL);
