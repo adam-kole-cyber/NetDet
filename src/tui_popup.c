@@ -78,11 +78,11 @@ static const char *get_graph(void *arg) {
 }
 
 interfaces_list popup_list = {0};
-const inspect_field_t popup_inspect[] = {{"IP: %s", IP, .getter.get_ip = get_ip, .arg = &ip},
-										 {"802.1ad (QinQ): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter.get_vlan_tag = get_vlan_tag, .arg = &qinq_tag},
-										 {"802.1Q (Dot1Q): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter.get_vlan_tag = get_vlan_tag, .arg = &dot1q_tag},
-										 {"Total frames: %d", ATOMIC_INT, .getter.get_atomic_int = get_atomic_int, .arg = &atomic_int_storage},
-										 {"Rate history: %s", GRAPH, .getter.get_graph = get_graph, .arg = &graph}};
+const inspect_field_t popup_inspect[5] = {{"IP: %s", IP, .getter.get_ip = get_ip, .arg = &ip},
+										  {"802.1ad (QinQ): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter.get_vlan_tag = get_vlan_tag, .arg = &qinq_tag},
+										  {"802.1Q (Dot1Q): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter.get_vlan_tag = get_vlan_tag, .arg = &dot1q_tag},
+										  {"Total frames: %d", ATOMIC_INT, .getter.get_atomic_int = get_atomic_int, .arg = &atomic_int_storage},
+										  {"Rate history: %s", GRAPH, .getter.get_graph = get_graph, .arg = &graph}};
 scroll_view inspect_field;
 
 static void prepare_interface_list(pthread_t signal_thread) {

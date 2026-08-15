@@ -172,15 +172,24 @@ void resize_handler(app_context *variables) {
 			variables->popup_window.height = variables->main_window.height;
 		}
 
-		popup_list.view.count = 0;
-		while (popup_list.items[popup_list.view.count].if_index != 0) {
-			popup_list.view.count++;
-		}
+		if (variables->popup_window.popup_type == INTERFACES_LIST) {
+			popup_list.view.count = 0;
+			while (popup_list.items[popup_list.view.count].if_index != 0) {
+				popup_list.view.count++;
+			}
 
-		popup_list.view.visible = variables->popup_window.height - 2;
+			popup_list.view.visible = variables->popup_window.height - 2;
 
-		if (popup_list.view.visible > popup_list.view.count) {
-			popup_list.view.visible = popup_list.view.count;
+			if (popup_list.view.visible > popup_list.view.count) {
+				popup_list.view.visible = popup_list.view.count;
+			}
+		} else {
+			inspect_field.count = sizeof(popup_inspect) / sizeof(popup_inspect[0]);
+			inspect_field.visible = variables->popup_window.height - 2;
+
+			if (inspect_field.visible > inspect_field.count) {
+				inspect_field.visible = inspect_field.count;
+			}
 		}
 
 		wresize(variables->popup_window.window, variables->popup_window.height, variables->popup_window.width);
