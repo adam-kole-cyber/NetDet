@@ -22,5 +22,6 @@ extern int32_t col_width;
 extern int32_t col_width_remainder;
 extern const inspect_field_t popup_inspect[6];
 extern scroll_view inspect_field;
+extern popup_descriptor popup_descriptors[POPUP_TYPE_COUNT];
 
 #endif

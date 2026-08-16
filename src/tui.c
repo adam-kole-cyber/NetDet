@@ -60,7 +60,7 @@ void input_handler(int32_t input, app_context *variables) {
 			if (variables->popup_window.popup_type == INTERFACES_LIST)
 				scroll_move(&popup_list.view, 1);
 			else
-				scroll_move(&inspect_field, 1);
+				scroll_move(&popup_descriptors[variables->popup_window.popup_type].view, 1);
 		}
 		break;
 	case KEY_UP:
@@ -70,7 +70,7 @@ void input_handler(int32_t input, app_context *variables) {
 			if (variables->popup_window.popup_type == INTERFACES_LIST)
 				scroll_move(&popup_list.view, -1);
 			else
-				scroll_move(&inspect_field, -1);
+				scroll_move(&popup_descriptors[variables->popup_window.popup_type].view, -1);
 		}
 		break;
 	case 'b':
@@ -190,12 +190,21 @@ void resize_handler(app_context *variables) {
 				popup_list.view.visible = popup_list.view.count;
 			}
 		} else {
-			inspect_field.count = sizeof(popup_inspect) / sizeof(popup_inspect[0]);
+			popup_descriptor *descriptor = &popup_descriptors[variables->popup_window.popup_type];
+
+			descriptor->view.count = sizeof(popup_inspect) / sizeof(popup_inspect[0]);
+			descriptor->view.visible = variables->popup_window.height - 2;
+
+			if (descriptor->view.visible > descriptor->view.count) {
+				descriptor->view.visible = descriptor->view.count;
+			}
+
+			/*inspect_field.count = sizeof(popup_inspect) / sizeof(popup_inspect[0]);
 			inspect_field.visible = variables->popup_window.height - 2;
 
 			if (inspect_field.visible > inspect_field.count) {
 				inspect_field.visible = inspect_field.count;
-			}
+			}*/
 		}
 
 		wresize(variables->popup_window.window, variables->popup_window.height, variables->popup_window.width);

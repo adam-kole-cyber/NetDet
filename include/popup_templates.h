@@ -19,12 +19,14 @@ typedef struct {
 	popup_type popup_type;
 } popup_window_data;
 
-typedef void (*popup_item_renderer)(void);
+typedef void (*popup_item_renderer)(WINDOW *popup_window, int32_t row, int32_t col, uint32_t index, void *data);
 
 typedef struct {
 	scroll_view view;
 	popup_item_renderer render_item;
 	void *data;
 } popup_descriptor;
+
+void draw_popup(popup_window_data *popup_window);
 
 #endif
