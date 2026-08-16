@@ -60,7 +60,7 @@ void draw_popup(popup_window_data *popup_window) {
 		}
 
 		if ((uint32_t)data_scroll_view->cursor == i) {
-			wattroff(popup_window->window, COLOR_PAIR(3));
+			wattron(popup_window->window, COLOR_PAIR(3));
 		}
 
 		descriptor->render_item(popup_window->window, i + 1, 2, index, descriptor->data);
@@ -73,4 +73,4 @@ void draw_popup(popup_window_data *popup_window) {
 	return;
 }
 
-// TODO cursor is not showing up and and I'm getting an ancillary data error
+// TODO I'm getting an ancillary data error
