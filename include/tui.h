@@ -1,7 +1,6 @@
 #ifndef TUI_H
 #define TUI_H
 
-#include "scroll_view.h"
 #include <ncurses.h>
 #include <net/if.h>
 #include <panel.h>
@@ -28,7 +27,6 @@ typedef struct {
 typedef struct {
 	struct if_nameindex *items;
 	uint32_t size;
-	scroll_view view; // TODO remove this bc it will be in popup_templates
 } interfaces_list;
 
 void draw_window_frame(window_data *window_data, const char *title);

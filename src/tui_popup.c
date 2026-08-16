@@ -86,7 +86,6 @@ const inspect_field_t popup_inspect[6] = {
 	{"Total frames: %d", ATOMIC_INT, .getter = {.get_atomic_int = get_atomic_int}, .arg = &atomic_int_storage},
 	{"Rate history:", NONE, .getter = {.get_graph = get_graph}, .arg = &graph},
 	{"%s", GRAPH, .getter = {.get_graph = get_graph}, .arg = &graph}};
-scroll_view inspect_field;
 
 static void prepare_interface_list(pthread_t signal_thread) {
 	struct if_nameindex *kernel_interface = NULL;
@@ -118,24 +117,27 @@ static void prepare_interface_list(pthread_t signal_thread) {
 
 	popup_list.items[count].if_index = UINT32_MAX;
 	popup_list.items[count].if_name = strdup("all");
+	popup_list.size = count + 2;
 
 	return;
 }
 
 static void prepare_scroll_view(popup_window_data *popup_window) {
-	popup_list.view.count = 0;
-	while (popup_list.items[popup_list.view.count].if_index != 0) { // this is partiali universal
-		popup_list.view.count++;
+	scroll_view *view = &popup_descriptors[popup_window->popup_type].view;
+
+	view->count = 0;
+	while (popup_list.items[view->count].if_index != 0) { // this is partiali universal
+		view->count++;
 	}
 
-	popup_list.view.visible = popup_window->height - 2;
+	view->visible = popup_window->height - 2;
 
-	if (popup_list.view.visible > popup_list.view.count) {
-		popup_list.view.visible = popup_list.view.count;
+	if (view->visible > view->count) {
+		view->visible = view->count;
 	}
 
-	popup_list.view.head = 0;
-	popup_list.view.cursor = 0;
+	view->head = 0;
+	view->cursor = 0;
 
 	return;
 }
@@ -179,22 +181,14 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 			popup_descriptor *descriptor = &popup_descriptors[popup_window->popup_type];
 
 			descriptor->view.count = sizeof(popup_inspect) / sizeof(popup_inspect[0]);
-			// inspect_field.count = sizeof(popup_inspect) / sizeof(popup_inspect[0]);
 			descriptor->view.visible = popup_window->height - 2;
-			// inspect_field.visible = popup_window->height - 2;
 
 			if (descriptor->view.visible > descriptor->view.count) {
 				descriptor->view.visible = descriptor->view.count;
 			}
 
-			/*if (inspect_field.visible > inspect_field.count) {
-				inspect_field.visible = inspect_field.count;
-			}*/
-
 			descriptor->view.head = 0;
 			descriptor->view.cursor = 0;
-			/*inspect_field.head = 0;
-			inspect_field.cursor = 0;*/
 
 			draw_window_frame((window_data *)popup_window, " Inspect ");
 			draw_popup(popup_window);

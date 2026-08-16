@@ -1,6 +1,7 @@
 #include "tui.h"
 #include "app_context.h"
 #include "device.h"
+#include "popup_templates.h"
 #include "scroll_view.h"
 #include "shared_state.h"
 #include "tui_app.h"
@@ -57,20 +58,14 @@ void input_handler(int32_t input, app_context *variables) {
 		if (variables->main_window.is_active) {
 			scroll_move(&variables->buffer.view, 1);
 		} else {
-			if (variables->popup_window.popup_type == INTERFACES_LIST)
-				scroll_move(&popup_list.view, 1);
-			else
-				scroll_move(&popup_descriptors[variables->popup_window.popup_type].view, 1);
+			scroll_move(&popup_descriptors[variables->popup_window.popup_type].view, 1);
 		}
 		break;
 	case KEY_UP:
 		if (variables->main_window.is_active) {
 			scroll_move(&variables->buffer.view, -1);
 		} else {
-			if (variables->popup_window.popup_type == INTERFACES_LIST)
-				scroll_move(&popup_list.view, -1);
-			else
-				scroll_move(&popup_descriptors[variables->popup_window.popup_type].view, -1);
+			scroll_move(&popup_descriptors[variables->popup_window.popup_type].view, -1);
 		}
 		break;
 	case 'b':
@@ -84,10 +79,11 @@ void input_handler(int32_t input, app_context *variables) {
 		break;
 	}
 	case '\n':
-		if (variables->popup_window.is_active) {
-			int32_t selected = popup_list.view.head + popup_list.view.cursor;
+		if (variables->popup_window.is_active && variables->popup_window.popup_type == INTERFACES_LIST) {
+			scroll_view *view = &popup_descriptors[variables->popup_window.popup_type].view;
+			int32_t selected = view->head + view->cursor;
 
-			if ((uint32_t)selected >= popup_list.view.count)
+			if ((uint32_t)selected >= view->count)
 				break;
 			if (popup_list.items[selected].if_index == 0)
 				break;
@@ -179,32 +175,27 @@ void resize_handler(app_context *variables) {
 		}
 
 		if (variables->popup_window.popup_type == INTERFACES_LIST) {
-			popup_list.view.count = 0;
-			while (popup_list.items[popup_list.view.count].if_index != 0) {
+			scroll_view *view = &popup_descriptors[variables->popup_window.popup_type].view;
+
+			view->count = popup_list.size - 1;
+			/*while (popup_list.items[popup_list.view.count].if_index != 0) {
 				popup_list.view.count++;
-			}
+			}*/
 
-			popup_list.view.visible = variables->popup_window.height - 2;
+			view->visible = variables->popup_window.height - 2;
 
-			if (popup_list.view.visible > popup_list.view.count) {
-				popup_list.view.visible = popup_list.view.count;
+			if (view->visible > view->count) {
+				view->visible = view->count;
 			}
 		} else {
-			popup_descriptor *descriptor = &popup_descriptors[variables->popup_window.popup_type];
+			scroll_view *view = &popup_descriptors[variables->popup_window.popup_type].view;
 
-			descriptor->view.count = sizeof(popup_inspect) / sizeof(popup_inspect[0]);
-			descriptor->view.visible = variables->popup_window.height - 2;
+			view->count = sizeof(popup_inspect) / sizeof(popup_inspect[0]);
+			view->visible = variables->popup_window.height - 2;
 
-			if (descriptor->view.visible > descriptor->view.count) {
-				descriptor->view.visible = descriptor->view.count;
+			if (view->visible > view->count) {
+				view->visible = view->count;
 			}
-
-			/*inspect_field.count = sizeof(popup_inspect) / sizeof(popup_inspect[0]);
-			inspect_field.visible = variables->popup_window.height - 2;
-
-			if (inspect_field.visible > inspect_field.count) {
-				inspect_field.visible = inspect_field.count;
-			}*/
 		}
 
 		wresize(variables->popup_window.window, variables->popup_window.height, variables->popup_window.width);
