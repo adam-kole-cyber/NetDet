@@ -2,6 +2,7 @@
 #define APP_CONTEXT_H
 
 #include "device.h"
+#include "popup_templates.h"
 #include "tui.h"
 #include <pthread.h>
 #include <stdint.h>

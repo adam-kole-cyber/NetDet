@@ -3,6 +3,7 @@
 #include "device.h"
 #include "error.h"
 #include "init.h"
+#include "popup_templates.h"
 #include "scroll_view.h"
 #include "shared_state.h"
 #include "tui.h"
@@ -85,7 +86,6 @@ const inspect_field_t popup_inspect[6] = {
 	{"Total frames: %d", ATOMIC_INT, .getter = {.get_atomic_int = get_atomic_int}, .arg = &atomic_int_storage},
 	{"Rate history:", NONE, .getter = {.get_graph = get_graph}, .arg = &graph},
 	{"%s", GRAPH, .getter = {.get_graph = get_graph}, .arg = &graph}};
-scroll_view inspect_field;
 
 static void prepare_interface_list(pthread_t signal_thread) {
 	struct if_nameindex *kernel_interface = NULL;
@@ -117,24 +117,27 @@ static void prepare_interface_list(pthread_t signal_thread) {
 
 	popup_list.items[count].if_index = UINT32_MAX;
 	popup_list.items[count].if_name = strdup("all");
+	popup_list.size = count + 2;
 
 	return;
 }
 
 static void prepare_scroll_view(popup_window_data *popup_window) {
-	popup_list.view.count = 0;
-	while (popup_list.items[popup_list.view.count].if_index != 0) { // this is partiali universal
-		popup_list.view.count++;
+	scroll_view *view = &popup_descriptors[popup_window->popup_type].view;
+
+	view->count = 0;
+	while (popup_list.items[view->count].if_index != 0) { // this is partiali universal
+		view->count++;
 	}
 
-	popup_list.view.visible = popup_window->height - 2;
+	view->visible = popup_window->height - 2;
 
-	if (popup_list.view.visible > popup_list.view.count) {
-		popup_list.view.visible = popup_list.view.count;
+	if (view->visible > view->count) {
+		view->visible = view->count;
 	}
 
-	popup_list.view.head = 0;
-	popup_list.view.cursor = 0;
+	view->head = 0;
+	view->cursor = 0;
 
 	return;
 }
@@ -175,15 +178,17 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 			atomic_int_storage = &action_device->previsou_frames;
 			graph = &action_device->graph;
 
-			inspect_field.count = sizeof(popup_inspect) / sizeof(popup_inspect[0]);
-			inspect_field.visible = popup_window->height - 2;
+			popup_descriptor *descriptor = &popup_descriptors[popup_window->popup_type];
 
-			if (inspect_field.visible > inspect_field.count) {
-				inspect_field.visible = inspect_field.count;
+			descriptor->view.count = sizeof(popup_inspect) / sizeof(popup_inspect[0]);
+			descriptor->view.visible = popup_window->height - 2;
+
+			if (descriptor->view.visible > descriptor->view.count) {
+				descriptor->view.visible = descriptor->view.count;
 			}
 
-			inspect_field.head = 0;
-			inspect_field.cursor = 0;
+			descriptor->view.head = 0;
+			descriptor->view.cursor = 0;
 
 			draw_window_frame((window_data *)popup_window, " Inspect ");
 			draw_popup(popup_window);
@@ -207,73 +212,5 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 		}
 	}
 
-	return;
-}
-
-void draw_popup(popup_window_data *popup_window) {
-	if (popup_window->popup_type == INTERFACES_LIST) {
-
-		for (uint32_t i = 0; i < popup_list.view.visible; i++) {
-			int32_t index = popup_list.view.head + i;
-
-			if ((uint32_t)index >= popup_list.view.count) {
-				break;
-			}
-
-			if ((uint32_t)popup_list.view.cursor == i) {
-				wattron(popup_window->window, COLOR_PAIR(3));
-			}
-
-			pthread_mutex_lock(&binded_interface_mutex);
-			mvwprintw(popup_window->window, 1 + i, 2, "[%c] - %s", (binded_interface.if_index == popup_list.items[index].if_index) ? '*' : ' ',
-					  popup_list.items[index].if_name);
-			pthread_mutex_unlock(&binded_interface_mutex);
-
-			if ((uint32_t)popup_list.view.cursor == i) {
-				wattroff(popup_window->window, COLOR_PAIR(3));
-			}
-		}
-	} else {
-		for (uint32_t i = 0; i < inspect_field.visible; i++) {
-			int32_t index = inspect_field.head + i;
-
-			if ((uint32_t)index >= inspect_field.count) {
-				break;
-			}
-
-			if ((uint32_t)inspect_field.cursor == i) {
-				wattron(popup_window->window, COLOR_PAIR(3));
-			}
-
-			switch (popup_inspect[index].getter_type) {
-			case IP:
-				mvwprintw(popup_window->window, 1 + i, 2, popup_inspect[index].string, popup_inspect[index].getter.get_ip(popup_inspect[index].arg));
-				break;
-			case VLAN_TAG: {
-				uint32_t vlan_tag = popup_inspect[index].getter.get_vlan_tag(popup_inspect[index].arg);
-				mvwprintw(popup_window->window, 1 + i, 2, popup_inspect[index].string, (vlan_tag & 0xfff), (vlan_tag & 0xe000) >> 13,
-						  (vlan_tag & 0x1000) >> 12);
-				break;
-			}
-			case ATOMIC_INT:
-				mvwprintw(popup_window->window, 1 + i, 2, popup_inspect[index].string,
-						  popup_inspect[index].getter.get_atomic_int(popup_inspect[index].arg));
-				break;
-			case GRAPH:
-				mvwprintw(popup_window->window, 1 + i, 2, popup_inspect[index].string,
-						  popup_inspect[index].getter.get_graph(popup_inspect[index].arg));
-				break;
-			case NONE:
-				mvwprintw(popup_window->window, 1 + i, 2, "%s", popup_inspect[index].string);
-				break;
-			default:
-				break;
-			}
-
-			if ((uint32_t)inspect_field.cursor == i) {
-				wattroff(popup_window->window, COLOR_PAIR(3));
-			}
-		}
-	}
 	return;
 }
