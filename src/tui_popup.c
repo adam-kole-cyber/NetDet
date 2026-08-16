@@ -210,7 +210,25 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 	return;
 }
 
-void draw_popup(popup_window_data *popup_window) {
+void draw_popup(popup_window_data *popup_window, scroll_view *data_scroll_view) {
+	for (uint32_t i = 0; i < data_scroll_view->visible; i++) {
+		int32_t index = data_scroll_view->head + i;
+
+		if ((uint32_t)index >= data_scroll_view->count) {
+			break;
+		}
+
+		if ((uint32_t)data_scroll_view->cursor == i) {
+			wattroff(popup_window->window, COLOR_PAIR(3));
+		}
+
+		mvwprintw(popup_window->window, 1 + i, 2, "data");
+
+		if ((uint32_t)data_scroll_view->cursor == i) {
+			wattroff(popup_window->window, COLOR_PAIR(3));
+		}
+	}
+
 	if (popup_window->popup_type == INTERFACES_LIST) {
 
 		for (uint32_t i = 0; i < popup_list.view.visible; i++) {
@@ -224,7 +242,7 @@ void draw_popup(popup_window_data *popup_window) {
 				wattron(popup_window->window, COLOR_PAIR(3));
 			}
 
-			pthread_mutex_lock(&binded_interface_mutex);
+			pthread_mutex_lock(&binded_interface_mutex); // TODO if displaying the data requires a mutex, it must be enabled around the function call
 			mvwprintw(popup_window->window, 1 + i, 2, "[%c] - %s", (binded_interface.if_index == popup_list.items[index].if_index) ? '*' : ' ',
 					  popup_list.items[index].if_name);
 			pthread_mutex_unlock(&binded_interface_mutex);

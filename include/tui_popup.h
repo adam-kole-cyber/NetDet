@@ -2,6 +2,8 @@
 #define TUI_POPUP_H
 
 #include "device.h"
+#include "popup_templates.h"
+#include "scroll_view.h"
 #include "tui.h"
 #include <pthread.h>
 #include <stdint.h>
@@ -22,6 +24,6 @@ typedef struct {
 
 void popup_window_action(window_data *main_window, popup_window_data *popup_window, popup_type window_tpye, device *action_device,
 						 pthread_t signal_thread);
-void draw_popup(popup_window_data *popup_window);
+void draw_popup(popup_window_data *popup_window, scroll_view *data_scroll_view);
 
 #endif
