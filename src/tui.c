@@ -131,11 +131,7 @@ void draw(app_context *variables) {
 
 		if (variables->popup_window.is_active) {
 			werase(variables->popup_window.window);
-			if (variables->popup_window.popup_type == INTERFACES_LIST) {
-				draw_window_frame((window_data *)&variables->popup_window, " Available interfaces ");
-			} else {
-				draw_window_frame((window_data *)&variables->popup_window, " Inspect ");
-			}
+			draw_window_frame((window_data *)&variables->popup_window, popup_descriptors[variables->popup_window.popup_type].popup_title);
 			draw_popup(&variables->popup_window);
 		}
 

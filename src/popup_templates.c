@@ -45,11 +45,13 @@ void render_inspect_item(WINDOW *popup_window, int32_t row, int32_t col, uint32_
 }
 
 popup_descriptor popup_descriptors[POPUP_TYPE_COUNT] = {
-	[INTERFACES_LIST] = {.data = &popup_list,
+	[INTERFACES_LIST] = {.popup_title = " Available interfaces ",
+						 .data = &popup_list,
 						 .data_count = 0,
 						 .view = {.count = 0, .cursor = 0, .head = 0, .visible = 0},
 						 .render_item = render_interface_item},
-	[INSPECT_LIST] = {.data = (void *)&popup_inspect,
+	[INSPECT_LIST] = {.popup_title = " Inspect ",
+					  .data = (void *)&popup_inspect,
 					  .data_count = (int32_t)(sizeof(popup_inspect) / sizeof(popup_inspect[0])),
 					  .view = {.count = 0, .cursor = 0, .head = 0, .visible = 0},
 					  .render_item = render_inspect_item},

@@ -147,7 +147,6 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 		switch (window_type) {
 		case INTERFACES_LIST:
 			prepare_interface_list(signal_thread);
-			draw_window_frame((window_data *)popup_window, " Available interfaces "); // TODO fix this properly
 			break;
 		case INSPECT_LIST:
 			ip = action_device->ip;
@@ -156,7 +155,6 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 			atomic_int_storage = &action_device->previsou_frames;
 			graph = &action_device->graph;
 
-			draw_window_frame((window_data *)popup_window, " Inspect ");
 			break;
 		default:
 			break;
@@ -167,6 +165,7 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 		descriptor->view.head = 0;
 		descriptor->view.cursor = 0;
 
+		draw_window_frame((window_data *)popup_window, popup_descriptors[popup_window->popup_type].popup_title);
 		draw_popup(popup_window);
 	} else {
 		main_window->is_active = true;
