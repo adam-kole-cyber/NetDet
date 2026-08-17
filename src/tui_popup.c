@@ -117,27 +117,7 @@ static void prepare_interface_list(pthread_t signal_thread) {
 
 	popup_list.items[count].if_index = UINT32_MAX;
 	popup_list.items[count].if_name = strdup("all");
-	popup_list.size = count + 2;
-
-	return;
-}
-
-static void prepare_scroll_view(popup_window_data *popup_window) {
-	scroll_view *view = &popup_descriptors[popup_window->popup_type].view;
-
-	view->count = 0;
-	while (popup_list.items[view->count].if_index != 0) {
-		view->count++;
-	}
-
-	view->visible = popup_window->height - 2;
-
-	if (view->visible > view->count) {
-		view->visible = view->count;
-	}
-
-	view->head = 0;
-	view->cursor = 0;
+	popup_descriptors[INTERFACES_LIST].data_count = count + 1;
 
 	return;
 }
@@ -167,9 +147,7 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 		switch (window_type) {
 		case INTERFACES_LIST:
 			prepare_interface_list(signal_thread);
-			prepare_scroll_view(popup_window);
 			draw_window_frame((window_data *)popup_window, " Available interfaces "); // TODO fix this properly
-			draw_popup(popup_window);
 			break;
 		case INSPECT_LIST:
 			ip = action_device->ip;
@@ -178,25 +156,18 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 			atomic_int_storage = &action_device->previsou_frames;
 			graph = &action_device->graph;
 
-			popup_descriptor *descriptor = &popup_descriptors[popup_window->popup_type];
-
-			descriptor->view.count = sizeof(popup_inspect) / sizeof(popup_inspect[0]);
-			descriptor->view.visible = popup_window->height - 2;
-
-			if (descriptor->view.visible > descriptor->view.count) {
-				descriptor->view.visible = descriptor->view.count;
-			}
-
-			descriptor->view.head = 0;
-			descriptor->view.cursor = 0;
-
 			draw_window_frame((window_data *)popup_window, " Inspect ");
-			draw_popup(popup_window);
 			break;
 		default:
 			break;
 		}
 
+		popup_descriptor *descriptor = &popup_descriptors[popup_window->popup_type];
+		scroll_view_configure(&descriptor->view, descriptor->data_count, popup_window->height);
+		descriptor->view.head = 0;
+		descriptor->view.cursor = 0;
+
+		draw_popup(popup_window);
 	} else {
 		main_window->is_active = true;
 		popup_clean_up(popup_window);

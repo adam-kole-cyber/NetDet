@@ -13,5 +13,6 @@ typedef struct {
 } scroll_view;
 
 void scroll_move(scroll_view *view, int32_t direction);
+void scroll_view_configure(scroll_view *view, int32_t data_count, int32_t window_height);
 
 #endif

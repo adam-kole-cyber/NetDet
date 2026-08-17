@@ -72,12 +72,12 @@ void input_handler(int32_t input, app_context *variables) {
 		popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL, variables->signal_thread);
 		break;
 	case 'i': {
-		device *action_device =
-			variables->buffer.items[variables->buffer.view.head +
-									variables->buffer.view.cursor]; // the way in wich is action device passed to function might be reworked later
+		sliding_window_buffer *buffer_reference = &variables->buffer;
+		device *action_device = buffer_reference->items[buffer_reference->view.head + buffer_reference->view.cursor];
 		if (action_device == NULL) {
 			break;
 		}
+		// the way in wich is action device passed to function might be reworked later
 		popup_window_action(&variables->main_window, &variables->popup_window, INSPECT_LIST, action_device, variables->signal_thread);
 		break;
 	}
@@ -177,25 +177,8 @@ void resize_handler(app_context *variables) {
 			variables->popup_window.height = variables->main_window.height;
 		}
 
-		if (variables->popup_window.popup_type == INTERFACES_LIST) {
-			scroll_view *view = &popup_descriptors[variables->popup_window.popup_type].view;
-
-			view->count = popup_list.size - 1;
-			view->visible = variables->popup_window.height - 2;
-
-			if (view->visible > view->count) {
-				view->visible = view->count;
-			}
-		} else {
-			scroll_view *view = &popup_descriptors[variables->popup_window.popup_type].view;
-
-			view->count = sizeof(popup_inspect) / sizeof(popup_inspect[0]);
-			view->visible = variables->popup_window.height - 2;
-
-			if (view->visible > view->count) {
-				view->visible = view->count;
-			}
-		}
+		popup_descriptor *descriptor = &popup_descriptors[variables->popup_window.popup_type];
+		scroll_view_configure(&descriptor->view, descriptor->data_count, variables->popup_window.height);
 
 		wresize(variables->popup_window.window, variables->popup_window.height, variables->popup_window.width);
 		move_panel(variables->popup_window.panel, variables->popup_window.start_y, variables->popup_window.start_x);

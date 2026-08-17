@@ -3,6 +3,7 @@
 #include "shared_state.h"
 #include "tui_popup.h"
 #include <net/if.h>
+#include <stdint.h>
 
 void render_interface_item(WINDOW *popup_window, int32_t row, int32_t col, uint32_t index, void *data) {
 	interfaces_list *items = (interfaces_list *)data;
@@ -44,8 +45,14 @@ void render_inspect_item(WINDOW *popup_window, int32_t row, int32_t col, uint32_
 }
 
 popup_descriptor popup_descriptors[POPUP_TYPE_COUNT] = {
-	[INTERFACES_LIST] = {.data = &popup_list, .view = {.count = 0, .cursor = 0, .head = 0, .visible = 0}, .render_item = render_interface_item},
-	[INSPECT_LIST] = {.data = (void *)&popup_inspect, .view = {.count = 0, .cursor = 0, .head = 0, .visible = 0}, .render_item = render_inspect_item},
+	[INTERFACES_LIST] = {.data = &popup_list,
+						 .data_count = 0,
+						 .view = {.count = 0, .cursor = 0, .head = 0, .visible = 0},
+						 .render_item = render_interface_item},
+	[INSPECT_LIST] = {.data = (void *)&popup_inspect,
+					  .data_count = (int32_t)(sizeof(popup_inspect) / sizeof(popup_inspect[0])),
+					  .view = {.count = 0, .cursor = 0, .head = 0, .visible = 0},
+					  .render_item = render_inspect_item},
 };
 
 void draw_popup(popup_window_data *popup_window) {
