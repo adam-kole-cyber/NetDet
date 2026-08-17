@@ -1,3 +1,4 @@
 build/
 NetDet
 compile_commands.json
+*.log

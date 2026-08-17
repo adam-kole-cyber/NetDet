@@ -72,5 +72,3 @@ void draw_popup(popup_window_data *popup_window) {
 
 	return;
 }
-
-// TODO I'm getting an ancillary data error

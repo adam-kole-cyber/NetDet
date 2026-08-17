@@ -126,7 +126,7 @@ static void prepare_scroll_view(popup_window_data *popup_window) {
 	scroll_view *view = &popup_descriptors[popup_window->popup_type].view;
 
 	view->count = 0;
-	while (popup_list.items[view->count].if_index != 0) { // this is partiali universal
+	while (popup_list.items[view->count].if_index != 0) {
 		view->count++;
 	}
 
