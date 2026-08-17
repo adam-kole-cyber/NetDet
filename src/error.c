@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-static error_code error_app;
+static error_code error_app = APP_ERR_NONE;
 static int32_t errno_val_app = 0;
 
 static const char *error_code_to_text(error_code err) {
