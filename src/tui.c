@@ -75,6 +75,9 @@ void input_handler(int32_t input, app_context *variables) {
 		device *action_device =
 			variables->buffer.items[variables->buffer.view.head +
 									variables->buffer.view.cursor]; // the way in wich is action device passed to function might be reworked later
+		if (action_device == NULL) {
+			break;
+		}
 		popup_window_action(&variables->main_window, &variables->popup_window, INSPECT_LIST, action_device, variables->signal_thread);
 		break;
 	}
@@ -178,10 +181,6 @@ void resize_handler(app_context *variables) {
 			scroll_view *view = &popup_descriptors[variables->popup_window.popup_type].view;
 
 			view->count = popup_list.size - 1;
-			/*while (popup_list.items[popup_list.view.count].if_index != 0) {
-				popup_list.view.count++;
-			}*/
-
 			view->visible = variables->popup_window.height - 2;
 
 			if (view->visible > view->count) {
