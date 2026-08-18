@@ -15,7 +15,6 @@
 struct network_thread_args {
 	int argc;
 	char **argv;
-	pthread_t signal_thread;
 };
 
 struct eth_header {

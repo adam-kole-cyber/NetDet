@@ -13,7 +13,7 @@
 void main_clean_up(app_context *variables) {
 
 	pthread_join(variables->network_thread, NULL);
-	pthread_join(variables->signal_thread, NULL);
+	pthread_join(signal_thread, NULL);
 
 	for (uint32_t i = 0; i < variables->buffer.view.count; i++) {
 		free(variables->buffer.items[i]);

@@ -88,14 +88,14 @@ const inspect_field_t popup_inspect[6] = {
 	{"Rate history:", NONE, .getter = {.get_graph = get_graph}, .arg = &graph},
 	{"%s", GRAPH, .getter = {.get_graph = get_graph}, .arg = &graph}};
 
-static void prepare_interface_list(pthread_t signal_thread) {
+static void prepare_interface_list(void) {
 	struct if_nameindex *kernel_interface = NULL;
 	int32_t count = 0;
 	int32_t i = 0;
 
 	kernel_interface = if_nameindex();
 	if (kernel_interface == NULL) {
-		main_error(APP_ERR_IF_NAMEINDEX, signal_thread);
+		main_error(APP_ERR_IF_NAMEINDEX);
 		return;
 	}
 
@@ -106,7 +106,7 @@ static void prepare_interface_list(pthread_t signal_thread) {
 
 	popup_list = calloc(count + 2, sizeof(struct if_nameindex));
 	if (popup_list == NULL) {
-		main_error(APP_ERR_CALLOC, signal_thread);
+		main_error(APP_ERR_CALLOC);
 		return;
 	}
 
@@ -134,8 +134,7 @@ static void interfaces_list_clean_up(void) {
 	return;
 }
 
-void popup_window_action(window_data *main_window, popup_window_data *popup_window, popup_type window_type, device *action_device,
-						 pthread_t signal_thread) {
+void popup_window_action(window_data *main_window, popup_window_data *popup_window, popup_type window_type, device *action_device) {
 	static bool is_visible = false;
 
 	is_visible = !is_visible;
@@ -147,7 +146,7 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 
 		switch (window_type) {
 		case INTERFACES_LIST:
-			prepare_interface_list(signal_thread);
+			prepare_interface_list();
 			break;
 		case INSPECT_LIST:
 			ip = action_device->ip;

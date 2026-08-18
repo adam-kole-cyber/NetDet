@@ -69,7 +69,7 @@ void input_handler(int32_t input, app_context *variables) {
 		}
 		break;
 	case 'b':
-		popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL, variables->signal_thread);
+		popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL);
 		break;
 	case 'i': {
 		sliding_window_buffer *buffer_reference = &variables->buffer;
@@ -78,7 +78,7 @@ void input_handler(int32_t input, app_context *variables) {
 			break;
 		}
 		// the way in wich is action device passed to function might be reworked later
-		popup_window_action(&variables->main_window, &variables->popup_window, INSPECT_LIST, action_device, variables->signal_thread);
+		popup_window_action(&variables->main_window, &variables->popup_window, INSPECT_LIST, action_device);
 		break;
 	}
 	case '\n':
@@ -102,7 +102,7 @@ void input_handler(int32_t input, app_context *variables) {
 			uint64_t event_updated_bind = 1;
 			write(bind_update_fd, &event_updated_bind, sizeof(event_updated_bind));
 
-			popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL, variables->signal_thread);
+			popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL);
 		}
 
 		break;

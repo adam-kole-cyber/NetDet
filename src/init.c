@@ -38,8 +38,7 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 	sigaddset(&mask, SIGUSR1);
 	pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
-	pthread_create(&variables->signal_thread, NULL, signal_routine, NULL);
-	args->signal_thread = variables->signal_thread;
+	pthread_create(&signal_thread, NULL, signal_routine, NULL);
 	pthread_create(&variables->network_thread, NULL, network_routine, (void *)args);
 
 	pipe(pipe_fd);
@@ -79,7 +78,7 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 	variables->buffer.size = BUFFER_INITIAL_SIZE;
 	variables->buffer.items = calloc(variables->buffer.size, sizeof(device *));
 	if (variables->buffer.items == NULL) {
-		main_error(APP_ERR_CALLOC, variables->signal_thread);
+		main_error(APP_ERR_CALLOC);
 		return;
 	}
 	variables->buffer.view.count = 0;
@@ -102,13 +101,13 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (*socket_fd == -1) {
 		set_error(APP_ERR_SOCKET, errno);
-		pthread_kill(args->signal_thread, SIGUSR1);
+		pthread_kill(signal_thread, SIGUSR1);
 		pthread_exit(NULL);
 		return;
 	}
 
 	if (setsockopt(*socket_fd, SOL_PACKET, PACKET_AUXDATA, &enable, sizeof(enable)) == -1) {
-		network_error(APP_ERR_SETSOCKOPT, socket_fd, args->signal_thread);
+		network_error(APP_ERR_SETSOCKOPT, socket_fd);
 		return;
 	}
 
@@ -125,12 +124,12 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 		sll.sll_ifindex = if_nametoindex(args->argv[1]);
 
 		if (sll.sll_ifindex == 0) {
-			network_error(APP_ERR_IF_NAMETOINDEX, socket_fd, args->signal_thread);
+			network_error(APP_ERR_IF_NAMETOINDEX, socket_fd);
 			return;
 		}
 
 		if (bind(*socket_fd, (struct sockaddr *)&sll, sizeof(sll)) == -1) {
-			network_error(APP_ERR_BIND, socket_fd, args->signal_thread);
+			network_error(APP_ERR_BIND, socket_fd);
 			return;
 		}
 
@@ -145,7 +144,7 @@ void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map
 	map->count = 0;
 	map->table = calloc(map->size, sizeof(hash_entry));
 	if (map->table == NULL) {
-		network_error(APP_ERR_CALLOC, socket_fd, args->signal_thread);
+		network_error(APP_ERR_CALLOC, socket_fd);
 		return;
 	}
 

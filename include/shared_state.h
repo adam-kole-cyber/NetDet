@@ -21,5 +21,6 @@ extern int32_t col_width;
 extern int32_t col_width_remainder;
 extern const inspect_field_t popup_inspect[6];
 extern popup_descriptor popup_descriptors[POPUP_TYPE_COUNT];
+extern pthread_t signal_thread;
 
 #endif

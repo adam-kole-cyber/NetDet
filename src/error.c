@@ -1,4 +1,5 @@
 #include "error.h"
+#include "shared_state.h"
 #include <errno.h>
 #include <pthread.h>
 #include <signal.h>
@@ -56,7 +57,7 @@ void get_error(void) {
 	return;
 }
 
-void network_error(error_code error, int32_t *socket, pthread_t signal_thread) {
+void network_error(error_code error, int32_t *socket) {
 	set_error(error, errno);
 	close(*socket);
 	pthread_kill(signal_thread, SIGUSR1);
@@ -64,7 +65,7 @@ void network_error(error_code error, int32_t *socket, pthread_t signal_thread) {
 	return;
 }
 
-void main_error(error_code error, pthread_t signal_thread) {
+void main_error(error_code error) {
 	set_error(error, errno);
 	pthread_kill(signal_thread, SIGUSR1);
 	return;
