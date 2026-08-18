@@ -24,11 +24,6 @@ typedef struct {
 	PANEL *panel;
 } window_data;
 
-typedef struct {
-	struct if_nameindex *items;
-	uint32_t size;
-} interfaces_list;
-
 void draw_window_frame(window_data *window_data, const char *title);
 void input_handler(int32_t input, app_context *variables);
 void draw(app_context *variables);

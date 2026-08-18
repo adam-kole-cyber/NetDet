@@ -9,6 +9,7 @@
 #include "tui.h"
 #include <math.h>
 #include <ncurses.h>
+#include <net/if.h>
 #include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -78,7 +79,7 @@ static const char *get_graph(void *arg) {
 	return result;
 }
 
-interfaces_list popup_list = {0};
+struct if_nameindex *popup_list = NULL;
 const inspect_field_t popup_inspect[6] = {
 	{"IP: %s", IP, .getter = {.get_ip = get_ip}, .arg = &ip},
 	{"802.1ad (QinQ): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter = {.get_vlan_tag = get_vlan_tag}, .arg = &qinq_tag},
@@ -103,32 +104,32 @@ static void prepare_interface_list(pthread_t signal_thread) {
 		count++;
 	}
 
-	popup_list.items = calloc(count + 2, sizeof(struct if_nameindex));
-	if (popup_list.items == NULL) {
+	popup_list = calloc(count + 2, sizeof(struct if_nameindex));
+	if (popup_list == NULL) {
 		main_error(APP_ERR_CALLOC, signal_thread);
 		return;
 	}
 
 	for (i = 0; i < count; i++) {
-		popup_list.items[i].if_index = kernel_interface[i].if_index;
-		popup_list.items[i].if_name = strdup(kernel_interface[i].if_name);
+		popup_list[i].if_index = kernel_interface[i].if_index;
+		popup_list[i].if_name = strdup(kernel_interface[i].if_name);
 	}
 	if_freenameindex(kernel_interface);
 
-	popup_list.items[count].if_index = UINT32_MAX;
-	popup_list.items[count].if_name = strdup("all");
+	popup_list[count].if_index = UINT32_MAX;
+	popup_list[count].if_name = strdup("all");
 	popup_descriptors[INTERFACES_LIST].data_count = count + 1;
 
 	return;
 }
 
 static void interfaces_list_clean_up(void) {
-	for (int32_t i = 0; popup_list.items[i].if_name != NULL; i++) {
-		free(popup_list.items[i].if_name);
-		popup_list.items[i].if_name = NULL;
+	for (int32_t i = 0; popup_list[i].if_name != NULL; i++) {
+		free(popup_list[i].if_name);
+		popup_list[i].if_name = NULL;
 	}
-	free(popup_list.items);
-	popup_list.items = NULL;
+	free(popup_list);
+	popup_list = NULL;
 
 	return;
 }

@@ -32,11 +32,12 @@ void main_clean_up(app_context *variables) {
 		del_panel(variables->popup_window.panel);
 		delwin(variables->popup_window.window);
 	}
-	if (popup_list.items != NULL) {
-		for (int32_t i = 0; popup_list.items[i].if_name != NULL; i++) {
-			free(popup_list.items[i].if_name);
+
+	if (popup_list != NULL) {
+		for (int32_t i = 0; popup_list[i].if_name != NULL; i++) {
+			free(popup_list[i].if_name);
 		}
-		free(popup_list.items);
+		free(popup_list);
 	}
 
 	del_panel(variables->main_window.panel);

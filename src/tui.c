@@ -88,14 +88,14 @@ void input_handler(int32_t input, app_context *variables) {
 
 			if ((uint32_t)selected >= view->count)
 				break;
-			if (popup_list.items[selected].if_index == 0)
+			if (popup_list[selected].if_index == 0)
 				break;
 
 			pthread_mutex_lock(&binded_interface_mutex);
 
-			binded_interface.if_index = popup_list.items[selected].if_index;
+			binded_interface.if_index = popup_list[selected].if_index;
 			free(binded_interface.if_name);
-			binded_interface.if_name = strdup(popup_list.items[selected].if_name);
+			binded_interface.if_name = strdup(popup_list[selected].if_name);
 
 			pthread_mutex_unlock(&binded_interface_mutex);
 
