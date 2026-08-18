@@ -1,15 +1,54 @@
 #include "popup_templates.h"
+#include "error.h"
 #include "scroll_view.h"
 #include "shared_state.h"
 #include "tui_popup.h"
 #include <net/if.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
+static void prepare_interface_list(void *args) {
+	(void)args;
+	struct if_nameindex *kernel_interface = NULL;
+	int32_t count = 0;
+	int32_t i = 0;
+
+	kernel_interface = if_nameindex();
+	if (kernel_interface == NULL) {
+		main_error(APP_ERR_IF_NAMEINDEX);
+		return;
+	}
+
+	while (kernel_interface[count].if_index != 0) {
+		// is used to determine how many records an array contains
+		count++;
+	}
+
+	popup_list = calloc(count + 2, sizeof(struct if_nameindex));
+	if (popup_list == NULL) {
+		main_error(APP_ERR_CALLOC);
+		return;
+	}
+
+	for (i = 0; i < count; i++) {
+		popup_list[i].if_index = kernel_interface[i].if_index;
+		popup_list[i].if_name = strdup(kernel_interface[i].if_name);
+	}
+	if_freenameindex(kernel_interface);
+
+	popup_list[count].if_index = UINT32_MAX;
+	popup_list[count].if_name = strdup("all");
+	popup_descriptors[INTERFACES_LIST].data_count = count + 1;
+
+	return;
+}
 
 void render_interface_item(WINDOW *popup_window, int32_t row, int32_t col, uint32_t index, void *data) {
-	interfaces_list *items = (interfaces_list *)data;
+	struct if_nameindex *items = *(struct if_nameindex **)data;
 
 	pthread_mutex_lock(&binded_interface_mutex);
-	mvwprintw(popup_window, row, col, "[%c] - %s", (binded_interface.if_index == items->items[index].if_index) ? '*' : ' ',
-			  items->items[index].if_name);
+	mvwprintw(popup_window, row, col, "[%c] - %s", (binded_interface.if_index == items[index].if_index) ? '*' : ' ', items[index].if_name);
 	pthread_mutex_unlock(&binded_interface_mutex);
 
 	return;
@@ -44,8 +83,18 @@ void render_inspect_item(WINDOW *popup_window, int32_t row, int32_t col, uint32_
 }
 
 popup_descriptor popup_descriptors[POPUP_TYPE_COUNT] = {
-	[INTERFACES_LIST] = {.data = &popup_list, .view = {.count = 0, .cursor = 0, .head = 0, .visible = 0}, .render_item = render_interface_item},
-	[INSPECT_LIST] = {.data = (void *)&popup_inspect, .view = {.count = 0, .cursor = 0, .head = 0, .visible = 0}, .render_item = render_inspect_item},
+	[INTERFACES_LIST] = {.popup_title = " Available interfaces ",
+						 .data = (void *)&popup_list,
+						 .data_count = 0,
+						 .data_init = prepare_interface_list,
+						 .view = {.count = 0, .cursor = 0, .head = 0, .visible = 0},
+						 .render_item = render_interface_item},
+	[INSPECT_LIST] = {.popup_title = " Inspect ",
+					  .data = (void *)&popup_inspect,
+					  .data_count = (int32_t)(sizeof(popup_inspect) / sizeof(popup_inspect[0])),
+					  .data_init = prepare_inspect_data,
+					  .view = {.count = 0, .cursor = 0, .head = 0, .visible = 0},
+					  .render_item = render_inspect_item},
 };
 
 void draw_popup(popup_window_data *popup_window) {

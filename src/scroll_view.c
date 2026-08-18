@@ -1,4 +1,5 @@
 #include "scroll_view.h"
+#include <stdint.h>
 
 void scroll_move(scroll_view *view, int32_t direction) {
 	if (view->count == 0)
@@ -29,5 +30,17 @@ void scroll_move(scroll_view *view, int32_t direction) {
 	}
 
 	view->cursor = new_position;
+
+	return;
+}
+
+void scroll_view_configure(scroll_view *view, int32_t data_count, int32_t window_height) {
+	view->count = data_count;
+	view->visible = window_height - 2;
+
+	if (view->visible > view->count) {
+		view->visible = view->count;
+	}
+
 	return;
 }

@@ -1,7 +1,6 @@
 #include "tui_popup.h"
 #include "clean_up.h"
 #include "device.h"
-#include "error.h"
 #include "init.h"
 #include "popup_templates.h"
 #include "scroll_view.h"
@@ -9,6 +8,7 @@
 #include "tui.h"
 #include <math.h>
 #include <ncurses.h>
+#include <net/if.h>
 #include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -78,7 +78,7 @@ static const char *get_graph(void *arg) {
 	return result;
 }
 
-interfaces_list popup_list = {0};
+struct if_nameindex *popup_list = NULL;
 const inspect_field_t popup_inspect[6] = {
 	{"IP: %s", IP, .getter = {.get_ip = get_ip}, .arg = &ip},
 	{"802.1ad (QinQ): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter = {.get_vlan_tag = get_vlan_tag}, .arg = &qinq_tag},
@@ -87,74 +87,30 @@ const inspect_field_t popup_inspect[6] = {
 	{"Rate history:", NONE, .getter = {.get_graph = get_graph}, .arg = &graph},
 	{"%s", GRAPH, .getter = {.get_graph = get_graph}, .arg = &graph}};
 
-static void prepare_interface_list(pthread_t signal_thread) {
-	struct if_nameindex *kernel_interface = NULL;
-	int32_t count = 0;
-	int32_t i = 0;
+void prepare_inspect_data(void *args) {
+	device *action_device = (device *)args;
 
-	kernel_interface = if_nameindex();
-	if (kernel_interface == NULL) {
-		main_error(APP_ERR_IF_NAMEINDEX, signal_thread);
-		return;
-	}
-
-	while (kernel_interface[count].if_index != 0) {
-		// is used to determine how many records an array contains
-		count++;
-	}
-
-	popup_list.items = calloc(count + 2, sizeof(struct if_nameindex));
-	if (popup_list.items == NULL) {
-		main_error(APP_ERR_CALLOC, signal_thread);
-		return;
-	}
-
-	for (i = 0; i < count; i++) {
-		popup_list.items[i].if_index = kernel_interface[i].if_index;
-		popup_list.items[i].if_name = strdup(kernel_interface[i].if_name);
-	}
-	if_freenameindex(kernel_interface);
-
-	popup_list.items[count].if_index = UINT32_MAX;
-	popup_list.items[count].if_name = strdup("all");
-	popup_list.size = count + 2;
-
-	return;
-}
-
-static void prepare_scroll_view(popup_window_data *popup_window) {
-	scroll_view *view = &popup_descriptors[popup_window->popup_type].view;
-
-	view->count = 0;
-	while (popup_list.items[view->count].if_index != 0) {
-		view->count++;
-	}
-
-	view->visible = popup_window->height - 2;
-
-	if (view->visible > view->count) {
-		view->visible = view->count;
-	}
-
-	view->head = 0;
-	view->cursor = 0;
+	ip = action_device->ip;
+	qinq_tag = &action_device->qinq_tag;
+	dot1q_tag = &action_device->dot1q_tag;
+	atomic_int_storage = &action_device->previsou_frames;
+	graph = &action_device->graph;
 
 	return;
 }
 
 static void interfaces_list_clean_up(void) {
-	for (int32_t i = 0; popup_list.items[i].if_name != NULL; i++) {
-		free(popup_list.items[i].if_name);
-		popup_list.items[i].if_name = NULL;
+	for (int32_t i = 0; popup_list[i].if_name != NULL; i++) {
+		free(popup_list[i].if_name);
+		popup_list[i].if_name = NULL;
 	}
-	free(popup_list.items);
-	popup_list.items = NULL;
+	free(popup_list);
+	popup_list = NULL;
 
 	return;
 }
 
-void popup_window_action(window_data *main_window, popup_window_data *popup_window, popup_type window_type, device *action_device,
-						 pthread_t signal_thread) {
+void popup_window_action(window_data *main_window, popup_window_data *popup_window, popup_type window_type, device *action_device) {
 	static bool is_visible = false;
 
 	is_visible = !is_visible;
@@ -164,39 +120,16 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 
 		popup_init(popup_window, main_window, window_type);
 
-		switch (window_type) {
-		case INTERFACES_LIST:
-			prepare_interface_list(signal_thread);
-			prepare_scroll_view(popup_window);
-			draw_window_frame((window_data *)popup_window, " Available interfaces "); // TODO fix this properly
-			draw_popup(popup_window);
-			break;
-		case INSPECT_LIST:
-			ip = action_device->ip;
-			qinq_tag = &action_device->qinq_tag;
-			dot1q_tag = &action_device->dot1q_tag;
-			atomic_int_storage = &action_device->previsou_frames;
-			graph = &action_device->graph;
+		popup_descriptor *descriptor = &popup_descriptors[popup_window->popup_type];
+		descriptor->args = action_device;
+		descriptor->data_init(action_device);
 
-			popup_descriptor *descriptor = &popup_descriptors[popup_window->popup_type];
+		scroll_view_configure(&descriptor->view, descriptor->data_count, popup_window->height);
+		descriptor->view.head = 0;
+		descriptor->view.cursor = 0;
 
-			descriptor->view.count = sizeof(popup_inspect) / sizeof(popup_inspect[0]);
-			descriptor->view.visible = popup_window->height - 2;
-
-			if (descriptor->view.visible > descriptor->view.count) {
-				descriptor->view.visible = descriptor->view.count;
-			}
-
-			descriptor->view.head = 0;
-			descriptor->view.cursor = 0;
-
-			draw_window_frame((window_data *)popup_window, " Inspect ");
-			draw_popup(popup_window);
-			break;
-		default:
-			break;
-		}
-
+		draw_window_frame((window_data *)popup_window, popup_descriptors[popup_window->popup_type].popup_title);
+		draw_popup(popup_window);
 	} else {
 		main_window->is_active = true;
 		popup_clean_up(popup_window);

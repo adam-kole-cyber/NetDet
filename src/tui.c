@@ -69,16 +69,16 @@ void input_handler(int32_t input, app_context *variables) {
 		}
 		break;
 	case 'b':
-		popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL, variables->signal_thread);
+		popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL);
 		break;
 	case 'i': {
-		device *action_device =
-			variables->buffer.items[variables->buffer.view.head +
-									variables->buffer.view.cursor]; // the way in wich is action device passed to function might be reworked later
+		sliding_window_buffer *buffer_reference = &variables->buffer;
+		device *action_device = buffer_reference->items[buffer_reference->view.head + buffer_reference->view.cursor];
 		if (action_device == NULL) {
 			break;
 		}
-		popup_window_action(&variables->main_window, &variables->popup_window, INSPECT_LIST, action_device, variables->signal_thread);
+		// the way in wich is action device passed to function might be reworked later
+		popup_window_action(&variables->main_window, &variables->popup_window, INSPECT_LIST, action_device);
 		break;
 	}
 	case '\n':
@@ -88,21 +88,21 @@ void input_handler(int32_t input, app_context *variables) {
 
 			if ((uint32_t)selected >= view->count)
 				break;
-			if (popup_list.items[selected].if_index == 0)
+			if (popup_list[selected].if_index == 0)
 				break;
 
 			pthread_mutex_lock(&binded_interface_mutex);
 
-			binded_interface.if_index = popup_list.items[selected].if_index;
+			binded_interface.if_index = popup_list[selected].if_index;
 			free(binded_interface.if_name);
-			binded_interface.if_name = strdup(popup_list.items[selected].if_name);
+			binded_interface.if_name = strdup(popup_list[selected].if_name);
 
 			pthread_mutex_unlock(&binded_interface_mutex);
 
 			uint64_t event_updated_bind = 1;
 			write(bind_update_fd, &event_updated_bind, sizeof(event_updated_bind));
 
-			popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL, variables->signal_thread);
+			popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL);
 		}
 
 		break;
@@ -131,11 +131,7 @@ void draw(app_context *variables) {
 
 		if (variables->popup_window.is_active) {
 			werase(variables->popup_window.window);
-			if (variables->popup_window.popup_type == INTERFACES_LIST) {
-				draw_window_frame((window_data *)&variables->popup_window, " Available interfaces ");
-			} else {
-				draw_window_frame((window_data *)&variables->popup_window, " Inspect ");
-			}
+			draw_window_frame((window_data *)&variables->popup_window, popup_descriptors[variables->popup_window.popup_type].popup_title);
 			draw_popup(&variables->popup_window);
 		}
 
@@ -177,25 +173,8 @@ void resize_handler(app_context *variables) {
 			variables->popup_window.height = variables->main_window.height;
 		}
 
-		if (variables->popup_window.popup_type == INTERFACES_LIST) {
-			scroll_view *view = &popup_descriptors[variables->popup_window.popup_type].view;
-
-			view->count = popup_list.size - 1;
-			view->visible = variables->popup_window.height - 2;
-
-			if (view->visible > view->count) {
-				view->visible = view->count;
-			}
-		} else {
-			scroll_view *view = &popup_descriptors[variables->popup_window.popup_type].view;
-
-			view->count = sizeof(popup_inspect) / sizeof(popup_inspect[0]);
-			view->visible = variables->popup_window.height - 2;
-
-			if (view->visible > view->count) {
-				view->visible = view->count;
-			}
-		}
+		popup_descriptor *descriptor = &popup_descriptors[variables->popup_window.popup_type];
+		scroll_view_configure(&descriptor->view, descriptor->data_count, variables->popup_window.height);
 
 		wresize(variables->popup_window.window, variables->popup_window.height, variables->popup_window.width);
 		move_panel(variables->popup_window.panel, variables->popup_window.start_y, variables->popup_window.start_x);

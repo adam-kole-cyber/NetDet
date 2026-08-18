@@ -10,7 +10,6 @@
 typedef struct app_context {
 	int32_t epoll_fd;
 
-	pthread_t signal_thread;
 	pthread_t network_thread;
 
 	sliding_window_buffer buffer;

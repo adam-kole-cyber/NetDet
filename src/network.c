@@ -34,7 +34,7 @@ int32_t bind_update_fd;
 struct if_nameindex binded_interface = {0};
 pthread_mutex_t binded_interface_mutex;
 
-static void get_vlan_info(struct msghdr *control_msg, unsigned char *processed_frame, int32_t *socket_fd, pthread_t signal_thread) {
+static void get_vlan_info(struct msghdr *control_msg, unsigned char *processed_frame, int32_t *socket_fd) {
 
 	for (struct cmsghdr *cmsg = CMSG_FIRSTHDR(control_msg); cmsg != NULL; cmsg = CMSG_NXTHDR(control_msg, cmsg)) {
 		if (cmsg->cmsg_level == SOL_PACKET && cmsg->cmsg_type == PACKET_AUXDATA) {
@@ -60,7 +60,7 @@ static void get_vlan_info(struct msghdr *control_msg, unsigned char *processed_f
 					memcpy(&processed_frame[offset], &tpid_network_orded, sizeof(tpid_network_orded));
 					memcpy(&processed_frame[offset + 2], &tci_network_order, sizeof(tci_network_order));
 				} else { // TPID is unavailable (most likely due to RX VLAN OFFLOAD)
-					network_error(APP_ERR_ANCILLARY_DATA, socket_fd, signal_thread);
+					network_error(APP_ERR_ANCILLARY_DATA, socket_fd);
 					return;
 				}
 
@@ -69,7 +69,7 @@ static void get_vlan_info(struct msghdr *control_msg, unsigned char *processed_f
 			}
 #else
 			// rx offload off or rebuild against newer Linux headers
-			network_error(APP_ERR_ANCILLARY_DATA, socket_fd, signal_thread);
+			network_error(APP_ERR_ANCILLARY_DATA, socket_fd);
 #endif
 		}
 	}
@@ -77,7 +77,7 @@ static void get_vlan_info(struct msghdr *control_msg, unsigned char *processed_f
 	return;
 }
 
-static void change_bind(int32_t *socket_fd, int32_t *epoll, pthread_t signal_thread) {
+static void change_bind(int32_t *socket_fd, int32_t *epoll) {
 	int32_t enable = 1;
 	struct sockaddr_ll sll;
 	memset(&sll, 0, sizeof(sll));
@@ -94,7 +94,7 @@ static void change_bind(int32_t *socket_fd, int32_t *epoll, pthread_t signal_thr
 	}
 
 	if (setsockopt(*socket_fd, SOL_PACKET, PACKET_AUXDATA, &enable, sizeof(enable)) == -1) {
-		network_error(APP_ERR_SETSOCKOPT, socket_fd, signal_thread);
+		network_error(APP_ERR_SETSOCKOPT, socket_fd);
 		return;
 	}
 
@@ -111,12 +111,12 @@ static void change_bind(int32_t *socket_fd, int32_t *epoll, pthread_t signal_thr
 	sll.sll_protocol = htons(ETH_P_ALL);
 
 	if (sll.sll_ifindex == 0) {
-		network_error(APP_ERR_IF_NAMETOINDEX, socket_fd, signal_thread);
+		network_error(APP_ERR_IF_NAMETOINDEX, socket_fd);
 		return;
 	}
 
 	if (bind(*socket_fd, (struct sockaddr *)&sll, sizeof(sll)) == -1) {
-		network_error(APP_ERR_BIND, socket_fd, signal_thread);
+		network_error(APP_ERR_BIND, socket_fd);
 		return;
 	}
 
@@ -168,7 +168,7 @@ static void process_raw_arp_frame(unsigned char *raw_frame_data, unsigned char *
 	return;
 }
 
-static void set_device_data(device *device_data, unsigned char *processed_frame, int32_t *socket, device *device, pthread_t signal_thread) {
+static void set_device_data(device *device_data, unsigned char *processed_frame, int32_t *socket, device *device) {
 	time_t now;
 	struct tm local_time;
 	struct eth_header *eth = (struct eth_header *)processed_frame;
@@ -184,7 +184,7 @@ static void set_device_data(device *device_data, unsigned char *processed_frame,
 	if (localtime_r(&now, &local_time) == NULL) {
 		free(device);
 		device = NULL;
-		network_error(APP_ERR_LOCALTIME_R, socket, signal_thread);
+		network_error(APP_ERR_LOCALTIME_R, socket);
 		return;
 	}
 
@@ -211,7 +211,6 @@ void *network_routine(void *args) {
 	int32_t timer_fd;
 	uint64_t timer_ticks = 0;
 	hash_map map;
-	pthread_t signal_thread = ((struct network_thread_args *)args)->signal_thread;
 	ui_message msg = {0};
 	struct epoll_event events[4];
 
@@ -251,8 +250,8 @@ void *network_routine(void *args) {
 					continue;
 				}
 
-				get_vlan_info(&control_msg, processed_frame, &socket_fd, signal_thread);
-				set_device_data(device_data, processed_frame, &socket_fd, device_data, signal_thread);
+				get_vlan_info(&control_msg, processed_frame, &socket_fd);
+				set_device_data(device_data, processed_frame, &socket_fd, device_data);
 
 				device *exitsing_device = hashmap_check_entry(&map, device_data->mac);
 
@@ -268,7 +267,7 @@ void *network_routine(void *args) {
 					device_data = NULL;
 				} else {
 					if (hashmap_store_entry(&map, device_data) == -1) {
-						network_error(APP_ERR_HASHMAP_SOTRE_ENTRY, &socket_fd, signal_thread);
+						network_error(APP_ERR_HASHMAP_SOTRE_ENTRY, &socket_fd);
 					}
 
 					atomic_store(&device_data->previsou_frames, 0);
@@ -290,12 +289,12 @@ void *network_routine(void *args) {
 				uint64_t read_event;
 				read(bind_update_fd, &read_event, sizeof(read_event)); // resets counter
 
-				change_bind(&socket_fd, &epoll_fd, signal_thread);
+				change_bind(&socket_fd, &epoll_fd);
 			} else if (events[i].data.fd == timer_fd) {
 				ssize_t return_val = read(timer_fd, &timer_ticks, sizeof(timer_ticks));
 
 				if (return_val != sizeof(timer_ticks)) {
-					network_error(APP_ERR_TIMER, &socket_fd, signal_thread);
+					network_error(APP_ERR_TIMER, &socket_fd);
 				}
 
 				for (uint32_t i = 0; i < map.size; i++) {

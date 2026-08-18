@@ -21,6 +21,7 @@ atomic_bool end_main_loop = false;
 atomic_uint_fast32_t termination_reason = PROGRAM_RUNNING;
 int32_t shutdown_main_fd;
 int32_t pipe_fd[2];
+pthread_t signal_thread;
 
 int main(int argc, char *argv[]) {
 	app_context variables = {0};
@@ -44,7 +45,7 @@ int main(int argc, char *argv[]) {
 
 				if (msg.msg_type == UI_NEW_ENTRY) {
 					if (slidingwindowbuffer_store_entry(&variables.buffer, msg.data) == -1) {
-						main_error(APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY, variables.signal_thread);
+						main_error(APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY);
 					}
 				} else if (msg.msg_type == UI_RESIZE) {
 					resize_handler(&variables);
