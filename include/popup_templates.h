@@ -20,13 +20,16 @@ typedef struct {
 } popup_window_data;
 
 typedef void (*popup_item_renderer)(WINDOW *popup_window, int32_t row, int32_t col, uint32_t index, void *data);
+typedef void (*data_initializer)(void *args);
 
 typedef struct {
 	const char *popup_title;
 	void *data;
 	int32_t data_count;
-	scroll_view view;
+	data_initializer data_init;
+	void *args;
 	popup_item_renderer render_item;
+	scroll_view view;
 } popup_descriptor;
 
 void draw_popup(popup_window_data *popup_window);

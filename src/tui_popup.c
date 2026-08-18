@@ -1,7 +1,6 @@
 #include "tui_popup.h"
 #include "clean_up.h"
 #include "device.h"
-#include "error.h"
 #include "init.h"
 #include "popup_templates.h"
 #include "scroll_view.h"
@@ -88,37 +87,14 @@ const inspect_field_t popup_inspect[6] = {
 	{"Rate history:", NONE, .getter = {.get_graph = get_graph}, .arg = &graph},
 	{"%s", GRAPH, .getter = {.get_graph = get_graph}, .arg = &graph}};
 
-static void prepare_interface_list(void) {
-	struct if_nameindex *kernel_interface = NULL;
-	int32_t count = 0;
-	int32_t i = 0;
+void prepare_inspect_data(void *args) {
+	device *action_device = (device *)args;
 
-	kernel_interface = if_nameindex();
-	if (kernel_interface == NULL) {
-		main_error(APP_ERR_IF_NAMEINDEX);
-		return;
-	}
-
-	while (kernel_interface[count].if_index != 0) {
-		// is used to determine how many records an array contains
-		count++;
-	}
-
-	popup_list = calloc(count + 2, sizeof(struct if_nameindex));
-	if (popup_list == NULL) {
-		main_error(APP_ERR_CALLOC);
-		return;
-	}
-
-	for (i = 0; i < count; i++) {
-		popup_list[i].if_index = kernel_interface[i].if_index;
-		popup_list[i].if_name = strdup(kernel_interface[i].if_name);
-	}
-	if_freenameindex(kernel_interface);
-
-	popup_list[count].if_index = UINT32_MAX;
-	popup_list[count].if_name = strdup("all");
-	popup_descriptors[INTERFACES_LIST].data_count = count + 1;
+	ip = action_device->ip;
+	qinq_tag = &action_device->qinq_tag;
+	dot1q_tag = &action_device->dot1q_tag;
+	atomic_int_storage = &action_device->previsou_frames;
+	graph = &action_device->graph;
 
 	return;
 }
@@ -144,23 +120,10 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 
 		popup_init(popup_window, main_window, window_type);
 
-		switch (window_type) {
-		case INTERFACES_LIST:
-			prepare_interface_list();
-			break;
-		case INSPECT_LIST:
-			ip = action_device->ip;
-			qinq_tag = &action_device->qinq_tag;
-			dot1q_tag = &action_device->dot1q_tag;
-			atomic_int_storage = &action_device->previsou_frames;
-			graph = &action_device->graph;
-
-			break;
-		default:
-			break;
-		}
-
 		popup_descriptor *descriptor = &popup_descriptors[popup_window->popup_type];
+		descriptor->args = action_device;
+		descriptor->data_init(action_device);
+
 		scroll_view_configure(&descriptor->view, descriptor->data_count, popup_window->height);
 		descriptor->view.head = 0;
 		descriptor->view.cursor = 0;
