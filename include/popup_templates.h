@@ -21,12 +21,14 @@ typedef struct {
 
 typedef void (*popup_item_renderer)(WINDOW *popup_window, int32_t row, int32_t col, uint32_t index, void *data);
 typedef void (*data_initializer)(void *args);
+typedef void (*data_cleanup)(void *args);
 
 typedef struct {
 	const char *popup_title;
 	void *data;
 	int32_t data_count;
 	data_initializer data_init;
+	data_cleanup data_cleanup;
 	void *args;
 	popup_item_renderer render_item;
 	scroll_view view;

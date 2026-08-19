@@ -80,11 +80,13 @@ void input_handler(int32_t input, app_context *variables) {
 	}
 	case '\n':
 		if (variables->popup_window.is_active && variables->popup_window.popup_type == INTERFACES_LIST) {
+			struct if_nameindex *popup_list = *(struct if_nameindex **)popup_descriptors[variables->popup_window.popup_type].data;
 			scroll_view *view = &popup_descriptors[variables->popup_window.popup_type].view;
 			int32_t selected = view->head + view->cursor;
 
 			if ((uint32_t)selected >= view->count)
 				break;
+
 			if (popup_list[selected].if_index == 0)
 				break;
 
@@ -92,6 +94,7 @@ void input_handler(int32_t input, app_context *variables) {
 
 			binded_interface.if_index = popup_list[selected].if_index;
 			free(binded_interface.if_name);
+
 			binded_interface.if_name = strdup(popup_list[selected].if_name);
 
 			pthread_mutex_unlock(&binded_interface_mutex);

@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+struct if_nameindex *popup_list = NULL;
+
 static void prepare_interface_list(void *args) {
 	(void)args;
 	struct if_nameindex *kernel_interface = NULL;
@@ -40,6 +42,18 @@ static void prepare_interface_list(void *args) {
 	popup_list[count].if_index = UINT32_MAX;
 	popup_list[count].if_name = strdup("all");
 	popup_descriptors[INTERFACES_LIST].data_count = count + 1;
+
+	return;
+}
+
+static void interfaces_list_clean_up(void *args) {
+	(void)args;
+	for (int32_t i = 0; popup_list[i].if_name != NULL; i++) {
+		free(popup_list[i].if_name);
+		popup_list[i].if_name = NULL;
+	}
+	free(popup_list);
+	popup_list = NULL;
 
 	return;
 }
@@ -87,12 +101,14 @@ popup_descriptor popup_descriptors[POPUP_TYPE_COUNT] = {
 						 .data = (void *)&popup_list,
 						 .data_count = 0,
 						 .data_init = prepare_interface_list,
+						 .data_cleanup = interfaces_list_clean_up,
 						 .view = {.count = 0, .cursor = 0, .head = 0, .visible = 0},
 						 .render_item = render_interface_item},
 	[INSPECT_LIST] = {.popup_title = " Inspect ",
 					  .data = (void *)&popup_inspect,
 					  .data_count = (int32_t)(sizeof(popup_inspect) / sizeof(popup_inspect[0])),
 					  .data_init = prepare_inspect_data,
+					  .data_cleanup = NULL,
 					  .view = {.count = 0, .cursor = 0, .head = 0, .visible = 0},
 					  .render_item = render_inspect_item},
 };

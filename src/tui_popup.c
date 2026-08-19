@@ -12,7 +12,6 @@
 #include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 static uint8_t *ip;
@@ -78,7 +77,6 @@ static const char *get_graph(void *arg) {
 	return result;
 }
 
-struct if_nameindex *popup_list = NULL;
 const inspect_field_t popup_inspect[6] = {
 	{"IP: %s", IP, .getter = {.get_ip = get_ip}, .arg = &ip},
 	{"802.1ad (QinQ): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter = {.get_vlan_tag = get_vlan_tag}, .arg = &qinq_tag},
@@ -95,17 +93,6 @@ void prepare_inspect_data(void *args) {
 	dot1q_tag = &action_device->dot1q_tag;
 	atomic_int_storage = &action_device->previsou_frames;
 	graph = &action_device->graph;
-
-	return;
-}
-
-static void interfaces_list_clean_up(void) {
-	for (int32_t i = 0; popup_list[i].if_name != NULL; i++) {
-		free(popup_list[i].if_name);
-		popup_list[i].if_name = NULL;
-	}
-	free(popup_list);
-	popup_list = NULL;
 
 	return;
 }
@@ -134,7 +121,12 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 		main_window->is_active = true;
 		popup_clean_up(popup_window);
 
-		switch (popup_window->popup_type) {
+		popup_descriptor *descriptor = &popup_descriptors[popup_window->popup_type];
+
+		if (descriptor->data_cleanup != NULL) {
+			descriptor->data_cleanup(descriptor->args);
+		}
+		/*switch (popup_window->popup_type) {
 		case INTERFACES_LIST:
 			interfaces_list_clean_up();
 			break;
@@ -142,7 +134,7 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 			break;
 		default:
 			break;
-		}
+		}*/
 	}
 
 	return;
