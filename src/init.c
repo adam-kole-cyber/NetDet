@@ -7,6 +7,7 @@
 #include "shared_state.h"
 #include "signal_handler.h"
 #include "tui.h"
+#include "tui_app.h"
 #include <errno.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
@@ -60,8 +61,7 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 	variables->main_window.panel = new_panel(variables->main_window.window);
 	keypad(variables->main_window.window, TRUE);
 
-	col_width = (variables->main_window.width - 4) / 4;
-	col_width_remainder = (variables->main_window.width - 4) % 4;
+	set_column_width(variables->main_window.width);
 
 	variables->popup_window.is_active = false;
 	variables->popup_window.start_x = 0;

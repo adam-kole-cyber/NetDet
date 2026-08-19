@@ -19,9 +19,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-int32_t col_width = 0;
-int32_t col_width_remainder = 0;
-
 void draw_window_frame(window_data *window_data, const char *title) {
 	bool title_set = title != NULL;
 	int32_t last_usable_column = window_data->width - 1; // the window width will be reduced due to the frame
@@ -151,8 +148,7 @@ void resize_handler(app_context *variables) {
 	wresize(variables->main_window.window, variables->main_window.height, variables->main_window.width);
 	move_panel(variables->main_window.panel, variables->main_window.start_y, variables->main_window.start_x);
 
-	col_width = (variables->main_window.width - 4) / 4;
-	col_width_remainder = (variables->main_window.width - 4) % 4;
+	set_column_width(variables->main_window.width);
 
 	uint32_t i = (variables->main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) < 0
 					 ? 0
