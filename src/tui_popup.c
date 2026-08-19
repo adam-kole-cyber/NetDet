@@ -97,6 +97,34 @@ void prepare_inspect_data(void *args) {
 	return;
 }
 
+void render_inspect_item(WINDOW *popup_window, int32_t row, int32_t col, uint32_t index, void *data) {
+	const inspect_field_t *items = (const inspect_field_t *)data;
+
+	switch (popup_inspect[index].getter_type) {
+	case IP:
+		mvwprintw(popup_window, row, col, items[index].string, items[index].getter.get_ip(items[index].arg));
+		break;
+	case VLAN_TAG: {
+		uint32_t vlan_tag = items[index].getter.get_vlan_tag(items[index].arg);
+		mvwprintw(popup_window, row, col, items[index].string, (vlan_tag & 0xfff), (vlan_tag & 0xe000) >> 13, (vlan_tag & 0x1000) >> 12);
+		break;
+	}
+	case ATOMIC_INT:
+		mvwprintw(popup_window, row, col, items[index].string, items[index].getter.get_atomic_int(items[index].arg));
+		break;
+	case GRAPH:
+		mvwprintw(popup_window, row, col, items[index].string, items[index].getter.get_graph(items[index].arg));
+		break;
+	case NONE:
+		mvwprintw(popup_window, row, col, "%s", items[index].string);
+		break;
+	default:
+		break;
+	}
+
+	return;
+}
+
 void popup_window_action(window_data *main_window, popup_window_data *popup_window, popup_type window_type, device *action_device) {
 	static bool is_visible = false;
 
@@ -126,15 +154,6 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 		if (descriptor->data_cleanup != NULL) {
 			descriptor->data_cleanup(descriptor->args);
 		}
-		/*switch (popup_window->popup_type) {
-		case INTERFACES_LIST:
-			interfaces_list_clean_up();
-			break;
-		case INSPECT_LIST:
-			break;
-		default:
-			break;
-		}*/
 	}
 
 	return;

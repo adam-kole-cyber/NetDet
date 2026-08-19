@@ -35,5 +35,7 @@ typedef struct {
 } popup_descriptor;
 
 void draw_popup(popup_window_data *popup_window);
+uint32_t get_interface_index(int32_t interface_index);
+char *get_interface_name(int32_t interface_index);
 
 #endif
