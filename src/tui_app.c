@@ -1,9 +1,10 @@
 #include "tui_app.h"
 #include "device.h"
-#include "shared_state.h"
 #include <ncurses.h>
 #include <stdint.h>
 #include <stdio.h>
+
+static table_layout current_layout = {0};
 
 static inline void sync_display_limit(sliding_window_buffer *buffer) {
 	buffer->view.visible =
@@ -37,7 +38,7 @@ static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t
 	}
 
 	wattrset(window, pair ? COLOR_PAIR(pair) : A_NORMAL);
-	mvwprintw(window, row, column, "%-*s", col_width, mac_string);
+	mvwprintw(window, row, column, "%-*s", current_layout.col_width, mac_string);
 	wattrset(window, A_NORMAL);
 
 	if (highlight_line) {
@@ -51,7 +52,7 @@ static void print_ip(WINDOW *window, const uint8_t *ip) {
 	char ip_string[16];
 
 	snprintf(ip_string, sizeof(ip_string), "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
-	wprintw(window, "%-*s", col_width, ip_string);
+	wprintw(window, "%-*s", current_layout.col_width, ip_string);
 	return;
 }
 
@@ -73,7 +74,7 @@ static void print_qinq(WINDOW *window, const uint32_t *qinq_tag, bool highlight_
 			wattrset(window, COLOR_PAIR(pair));
 		}
 
-		wprintw(window, "%-*s", col_width, qinq_string);
+		wprintw(window, "%-*s", current_layout.col_width, qinq_string);
 		wattrset(window, A_NORMAL);
 
 		if (highlight_line) {
@@ -89,7 +90,7 @@ static void print_qinq(WINDOW *window, const uint32_t *qinq_tag, bool highlight_
 		}
 
 		wattrset(window, COLOR_PAIR(pair));
-		wprintw(window, "%-*s", col_width, "-");
+		wprintw(window, "%-*s", current_layout.col_width, "-");
 		wattrset(window, A_NORMAL);
 
 		if (highlight_line) {
@@ -117,7 +118,7 @@ static void print_dot1q(WINDOW *window, const uint32_t *dot1q_tag, bool highligh
 			wattrset(window, COLOR_PAIR(pair));
 		}
 
-		wprintw(window, "%-*s", (col_width / 2), dot1q_string);
+		wprintw(window, "%-*s", (current_layout.col_width / 2), dot1q_string);
 		wattrset(window, A_NORMAL);
 
 		if (highlight_line) {
@@ -132,7 +133,7 @@ static void print_dot1q(WINDOW *window, const uint32_t *dot1q_tag, bool highligh
 		}
 
 		wattrset(window, COLOR_PAIR(pair));
-		wprintw(window, "%-*s", (col_width / 2), "-");
+		wprintw(window, "%-*s", (current_layout.col_width / 2), "-");
 		wattrset(window, A_NORMAL);
 
 		if (highlight_line) {
@@ -147,7 +148,7 @@ static void print_lastseen(WINDOW *window, const time_struct *last_seen) {
 
 	snprintf(last_seen_string, sizeof(last_seen_string), "%02u:%02u:%02u", atomic_load(&last_seen->hour), atomic_load(&last_seen->minutes),
 			 atomic_load(&last_seen->seconds));
-	wprintw(window, "%*s", ((col_width / 2) + col_width_remainder), last_seen_string);
+	wprintw(window, "%*s", ((current_layout.col_width / 2) + current_layout.col_width_remainder), last_seen_string);
 	return;
 }
 
@@ -164,8 +165,9 @@ static void print_network_row(WINDOW *window, int32_t row, int32_t column, const
 void draw_table_header(WINDOW *window) {
 	wattron(window, COLOR_PAIR(2));
 
-	mvwprintw(window, 1, 2, "%-*s%-*s%-*s%-*s%*s", col_width, "MAC", col_width, "IP", col_width, "802.1ad", (col_width / 2), "802.1Q",
-			  ((col_width / 2) + col_width_remainder), "Last seen");
+	mvwprintw(window, 1, 2, "%-*s%-*s%-*s%-*s%*s", current_layout.col_width, "MAC", current_layout.col_width, "IP", current_layout.col_width,
+			  "802.1ad", (current_layout.col_width / 2), "802.1Q", ((current_layout.col_width / 2) + current_layout.col_width_remainder),
+			  "Last seen");
 	wattroff(window, COLOR_PAIR(2));
 
 	return;
@@ -192,5 +194,15 @@ void print_network_data(WINDOW *window, sliding_window_buffer *buffer) {
 			wattroff(window, COLOR_PAIR(3));
 		}
 	}
+	return;
+}
+
+static table_layout table_layout_compute(int32_t window_width) {
+	table_layout layout = {.col_width = (window_width - 4) / 4, .col_width_remainder = (window_width - 4) % 4};
+	return layout;
+}
+
+void set_column_width(int32_t window_width) {
+	current_layout = table_layout_compute(window_width);
 	return;
 }

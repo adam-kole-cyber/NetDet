@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+static struct if_nameindex *popup_list = NULL;
+
 static void prepare_interface_list(void *args) {
 	(void)args;
 	struct if_nameindex *kernel_interface = NULL;
@@ -39,12 +41,24 @@ static void prepare_interface_list(void *args) {
 
 	popup_list[count].if_index = UINT32_MAX;
 	popup_list[count].if_name = strdup("all");
-	popup_descriptors[INTERFACES_LIST].data_count = count + 1;
+	set_popup_descriptor_data_count(INTERFACES_LIST, count + 1);
 
 	return;
 }
 
-void render_interface_item(WINDOW *popup_window, int32_t row, int32_t col, uint32_t index, void *data) {
+static void interfaces_list_clean_up(void *args) {
+	(void)args;
+	for (int32_t i = 0; popup_list[i].if_name != NULL; i++) {
+		free(popup_list[i].if_name);
+		popup_list[i].if_name = NULL;
+	}
+	free(popup_list);
+	popup_list = NULL;
+
+	return;
+}
+
+static void render_interface_item(WINDOW *popup_window, int32_t row, int32_t col, uint32_t index, void *data) {
 	struct if_nameindex *items = *(struct if_nameindex **)data;
 
 	pthread_mutex_lock(&binded_interface_mutex);
@@ -54,48 +68,27 @@ void render_interface_item(WINDOW *popup_window, int32_t row, int32_t col, uint3
 	return;
 }
 
-void render_inspect_item(WINDOW *popup_window, int32_t row, int32_t col, uint32_t index, void *data) {
-	const inspect_field_t *items = (const inspect_field_t *)data;
-
-	switch (popup_inspect[index].getter_type) {
-	case IP:
-		mvwprintw(popup_window, row, col, items[index].string, items[index].getter.get_ip(items[index].arg));
-		break;
-	case VLAN_TAG: {
-		uint32_t vlan_tag = items[index].getter.get_vlan_tag(items[index].arg);
-		mvwprintw(popup_window, row, col, items[index].string, (vlan_tag & 0xfff), (vlan_tag & 0xe000) >> 13, (vlan_tag & 0x1000) >> 12);
-		break;
-	}
-	case ATOMIC_INT:
-		mvwprintw(popup_window, row, col, items[index].string, items[index].getter.get_atomic_int(items[index].arg));
-		break;
-	case GRAPH:
-		mvwprintw(popup_window, row, col, items[index].string, items[index].getter.get_graph(items[index].arg));
-		break;
-	case NONE:
-		mvwprintw(popup_window, row, col, "%s", items[index].string);
-		break;
-	default:
-		break;
-	}
-
-	return;
-}
-
 popup_descriptor popup_descriptors[POPUP_TYPE_COUNT] = {
 	[INTERFACES_LIST] = {.popup_title = " Available interfaces ",
 						 .data = (void *)&popup_list,
 						 .data_count = 0,
 						 .data_init = prepare_interface_list,
+						 .data_cleanup = interfaces_list_clean_up,
 						 .view = {.count = 0, .cursor = 0, .head = 0, .visible = 0},
 						 .render_item = render_interface_item},
 	[INSPECT_LIST] = {.popup_title = " Inspect ",
 					  .data = (void *)&popup_inspect,
 					  .data_count = (int32_t)(sizeof(popup_inspect) / sizeof(popup_inspect[0])),
 					  .data_init = prepare_inspect_data,
+					  .data_cleanup = NULL,
 					  .view = {.count = 0, .cursor = 0, .head = 0, .visible = 0},
 					  .render_item = render_inspect_item},
 };
+
+void set_popup_descriptor_data_count(popup_type type, int32_t count) { popup_descriptors[type].data_count = count; }
+scroll_view *get_popup_descriptor_scroll_view(popup_type type) { return &popup_descriptors[type].view; }
+const char *get_popup_descriptor_title(popup_type type) { return popup_descriptors[type].popup_title; }
+popup_descriptor *get_popup_descriptor(popup_type type) { return &popup_descriptors[type]; }
 
 void draw_popup(popup_window_data *popup_window) {
 	popup_descriptor *descriptor = &popup_descriptors[popup_window->popup_type];
@@ -121,3 +114,6 @@ void draw_popup(popup_window_data *popup_window) {
 
 	return;
 }
+
+uint32_t get_interface_index(int32_t interface_index) { return popup_list[interface_index].if_index; }
+char *get_interface_name(int32_t interface_index) { return popup_list[interface_index].if_name; }

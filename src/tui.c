@@ -19,9 +19,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-int32_t col_width = 0;
-int32_t col_width_remainder = 0;
-
 void draw_window_frame(window_data *window_data, const char *title) {
 	bool title_set = title != NULL;
 	int32_t last_usable_column = window_data->width - 1; // the window width will be reduced due to the frame
@@ -58,14 +55,14 @@ void input_handler(int32_t input, app_context *variables) {
 		if (variables->main_window.is_active) {
 			scroll_move(&variables->buffer.view, 1);
 		} else {
-			scroll_move(&popup_descriptors[variables->popup_window.popup_type].view, 1);
+			scroll_move(get_popup_descriptor_scroll_view(variables->popup_window.popup_type), 1);
 		}
 		break;
 	case KEY_UP:
 		if (variables->main_window.is_active) {
 			scroll_move(&variables->buffer.view, -1);
 		} else {
-			scroll_move(&popup_descriptors[variables->popup_window.popup_type].view, -1);
+			scroll_move(get_popup_descriptor_scroll_view(variables->popup_window.popup_type), -1);
 		}
 		break;
 	case 'b':
@@ -83,19 +80,21 @@ void input_handler(int32_t input, app_context *variables) {
 	}
 	case '\n':
 		if (variables->popup_window.is_active && variables->popup_window.popup_type == INTERFACES_LIST) {
-			scroll_view *view = &popup_descriptors[variables->popup_window.popup_type].view;
+			scroll_view *view = get_popup_descriptor_scroll_view(variables->popup_window.popup_type);
 			int32_t selected = view->head + view->cursor;
 
 			if ((uint32_t)selected >= view->count)
 				break;
-			if (popup_list[selected].if_index == 0)
+
+			if (get_interface_index(selected) == 0)
 				break;
 
 			pthread_mutex_lock(&binded_interface_mutex);
 
-			binded_interface.if_index = popup_list[selected].if_index;
+			binded_interface.if_index = get_interface_index(selected);
 			free(binded_interface.if_name);
-			binded_interface.if_name = strdup(popup_list[selected].if_name);
+
+			binded_interface.if_name = strdup(get_interface_name(selected));
 
 			pthread_mutex_unlock(&binded_interface_mutex);
 
@@ -131,7 +130,7 @@ void draw(app_context *variables) {
 
 		if (variables->popup_window.is_active) {
 			werase(variables->popup_window.window);
-			draw_window_frame((window_data *)&variables->popup_window, popup_descriptors[variables->popup_window.popup_type].popup_title);
+			draw_window_frame((window_data *)&variables->popup_window, get_popup_descriptor_title(variables->popup_window.popup_type));
 			draw_popup(&variables->popup_window);
 		}
 
@@ -151,8 +150,7 @@ void resize_handler(app_context *variables) {
 	wresize(variables->main_window.window, variables->main_window.height, variables->main_window.width);
 	move_panel(variables->main_window.panel, variables->main_window.start_y, variables->main_window.start_x);
 
-	col_width = (variables->main_window.width - 4) / 4;
-	col_width_remainder = (variables->main_window.width - 4) % 4;
+	set_column_width(variables->main_window.width);
 
 	uint32_t i = (variables->main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) < 0
 					 ? 0
@@ -173,7 +171,7 @@ void resize_handler(app_context *variables) {
 			variables->popup_window.height = variables->main_window.height;
 		}
 
-		popup_descriptor *descriptor = &popup_descriptors[variables->popup_window.popup_type];
+		popup_descriptor *descriptor = get_popup_descriptor(variables->popup_window.popup_type);
 		scroll_view_configure(&descriptor->view, descriptor->data_count, variables->popup_window.height);
 
 		wresize(variables->popup_window.window, variables->popup_window.height, variables->popup_window.width);

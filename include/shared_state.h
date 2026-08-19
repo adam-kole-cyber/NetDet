@@ -14,13 +14,9 @@ extern int32_t shutdown_main_fd;
 extern int32_t shutdown_network_fd;
 extern int32_t pipe_fd[2];
 extern struct if_nameindex binded_interface;
-extern struct if_nameindex *popup_list;
 extern int32_t bind_update_fd;
 extern pthread_mutex_t binded_interface_mutex;
-extern int32_t col_width;
-extern int32_t col_width_remainder;
 extern const inspect_field_t popup_inspect[6];
-extern popup_descriptor popup_descriptors[POPUP_TYPE_COUNT];
 extern pthread_t signal_thread;
 
 #endif

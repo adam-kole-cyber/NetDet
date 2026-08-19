@@ -1,6 +1,7 @@
 #include "clean_up.h"
 #include "device.h"
 #include "error.h"
+#include "popup_templates.h"
 #include "shared_state.h"
 #include "tui.h"
 #include <ncurses.h>
@@ -33,11 +34,9 @@ void main_clean_up(app_context *variables) {
 		delwin(variables->popup_window.window);
 	}
 
-	if (popup_list != NULL) {
-		for (int32_t i = 0; popup_list[i].if_name != NULL; i++) {
-			free(popup_list[i].if_name);
-		}
-		free(popup_list);
+	popup_descriptor *descriptor = get_popup_descriptor(INTERFACES_LIST);
+	if (*(struct if_nameindex **)(descriptor[INTERFACES_LIST].data) != NULL) {
+		descriptor[INTERFACES_LIST].data_cleanup(descriptor[INTERFACES_LIST].args);
 	}
 
 	del_panel(variables->main_window.panel);

@@ -23,5 +23,6 @@ typedef struct {
 
 void popup_window_action(window_data *main_window, popup_window_data *popup_window, popup_type window_tpye, device *action_device);
 void prepare_inspect_data(void *args);
+void render_inspect_item(WINDOW *popup_window, int32_t row, int32_t col, uint32_t index, void *data);
 
 #endif

@@ -12,7 +12,6 @@
 #include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 static uint8_t *ip;
@@ -78,7 +77,6 @@ static const char *get_graph(void *arg) {
 	return result;
 }
 
-struct if_nameindex *popup_list = NULL;
 const inspect_field_t popup_inspect[6] = {
 	{"IP: %s", IP, .getter = {.get_ip = get_ip}, .arg = &ip},
 	{"802.1ad (QinQ): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter = {.get_vlan_tag = get_vlan_tag}, .arg = &qinq_tag},
@@ -99,13 +97,30 @@ void prepare_inspect_data(void *args) {
 	return;
 }
 
-static void interfaces_list_clean_up(void) {
-	for (int32_t i = 0; popup_list[i].if_name != NULL; i++) {
-		free(popup_list[i].if_name);
-		popup_list[i].if_name = NULL;
+void render_inspect_item(WINDOW *popup_window, int32_t row, int32_t col, uint32_t index, void *data) {
+	const inspect_field_t *items = (const inspect_field_t *)data;
+
+	switch (popup_inspect[index].getter_type) {
+	case IP:
+		mvwprintw(popup_window, row, col, items[index].string, items[index].getter.get_ip(items[index].arg));
+		break;
+	case VLAN_TAG: {
+		uint32_t vlan_tag = items[index].getter.get_vlan_tag(items[index].arg);
+		mvwprintw(popup_window, row, col, items[index].string, (vlan_tag & 0xfff), (vlan_tag & 0xe000) >> 13, (vlan_tag & 0x1000) >> 12);
+		break;
 	}
-	free(popup_list);
-	popup_list = NULL;
+	case ATOMIC_INT:
+		mvwprintw(popup_window, row, col, items[index].string, items[index].getter.get_atomic_int(items[index].arg));
+		break;
+	case GRAPH:
+		mvwprintw(popup_window, row, col, items[index].string, items[index].getter.get_graph(items[index].arg));
+		break;
+	case NONE:
+		mvwprintw(popup_window, row, col, "%s", items[index].string);
+		break;
+	default:
+		break;
+	}
 
 	return;
 }
@@ -120,7 +135,7 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 
 		popup_init(popup_window, main_window, window_type);
 
-		popup_descriptor *descriptor = &popup_descriptors[popup_window->popup_type];
+		popup_descriptor *descriptor = get_popup_descriptor(popup_window->popup_type);
 		descriptor->args = action_device;
 		descriptor->data_init(action_device);
 
@@ -128,20 +143,16 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 		descriptor->view.head = 0;
 		descriptor->view.cursor = 0;
 
-		draw_window_frame((window_data *)popup_window, popup_descriptors[popup_window->popup_type].popup_title);
+		draw_window_frame((window_data *)popup_window, get_popup_descriptor_title(popup_window->popup_type));
 		draw_popup(popup_window);
 	} else {
 		main_window->is_active = true;
 		popup_clean_up(popup_window);
 
-		switch (popup_window->popup_type) {
-		case INTERFACES_LIST:
-			interfaces_list_clean_up();
-			break;
-		case INSPECT_LIST:
-			break;
-		default:
-			break;
+		popup_descriptor *descriptor = get_popup_descriptor(popup_window->popup_type);
+
+		if (descriptor->data_cleanup != NULL) {
+			descriptor->data_cleanup(descriptor->args);
 		}
 	}
 
