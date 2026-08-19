@@ -41,7 +41,7 @@ static void prepare_interface_list(void *args) {
 
 	popup_list[count].if_index = UINT32_MAX;
 	popup_list[count].if_name = strdup("all");
-	popup_descriptors[INTERFACES_LIST].data_count = count + 1;
+	set_popup_descriptor_data_count(INTERFACES_LIST, count + 1);
 
 	return;
 }
@@ -84,6 +84,11 @@ popup_descriptor popup_descriptors[POPUP_TYPE_COUNT] = {
 					  .view = {.count = 0, .cursor = 0, .head = 0, .visible = 0},
 					  .render_item = render_inspect_item},
 };
+
+void set_popup_descriptor_data_count(popup_type type, int32_t count) { popup_descriptors[type].data_count = count; }
+scroll_view *get_popup_descriptor_scroll_view(popup_type type) { return &popup_descriptors[type].view; }
+const char *get_popup_descriptor_title(popup_type type) { return popup_descriptors[type].popup_title; }
+popup_descriptor *get_popup_descriptor(popup_type type) { return &popup_descriptors[type]; }
 
 void draw_popup(popup_window_data *popup_window) {
 	popup_descriptor *descriptor = &popup_descriptors[popup_window->popup_type];

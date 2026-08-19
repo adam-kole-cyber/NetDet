@@ -34,8 +34,9 @@ void main_clean_up(app_context *variables) {
 		delwin(variables->popup_window.window);
 	}
 
-	if (*(struct if_nameindex **)(popup_descriptors[INTERFACES_LIST].data) != NULL) {
-		popup_descriptors[INTERFACES_LIST].data_cleanup(popup_descriptors[INTERFACES_LIST].args);
+	popup_descriptor *descriptor = get_popup_descriptor(INTERFACES_LIST);
+	if (*(struct if_nameindex **)(descriptor[INTERFACES_LIST].data) != NULL) {
+		descriptor[INTERFACES_LIST].data_cleanup(descriptor[INTERFACES_LIST].args);
 	}
 
 	del_panel(variables->main_window.panel);

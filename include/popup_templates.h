@@ -35,6 +35,10 @@ typedef struct {
 } popup_descriptor;
 
 void draw_popup(popup_window_data *popup_window);
+void set_popup_descriptor_data_count(popup_type type, int32_t count);
+scroll_view *get_popup_descriptor_scroll_view(popup_type type);
+const char *get_popup_descriptor_title(popup_type type);
+popup_descriptor *get_popup_descriptor(popup_type type);
 uint32_t get_interface_index(int32_t interface_index);
 char *get_interface_name(int32_t interface_index);
 

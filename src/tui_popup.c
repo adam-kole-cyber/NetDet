@@ -135,7 +135,7 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 
 		popup_init(popup_window, main_window, window_type);
 
-		popup_descriptor *descriptor = &popup_descriptors[popup_window->popup_type];
+		popup_descriptor *descriptor = get_popup_descriptor(popup_window->popup_type);
 		descriptor->args = action_device;
 		descriptor->data_init(action_device);
 
@@ -143,13 +143,13 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 		descriptor->view.head = 0;
 		descriptor->view.cursor = 0;
 
-		draw_window_frame((window_data *)popup_window, popup_descriptors[popup_window->popup_type].popup_title);
+		draw_window_frame((window_data *)popup_window, get_popup_descriptor_title(popup_window->popup_type));
 		draw_popup(popup_window);
 	} else {
 		main_window->is_active = true;
 		popup_clean_up(popup_window);
 
-		popup_descriptor *descriptor = &popup_descriptors[popup_window->popup_type];
+		popup_descriptor *descriptor = get_popup_descriptor(popup_window->popup_type);
 
 		if (descriptor->data_cleanup != NULL) {
 			descriptor->data_cleanup(descriptor->args);

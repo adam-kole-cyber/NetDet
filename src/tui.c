@@ -55,14 +55,14 @@ void input_handler(int32_t input, app_context *variables) {
 		if (variables->main_window.is_active) {
 			scroll_move(&variables->buffer.view, 1);
 		} else {
-			scroll_move(&popup_descriptors[variables->popup_window.popup_type].view, 1);
+			scroll_move(get_popup_descriptor_scroll_view(variables->popup_window.popup_type), 1);
 		}
 		break;
 	case KEY_UP:
 		if (variables->main_window.is_active) {
 			scroll_move(&variables->buffer.view, -1);
 		} else {
-			scroll_move(&popup_descriptors[variables->popup_window.popup_type].view, -1);
+			scroll_move(get_popup_descriptor_scroll_view(variables->popup_window.popup_type), -1);
 		}
 		break;
 	case 'b':
@@ -80,7 +80,7 @@ void input_handler(int32_t input, app_context *variables) {
 	}
 	case '\n':
 		if (variables->popup_window.is_active && variables->popup_window.popup_type == INTERFACES_LIST) {
-			scroll_view *view = &popup_descriptors[variables->popup_window.popup_type].view;
+			scroll_view *view = get_popup_descriptor_scroll_view(variables->popup_window.popup_type);
 			int32_t selected = view->head + view->cursor;
 
 			if ((uint32_t)selected >= view->count)
@@ -130,7 +130,7 @@ void draw(app_context *variables) {
 
 		if (variables->popup_window.is_active) {
 			werase(variables->popup_window.window);
-			draw_window_frame((window_data *)&variables->popup_window, popup_descriptors[variables->popup_window.popup_type].popup_title);
+			draw_window_frame((window_data *)&variables->popup_window, get_popup_descriptor_title(variables->popup_window.popup_type));
 			draw_popup(&variables->popup_window);
 		}
 
@@ -171,7 +171,7 @@ void resize_handler(app_context *variables) {
 			variables->popup_window.height = variables->main_window.height;
 		}
 
-		popup_descriptor *descriptor = &popup_descriptors[variables->popup_window.popup_type];
+		popup_descriptor *descriptor = get_popup_descriptor(variables->popup_window.popup_type);
 		scroll_view_configure(&descriptor->view, descriptor->data_count, variables->popup_window.height);
 
 		wresize(variables->popup_window.window, variables->popup_window.height, variables->popup_window.width);
