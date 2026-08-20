@@ -253,12 +253,12 @@ void *network_routine(void *args) {
 				get_vlan_info(&control_msg, processed_frame, &socket_fd);
 				set_device_data(device_data, processed_frame, &socket_fd, device_data);
 
-				device *exitsing_device = hashmap_check_entry(&map, device_data->mac);
+				device *existing_device = hashmap_check_entry(&map, device_data->mac);
 
-				if (exitsing_device != NULL) {
-					atomic_store(&exitsing_device->last_seen.hour, device_data->last_seen.hour);
-					atomic_store(&exitsing_device->last_seen.minutes, device_data->last_seen.minutes);
-					atomic_store(&exitsing_device->last_seen.seconds, device_data->last_seen.seconds);
+				if (existing_device != NULL) {
+					atomic_store(&existing_device->last_seen.hour, device_data->last_seen.hour);
+					atomic_store(&existing_device->last_seen.minutes, device_data->last_seen.minutes);
+					atomic_store(&existing_device->last_seen.seconds, device_data->last_seen.seconds);
 
 					msg.msg_type = UI_UPDATE_TABLE;
 					msg.data = NULL; // this can be used when optimizing TUI
@@ -267,10 +267,10 @@ void *network_routine(void *args) {
 					device_data = NULL;
 				} else {
 					if (hashmap_store_entry(&map, device_data) == -1) {
-						network_error(APP_ERR_HASHMAP_SOTRE_ENTRY, &socket_fd);
+						network_error(APP_ERR_HASHMAP_STORE_ENTRY, &socket_fd);
 					}
 
-					atomic_store(&device_data->previsou_frames, 0);
+					atomic_store(&device_data->previous_frames, 0);
 					atomic_store(&device_data->total_frames, 1); // 1 because this frame, through which we discovered this device, also counts
 
 					device_data->graph.head = 0;
@@ -303,10 +303,10 @@ void *network_routine(void *args) {
 					}
 
 					device *device_to_update = map.table[i].device;
-					uint32_t rate = atomic_load(&device_to_update->total_frames) - atomic_load(&device_to_update->previsou_frames);
+					uint32_t rate = atomic_load(&device_to_update->total_frames) - atomic_load(&device_to_update->previous_frames);
 
 					atomic_store(&device_to_update->graph.data[device_to_update->graph.head], rate);
-					atomic_store(&device_to_update->previsou_frames, atomic_load(&device_to_update->total_frames));
+					atomic_store(&device_to_update->previous_frames, atomic_load(&device_to_update->total_frames));
 
 					device_to_update->graph.head = (device_to_update->graph.head + 1) % RATE_HISTORY_SIZE;
 				}

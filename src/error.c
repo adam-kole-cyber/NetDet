@@ -18,7 +18,7 @@ static const char *error_code_to_text(error_code err) {
 		return "bind() failed";
 	case APP_ERR_CALLOC:
 		return "calloc() failed";
-	case APP_ERR_HASHMAP_SOTRE_ENTRY:
+	case APP_ERR_HASHMAP_STORE_ENTRY:
 		return "hashmap_store_entry() failed";
 	case APP_ERR_IF_NAMEINDEX:
 		return "if_nameindex() failed";
