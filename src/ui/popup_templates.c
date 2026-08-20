@@ -1,4 +1,4 @@
-#include "popup_templates.h"
+#include "ui/popup_templates.h"
 #include "scroll_view.h"
 #include "ui/popup_inspect.h"
 #include "ui/popup_interfaces.h"
@@ -16,14 +16,18 @@ popup_descriptor popup_descriptors[POPUP_TYPE_COUNT] = {
 						 .render_item = render_interface_item},
 	[INSPECT_LIST] = {.popup_title = " Inspect ",
 					  .data = (void *)&popup_inspect,
-					  .data_count = (int32_t)(sizeof(popup_inspect) / sizeof(popup_inspect[0])),
+					  .data_count = INSPECT_FIELD_COUNT,
 					  .data_init = prepare_inspect_data,
 					  .data_cleanup = NULL,
 					  .view = {.count = 0, .cursor = 0, .head = 0, .visible = 0},
 					  .render_item = render_inspect_item},
 };
 
-void set_popup_descriptor_data_count(popup_type type, int32_t count) { popup_descriptors[type].data_count = count; }
+void set_popup_descriptor_data_count(popup_type type, int32_t count) {
+	popup_descriptors[type].data_count = count;
+	return;
+}
+
 scroll_view *get_popup_descriptor_scroll_view(popup_type type) { return &popup_descriptors[type].view; }
 const char *get_popup_descriptor_title(popup_type type) { return popup_descriptors[type].popup_title; }
 popup_descriptor *get_popup_descriptor(popup_type type) { return &popup_descriptors[type]; }

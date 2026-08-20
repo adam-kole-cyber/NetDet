@@ -2,9 +2,9 @@
 #include "clean_up.h"
 #include "device.h"
 #include "init.h"
-#include "popup_templates.h"
 #include "scroll_view.h"
 #include "tui.h"
+#include "ui/popup_templates.h"
 #include <ncurses.h>
 #include <net/if.h>
 #include <stdatomic.h>

@@ -3,6 +3,8 @@
 
 #include <ncurses.h>
 
+#define INSPECT_FIELD_COUNT 6
+
 enum union_type { VLAN_TAG, ATOMIC_INT, IP, GRAPH, NONE };
 
 typedef struct {
@@ -17,7 +19,7 @@ typedef struct {
 	void *arg;
 } inspect_field_t;
 
-extern const inspect_field_t popup_inspect[6];
+extern const inspect_field_t popup_inspect[INSPECT_FIELD_COUNT];
 
 void prepare_inspect_data(void *args);
 void render_inspect_item(WINDOW *popup_window, int32_t row, int32_t col, uint32_t index, void *data);

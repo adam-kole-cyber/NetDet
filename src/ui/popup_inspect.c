@@ -67,7 +67,7 @@ static const char *get_graph(void *arg) {
 	return result;
 }
 
-const inspect_field_t popup_inspect[6] = {
+const inspect_field_t popup_inspect[INSPECT_FIELD_COUNT] = {
 	{"IP: %s", IP, .getter = {.get_ip = get_ip}, .arg = &ip},
 	{"802.1ad (QinQ): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter = {.get_vlan_tag = get_vlan_tag}, .arg = &qinq_tag},
 	{"802.1Q (Dot1Q): %d\tCoS: %d\tDEI: %d", VLAN_TAG, .getter = {.get_vlan_tag = get_vlan_tag}, .arg = &dot1q_tag},

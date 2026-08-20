@@ -1,9 +1,9 @@
 #include "clean_up.h"
 #include "device.h"
 #include "error.h"
-#include "popup_templates.h"
 #include "shared_state.h"
 #include "tui.h"
+#include "ui/popup_templates.h"
 #include <ncurses.h>
 #include <panel.h>
 #include <pthread.h>

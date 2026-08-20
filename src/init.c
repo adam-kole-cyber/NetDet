@@ -3,11 +3,11 @@
 #include "epoll_utils.h"
 #include "error.h"
 #include "network.h"
-#include "popup_templates.h"
 #include "shared_state.h"
 #include "signal_handler.h"
 #include "tui.h"
 #include "tui_app.h"
+#include "ui/popup_templates.h"
 #include <errno.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>

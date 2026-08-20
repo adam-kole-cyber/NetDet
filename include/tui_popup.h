@@ -2,8 +2,8 @@
 #define TUI_POPUP_H
 
 #include "device.h"
-#include "popup_templates.h"
 #include "tui.h"
+#include "ui/popup_templates.h"
 #include <pthread.h>
 #include <stdint.h>
 

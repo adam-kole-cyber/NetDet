@@ -1,7 +1,7 @@
 #include "ui/popup_interfaces.h"
 #include "error.h"
-#include "popup_templates.h"
 #include "shared_state.h"
+#include "ui/popup_templates.h"
 #include <net/if.h>
 #include <stdlib.h>
 #include <string.h>
