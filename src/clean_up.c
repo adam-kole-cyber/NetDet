@@ -34,10 +34,18 @@ void main_clean_up(app_context *variables) {
 		delwin(variables->popup_window.window);
 	}
 
-	popup_descriptor *descriptor = get_popup_descriptor(INTERFACES_LIST);
+	if (variables->popup_window.is_active) {
+		popup_descriptor *descriptor = get_popup_descriptor(variables->popup_window.popup_type);
+
+		if (descriptor->data_cleanup != NULL) {
+			descriptor->data_cleanup(descriptor->args);
+		}
+	}
+
+	/*popup_descriptor *descriptor = get_popup_descriptor(INTERFACES_LIST);
 	if (*(struct if_nameindex **)(descriptor[INTERFACES_LIST].data) != NULL) {
 		descriptor[INTERFACES_LIST].data_cleanup(descriptor[INTERFACES_LIST].args);
-	}
+	}*/
 
 	del_panel(variables->main_window.panel);
 	delwin(variables->main_window.window);

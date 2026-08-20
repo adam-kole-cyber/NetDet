@@ -1,7 +1,6 @@
 #ifndef SHARED_STATE_H
 #define SHARED_STATE_H
 
-#include "tui_popup.h"
 #include <net/if.h>
 #include <pthread.h>
 #include <stdatomic.h>
@@ -16,7 +15,6 @@ extern int32_t pipe_fd[2];
 extern struct if_nameindex binded_interface;
 extern int32_t bind_update_fd;
 extern pthread_mutex_t binded_interface_mutex;
-extern const inspect_field_t popup_inspect[6];
 extern pthread_t signal_thread;
 
 #endif

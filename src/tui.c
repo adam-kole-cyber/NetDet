@@ -6,6 +6,7 @@
 #include "shared_state.h"
 #include "tui_app.h"
 #include "tui_popup.h"
+#include "ui/popup_interfaces.h"
 #include <ncurses.h>
 #include <net/if.h>
 #include <panel.h>
