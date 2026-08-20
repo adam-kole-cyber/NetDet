@@ -91,7 +91,7 @@ void prepare_inspect_data(void *args) {
 	ip = action_device->ip;
 	qinq_tag = &action_device->qinq_tag;
 	dot1q_tag = &action_device->dot1q_tag;
-	atomic_int_storage = &action_device->previsou_frames;
+	atomic_int_storage = &action_device->previous_frames;
 	graph = &action_device->graph;
 
 	return;

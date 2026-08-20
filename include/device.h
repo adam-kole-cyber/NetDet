@@ -27,7 +27,7 @@ typedef struct {
 	uint8_t ip[4];
 	uint32_t qinq_tag;
 	uint32_t dot1q_tag;
-	atomic_uint_least64_t previsou_frames;
+	atomic_uint_least64_t previous_frames;
 	atomic_uint_least64_t total_frames;
 	time_struct last_seen;
 	rate_history graph;
