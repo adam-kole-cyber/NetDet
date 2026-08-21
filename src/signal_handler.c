@@ -1,7 +1,8 @@
 #include "signal_handler.h"
 #include "device.h"
 #include "init.h"
-#include "shared_state.h"
+#include "lifecycle.h"
+#include "net/network_thread.h"
 #include <pthread.h>
 #include <signal.h>
 #include <stdatomic.h>
@@ -14,6 +15,7 @@ void *signal_routine(void *args) {
 	(void)args;
 	sigset_t mask;
 	int32_t signal;
+	uint32_t termination_reason;
 	ui_message msg = {0};
 	bool keep_running = true;
 
@@ -28,7 +30,7 @@ void *signal_routine(void *args) {
 		case SIGWINCH:
 			msg.msg_type = UI_RESIZE;
 			msg.data = NULL;
-			write(pipe_fd[1], &msg, sizeof(msg));
+			event_bus_publish(&msg);
 			break;
 		case SIGINT:
 			termination_reason = SIGINT_END;
@@ -41,11 +43,8 @@ void *signal_routine(void *args) {
 		}
 	}
 
-	uint64_t data = 1;
-	atomic_store(&end_main_loop, true);
-	atomic_store(&end_listen_loop, true);
+	lifecycle_request_shutdown(termination_reason);
+	network_request_shutdown();
 
-	write(shutdown_network_fd, &data, sizeof(data));
-	write(shutdown_main_fd, &data, sizeof(data));
 	return NULL;
 }

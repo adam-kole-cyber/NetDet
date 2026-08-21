@@ -2,13 +2,11 @@
 #include "device.h"
 #include "epoll_utils.h"
 #include "error.h"
-#include "network.h"
-#include "popup_templates.h"
-#include "shared_state.h"
-#include "signal_handler.h"
+#include "lifecycle.h"
+#include "net/network_thread.h"
 #include "tui.h"
 #include "tui_app.h"
-#include <errno.h>
+#include "ui/popup_templates.h"
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <locale.h>
@@ -23,7 +21,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <sys/socket.h>
@@ -33,23 +30,17 @@
 void main_init(app_context *variables, struct network_thread_args *args) {
 	sigset_t mask;
 
+	variables->epoll_fd = epoll_create1(0);
+	lifecycle_init(variables->epoll_fd);
+	epoll_register(variables->epoll_fd, STDIN_FILENO);
+
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGINT);
 	sigaddset(&mask, SIGWINCH);
 	sigaddset(&mask, SIGUSR1);
 	pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
-	pthread_create(&signal_thread, NULL, signal_routine, NULL);
 	pthread_create(&variables->network_thread, NULL, network_routine, (void *)args);
-
-	pipe(pipe_fd);
-
-	shutdown_main_fd = eventfd(0, 0);
-
-	variables->epoll_fd = epoll_create1(0);
-	epoll_register(variables->epoll_fd, shutdown_main_fd);
-	epoll_register(variables->epoll_fd, pipe_fd[0]);
-	epoll_register(variables->epoll_fd, STDIN_FILENO);
 
 	variables->main_window.is_active = true;
 	variables->main_window.start_x = WINDOW_OUTER_INDENT;
@@ -87,75 +78,6 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 	variables->buffer.view.cursor = 0;
 	atomic_store(&variables->buffer.view.viewport_capacity, i);
 
-	return;
-}
-
-void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map *map, int32_t *epoll_fd, int32_t *timer_fd) {
-	int32_t enable = 1;
-	struct itimerspec timer = {.it_value = {.tv_sec = 1, .tv_nsec = 0}, .it_interval = {.tv_sec = 1, .tv_nsec = 0}};
-	shutdown_network_fd = eventfd(0, 0);
-	bind_update_fd = eventfd(0, 0);
-
-	pthread_mutex_init(&binded_interface_mutex, NULL);
-
-	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-	if (*socket_fd == -1) {
-		set_error(APP_ERR_SOCKET, errno);
-		pthread_kill(signal_thread, SIGUSR1);
-		pthread_exit(NULL);
-		return;
-	}
-
-	if (setsockopt(*socket_fd, SOL_PACKET, PACKET_AUXDATA, &enable, sizeof(enable)) == -1) {
-		network_error(APP_ERR_SETSOCKOPT, socket_fd);
-		return;
-	}
-
-	pthread_mutex_lock(&binded_interface_mutex);
-	binded_interface.if_index = UINT32_MAX;
-	binded_interface.if_name = strdup("all");
-	pthread_mutex_unlock(&binded_interface_mutex);
-
-	if (args->argc > 1) {
-		struct sockaddr_ll sll;
-		memset(&sll, 0, sizeof(sll));
-		sll.sll_family = AF_PACKET;
-		sll.sll_protocol = htons(ETH_P_ALL);
-		sll.sll_ifindex = if_nametoindex(args->argv[1]);
-
-		if (sll.sll_ifindex == 0) {
-			network_error(APP_ERR_IF_NAMETOINDEX, socket_fd);
-			return;
-		}
-
-		if (bind(*socket_fd, (struct sockaddr *)&sll, sizeof(sll)) == -1) {
-			network_error(APP_ERR_BIND, socket_fd);
-			return;
-		}
-
-		pthread_mutex_lock(&binded_interface_mutex);
-		binded_interface.if_index = sll.sll_ifindex;
-		free(binded_interface.if_name);
-		binded_interface.if_name = strdup(args->argv[1]);
-		pthread_mutex_unlock(&binded_interface_mutex);
-	}
-
-	map->size = BUFFER_INITIAL_SIZE;
-	map->count = 0;
-	map->table = calloc(map->size, sizeof(hash_entry));
-	if (map->table == NULL) {
-		network_error(APP_ERR_CALLOC, socket_fd);
-		return;
-	}
-
-	*timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
-	timerfd_settime(*timer_fd, 0, &timer, NULL);
-
-	*epoll_fd = epoll_create1(0);
-	epoll_register(*epoll_fd, bind_update_fd);
-	epoll_register(*epoll_fd, shutdown_network_fd);
-	epoll_register(*epoll_fd, *socket_fd);
-	epoll_register(*epoll_fd, *timer_fd);
 	return;
 }
 

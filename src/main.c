@@ -3,8 +3,7 @@
 #include "device.h"
 #include "error.h"
 #include "init.h"
-#include "shared_state.h"
-#include "signal_handler.h"
+#include "lifecycle.h"
 #include "tui.h"
 #include <ncurses.h>
 #include <panel.h>
@@ -16,12 +15,6 @@
 #include <sys/eventfd.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-
-atomic_bool end_main_loop = false;
-atomic_uint_fast32_t termination_reason = PROGRAM_RUNNING;
-int32_t shutdown_main_fd;
-int32_t pipe_fd[2];
-pthread_t signal_thread;
 
 int main(int argc, char *argv[]) {
 	app_context variables = {0};
@@ -35,13 +28,13 @@ int main(int argc, char *argv[]) {
 	main_init(&variables, &args);
 
 	draw(&variables);
-	while (!atomic_load(&end_main_loop)) {
+	while (!get_end_main_loop()) {
 		int32_t number_of_events = epoll_wait(variables.epoll_fd, events, 3, -1);
 
 		for (int32_t i = 0; i < number_of_events; i++) {
-			if (events[i].data.fd == pipe_fd[0]) {
+			if (events[i].data.fd == get_event_bus_fd()) {
 				ui_message msg;
-				read(pipe_fd[0], &msg, sizeof(ui_message));
+				read(get_event_bus_fd(), &msg, sizeof(ui_message));
 
 				if (msg.msg_type == UI_NEW_ENTRY) {
 					if (slidingwindowbuffer_store_entry(&variables.buffer, msg.data) == -1) {
@@ -57,7 +50,7 @@ int main(int argc, char *argv[]) {
 				input_handler(input, &variables);
 
 				draw(&variables);
-			} else if (events[i].data.fd == shutdown_main_fd) {
+			} else if (events[i].data.fd == get_shutdown_main_fd()) {
 				continue;
 			}
 		}

@@ -1,11 +1,12 @@
 #include "tui.h"
 #include "app_context.h"
 #include "device.h"
-#include "popup_templates.h"
+#include "net/raw_socket.h"
 #include "scroll_view.h"
-#include "shared_state.h"
 #include "tui_app.h"
 #include "tui_popup.h"
+#include "ui/popup_interfaces.h"
+#include "ui/popup_templates.h"
 #include <ncurses.h>
 #include <net/if.h>
 #include <panel.h>
@@ -13,7 +14,6 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -89,17 +89,8 @@ void input_handler(int32_t input, app_context *variables) {
 			if (get_interface_index(selected) == 0)
 				break;
 
-			pthread_mutex_lock(&binded_interface_mutex);
-
-			binded_interface.if_index = get_interface_index(selected);
-			free(binded_interface.if_name);
-
-			binded_interface.if_name = strdup(get_interface_name(selected));
-
-			pthread_mutex_unlock(&binded_interface_mutex);
-
-			uint64_t event_updated_bind = 1;
-			write(bind_update_fd, &event_updated_bind, sizeof(event_updated_bind));
+			set_bound_interface(get_interface_index(selected), get_interface_name(selected));
+			bind_update_notify();
 
 			popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL);
 		}
