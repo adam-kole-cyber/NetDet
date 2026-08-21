@@ -2,9 +2,8 @@
 #include "device.h"
 #include "epoll_utils.h"
 #include "error.h"
+#include "lifecycle.h"
 #include "network.h"
-#include "shared_state.h"
-#include "signal_handler.h"
 #include "tui.h"
 #include "tui_app.h"
 #include "ui/popup_templates.h"
@@ -31,23 +30,17 @@
 void main_init(app_context *variables, struct network_thread_args *args) {
 	sigset_t mask;
 
+	variables->epoll_fd = epoll_create1(0);
+	lifecycle_init(variables->epoll_fd);
+	epoll_register(variables->epoll_fd, STDIN_FILENO);
+
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGINT);
 	sigaddset(&mask, SIGWINCH);
 	sigaddset(&mask, SIGUSR1);
 	pthread_sigmask(SIG_BLOCK, &mask, NULL);
 
-	pthread_create(&signal_thread, NULL, signal_routine, NULL);
 	pthread_create(&variables->network_thread, NULL, network_routine, (void *)args);
-
-	pipe(pipe_fd);
-
-	shutdown_main_fd = eventfd(0, 0);
-
-	variables->epoll_fd = epoll_create1(0);
-	epoll_register(variables->epoll_fd, shutdown_main_fd);
-	epoll_register(variables->epoll_fd, pipe_fd[0]);
-	epoll_register(variables->epoll_fd, STDIN_FILENO);
 
 	variables->main_window.is_active = true;
 	variables->main_window.start_x = WINDOW_OUTER_INDENT;

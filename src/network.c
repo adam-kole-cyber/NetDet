@@ -2,7 +2,7 @@
 #include "device.h"
 #include "epoll_utils.h"
 #include "error.h"
-#include "shared_state.h"
+#include "lifecycle.h"
 #include <arpa/inet.h>
 #include <bits/pthreadtypes.h>
 #include <bits/types/struct_iovec.h>
@@ -12,7 +12,6 @@
 #include <net/if.h>
 #include <netinet/in.h>
 #include <pthread.h>
-#include <signal.h>
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -28,8 +27,8 @@
 #include <time.h>
 #include <unistd.h>
 
-atomic_bool end_listen_loop = false;
-int32_t shutdown_network_fd;
+static atomic_bool end_listen_loop = false;
+static int32_t shutdown_network_fd;
 static int32_t bind_update_fd;
 static struct if_nameindex binded_interface = {0};
 static pthread_mutex_t binded_interface_mutex;
@@ -45,7 +44,7 @@ static void network_init(int32_t *socket_fd, struct network_thread_args *args, h
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (*socket_fd == -1) {
 		set_error(APP_ERR_SOCKET, errno);
-		pthread_kill(signal_thread, SIGUSR1);
+		lifecycle_notify_fatal_error();
 		pthread_exit(NULL);
 		return;
 	}
@@ -175,7 +174,7 @@ static void change_bind(int32_t *socket_fd, int32_t *epoll) {
 	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (*socket_fd == -1) {
 		set_error(APP_ERR_SOCKET, errno);
-		pthread_kill(signal_thread, SIGUSR1);
+		lifecycle_notify_fatal_error();
 		pthread_exit(NULL);
 		return;
 	}
@@ -235,6 +234,15 @@ void set_bound_interface(int32_t if_index, char *if_name) {
 void bind_update_notify(void) {
 	uint64_t event_updated_bind = 1;
 	write(bind_update_fd, &event_updated_bind, sizeof(event_updated_bind));
+
+	return;
+}
+
+void network_request_shutdown(void) {
+	uint64_t data = 1;
+
+	atomic_store(&end_listen_loop, true);
+	write(shutdown_network_fd, &data, sizeof(data));
 
 	return;
 }
@@ -398,7 +406,7 @@ void *network_routine(void *args) {
 					msg.data = device_data;
 				}
 
-				write(pipe_fd[1], &msg, sizeof(msg));
+				event_bus_publish(&msg);
 			} else if (events[i].data.fd == bind_update_fd) {
 				uint64_t read_event;
 				read(bind_update_fd, &read_event, sizeof(read_event)); // resets counter
@@ -427,7 +435,7 @@ void *network_routine(void *args) {
 
 				msg.msg_type = UI_UPDATE_TABLE;
 				msg.data = NULL;
-				write(pipe_fd[1], &msg, sizeof(msg));
+				event_bus_publish(&msg);
 			} else if (events[i].data.fd == shutdown_network_fd) {
 				continue;
 			}

@@ -1,8 +1,7 @@
 #include "error.h"
-#include "shared_state.h"
+#include "lifecycle.h"
 #include <errno.h>
 #include <pthread.h>
-#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -60,13 +59,13 @@ void get_error(void) {
 void network_error(error_code error, int32_t *socket) {
 	set_error(error, errno);
 	close(*socket);
-	pthread_kill(signal_thread, SIGUSR1);
+	lifecycle_notify_fatal_error();
 	pthread_exit(NULL);
 	return;
 }
 
 void main_error(error_code error) {
 	set_error(error, errno);
-	pthread_kill(signal_thread, SIGUSR1);
+	lifecycle_notify_fatal_error();
 	return;
 }

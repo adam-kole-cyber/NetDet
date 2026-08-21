@@ -41,5 +41,6 @@ void *network_routine(void *args);
 uint32_t get_bound_interface(void);
 void set_bound_interface(int32_t if_index, char *if_name);
 void bind_update_notify(void);
+void network_request_shutdown(void);
 
 #endif

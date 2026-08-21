@@ -1,7 +1,7 @@
 #include "clean_up.h"
 #include "device.h"
 #include "error.h"
-#include "shared_state.h"
+#include "lifecycle.h"
 #include "tui.h"
 #include "ui/popup_templates.h"
 #include <ncurses.h>
@@ -14,7 +14,7 @@
 void main_clean_up(app_context *variables) {
 
 	pthread_join(variables->network_thread, NULL);
-	pthread_join(signal_thread, NULL);
+	lifecycle_cleanup();
 
 	for (uint32_t i = 0; i < variables->buffer.view.count; i++) {
 		free(variables->buffer.items[i]);
@@ -25,9 +25,6 @@ void main_clean_up(app_context *variables) {
 	variables->buffer.items = NULL;
 
 	close(variables->epoll_fd);
-	close(pipe_fd[0]);
-	close(pipe_fd[1]);
-	close(shutdown_main_fd);
 
 	if (variables->popup_window.panel != NULL) {
 		del_panel(variables->popup_window.panel);
