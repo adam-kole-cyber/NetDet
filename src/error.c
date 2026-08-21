@@ -56,9 +56,9 @@ void get_error(void) {
 	return;
 }
 
-void network_error(error_code error, int32_t *socket) {
+void network_error(error_code error, int32_t socket) {
 	set_error(error, errno);
-	close(*socket);
+	close(socket);
 	lifecycle_notify_fatal_error();
 	pthread_exit(NULL);
 	return;

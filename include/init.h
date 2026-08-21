@@ -2,7 +2,7 @@
 #define INIT_H
 
 #include "app_context.h"
-#include "network.h"
+#include "net/network_thread.h"
 #include "tui.h"
 #include <signal.h>
 #include <stdint.h>

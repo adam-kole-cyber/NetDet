@@ -12,11 +12,6 @@
 #define ETH_TYPE_OFFSET_SINGLE_TAG 16 // EtherType/TPID after (802.1Q) tag
 #define ETH_TYPE_OFFSET_DOUBLE_TAG 20 // EtherType after (802.1ad + 802.1Q) tags
 
-struct network_thread_args {
-	int argc;
-	char **argv;
-};
-
 struct eth_header {
 	uint8_t dest_addr[6];
 	uint8_t sour_addr[6];

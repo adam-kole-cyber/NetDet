@@ -123,3 +123,13 @@ int32_t slidingwindowbuffer_store_entry(sliding_window_buffer *buffer, device *d
 	buffer->view.count++;
 	return 0;
 }
+
+void raise_frame_count(device *device_to_update) {
+	if (device_to_update == NULL) {
+		return;
+	}
+
+	atomic_store(&device_to_update->total_frames, atomic_load(&device_to_update->total_frames) + 1);
+
+	return;
+}

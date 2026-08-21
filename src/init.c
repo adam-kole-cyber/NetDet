@@ -3,6 +3,7 @@
 #include "epoll_utils.h"
 #include "error.h"
 #include "lifecycle.h"
+#include "net/network_thread.h"
 #include "network.h"
 #include "tui.h"
 #include "tui_app.h"

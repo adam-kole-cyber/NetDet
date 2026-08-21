@@ -21,7 +21,7 @@ typedef enum {
 
 void set_error(error_code error, int32_t errno_val);
 void get_error(void);
-void network_error(error_code error, int32_t *socket);
+void network_error(error_code error, int32_t socket);
 void main_error(error_code error);
 
 #endif
