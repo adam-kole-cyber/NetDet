@@ -5,7 +5,6 @@
 #include "lifecycle.h"
 #include "net/frame_parser.h"
 #include "net/raw_socket.h"
-#include "network.h"
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <net/if.h>
@@ -22,6 +21,92 @@
 static atomic_bool end_listen_loop = false;
 static int32_t shutdown_network_fd;
 
+static void handle_incoming_frame(int32_t socket_fd, hash_map *map) {
+	unsigned char raw_frame_data[FRAME_BUFFER_SIZE]; // expect a standard-length frame (as defined by IEEE 802.3)
+	unsigned char processed_frame[FRAME_BUFFER_SIZE];
+	char control[1024];
+	ui_message msg = {0};
+	ssize_t frame_length = 0;
+	device *device_data = malloc(sizeof(device) * 1);
+	struct iovec iov = {.iov_base = raw_frame_data, .iov_len = sizeof(raw_frame_data)};
+	struct msghdr control_msg = {
+		.msg_name = NULL, .msg_namelen = 0, .msg_iov = &iov, .msg_iovlen = 1, .msg_control = control, .msg_controllen = sizeof(control)};
+
+	memset(raw_frame_data, 0, sizeof(raw_frame_data));
+	memset(processed_frame, 0, sizeof(processed_frame));
+	memset(control, 0, sizeof(control));
+
+	frame_length = recvmsg(socket_fd, &control_msg, 0);
+	if (frame_length < 0) {
+		free(device_data);
+		device_data = NULL;
+		return;
+	}
+
+	raise_frame_count(hashmap_check_entry(map, &raw_frame_data[6])); // TODO consider increasing the frame rate and saving the device
+
+	process_raw_arp_frame(raw_frame_data, processed_frame, &frame_length);
+	if (frame_length <= 0 || (size_t)frame_length < sizeof(struct eth_header) + sizeof(struct arp_header)) {
+		free(device_data);
+		device_data = NULL;
+		return;
+	}
+
+	get_vlan_info(&control_msg, processed_frame, &socket_fd);
+	set_device_data(device_data, processed_frame, &socket_fd, device_data);
+
+	if (device_registry_upsert(map, device_data, socket_fd)) {
+		msg.msg_type = UI_UPDATE_TABLE;
+		msg.data = NULL; // this can be used when optimizing TUI
+	} else {
+		msg.msg_type = UI_NEW_ENTRY;
+		msg.data = device_data;
+	}
+
+	event_bus_publish(&msg);
+
+	return;
+}
+
+static void handle_bind_update(int32_t *socket_fd, int32_t *epoll_fd) {
+	uint64_t read_event;
+	read(get_bind_update_fd(), &read_event, sizeof(read_event));
+
+	change_bind(socket_fd, epoll_fd);
+
+	return;
+}
+
+static void handle_timer_tick(int32_t socket_fd, int32_t timer_fd, hash_map *map) {
+	uint64_t timer_ticks = 0;
+	ui_message msg = {0};
+	ssize_t return_val = read(timer_fd, &timer_ticks, sizeof(timer_ticks));
+
+	if (return_val != sizeof(timer_ticks)) {
+		network_error(APP_ERR_TIMER, socket_fd);
+	}
+
+	for (uint32_t i = 0; i < map->size; i++) {
+		if (map->table[i].device == NULL) {
+			continue;
+		}
+
+		device *device_to_update = map->table[i].device;
+		uint32_t rate = atomic_load(&device_to_update->total_frames) - atomic_load(&device_to_update->previous_frames);
+
+		atomic_store(&device_to_update->graph.data[device_to_update->graph.head], rate);
+		atomic_store(&device_to_update->previous_frames, atomic_load(&device_to_update->total_frames));
+
+		device_to_update->graph.head = (device_to_update->graph.head + 1) % RATE_HISTORY_SIZE;
+	}
+
+	msg.msg_type = UI_UPDATE_TABLE;
+	msg.data = NULL;
+	event_bus_publish(&msg);
+
+	return;
+}
+
 void network_init(int32_t *socket_fd, int32_t *epoll_fd, int32_t *timer_fd, hash_map *map, struct network_thread_args *args) {
 	struct itimerspec timer = {.it_value = {.tv_sec = 1, .tv_nsec = 0}, .it_interval = {.tv_sec = 1, .tv_nsec = 0}};
 
@@ -36,11 +121,12 @@ void network_init(int32_t *socket_fd, int32_t *epoll_fd, int32_t *timer_fd, hash
 	epoll_register(*epoll_fd, shutdown_network_fd);
 	epoll_register(*epoll_fd, *timer_fd);
 
-	socket_init(*socket_fd, *epoll_fd, args);
+	socket_init(*socket_fd, *epoll_fd, (args->argc > 1) ? args->argv[1] : NULL);
 
 	map->size = BUFFER_INITIAL_SIZE;
 	map->count = 0;
 	map->table = calloc(map->size, sizeof(hash_entry));
+
 	if (map->table == NULL) {
 		network_error(APP_ERR_CALLOC, *socket_fd);
 		return;
@@ -54,8 +140,6 @@ void *network_routine(void *args) {
 	int32_t epoll_fd;
 	int32_t timer_fd;
 	hash_map map;
-	uint64_t timer_ticks = 0;
-	ui_message msg = {0};
 	struct epoll_event events[4];
 
 	network_init(&socket_fd, &epoll_fd, &timer_fd, &map, (struct network_thread_args *)args);
@@ -65,99 +149,11 @@ void *network_routine(void *args) {
 
 		for (int32_t i = 0; i < number_of_events; i++) {
 			if (events[i].data.fd == socket_fd) {
-				unsigned char raw_frame_data[FRAME_BUFFER_SIZE]; // expect a standard-length frame (as defined by IEEE 802.3)
-				unsigned char processed_frame[FRAME_BUFFER_SIZE];
-				char control[1024];
-				ssize_t frame_length = 0;
-				device *device_data = malloc(sizeof(device) * 1);
-				struct iovec iov = {.iov_base = raw_frame_data, .iov_len = sizeof(raw_frame_data)};
-				struct msghdr control_msg = {
-					.msg_name = NULL, .msg_namelen = 0, .msg_iov = &iov, .msg_iovlen = 1, .msg_control = control, .msg_controllen = sizeof(control)};
-
-				memset(raw_frame_data, 0, sizeof(raw_frame_data));
-				memset(processed_frame, 0, sizeof(processed_frame));
-				memset(control, 0, sizeof(control));
-
-				frame_length = recvmsg(socket_fd, &control_msg, 0);
-				if (frame_length < 0) {
-					free(device_data);
-					device_data = NULL;
-					break;
-				}
-
-				raise_frame_count(hashmap_check_entry(&map, &raw_frame_data[6])); // TODO consider increasing the frame rate and saving the device
-
-				process_raw_arp_frame(raw_frame_data, processed_frame, &frame_length);
-				if (frame_length <= 0 || (size_t)frame_length < sizeof(struct eth_header) + sizeof(struct arp_header)) {
-					free(device_data);
-					device_data = NULL;
-					continue;
-				}
-
-				get_vlan_info(&control_msg, processed_frame, &socket_fd);
-				set_device_data(device_data, processed_frame, &socket_fd, device_data);
-
-				device *existing_device = hashmap_check_entry(&map, device_data->mac);
-
-				if (existing_device != NULL) {
-					atomic_store(&existing_device->last_seen.hour, device_data->last_seen.hour);
-					atomic_store(&existing_device->last_seen.minutes, device_data->last_seen.minutes);
-					atomic_store(&existing_device->last_seen.seconds, device_data->last_seen.seconds);
-
-					msg.msg_type = UI_UPDATE_TABLE;
-					msg.data = NULL; // this can be used when optimizing TUI
-
-					free(device_data);
-					device_data = NULL;
-				} else {
-					if (hashmap_store_entry(&map, device_data) == -1) {
-						network_error(APP_ERR_HASHMAP_STORE_ENTRY, socket_fd);
-					}
-
-					atomic_store(&device_data->previous_frames, 0);
-					atomic_store(&device_data->total_frames, 1); // 1 because this frame, through which we discovered this device, also counts
-
-					device_data->graph.head = 0;
-					device_data->graph.count = 0;
-
-					for (uint32_t i = 0; i < RATE_HISTORY_SIZE; i++) {
-						atomic_store(&device_data->graph.data[i], 0);
-					}
-
-					msg.msg_type = UI_NEW_ENTRY;
-					msg.data = device_data;
-				}
-
-				event_bus_publish(&msg);
+				handle_incoming_frame(socket_fd, &map);
 			} else if (events[i].data.fd == get_bind_update_fd()) {
-				uint64_t read_event;
-				read(get_bind_update_fd(), &read_event, sizeof(read_event)); // resets counter
-
-				change_bind(&socket_fd, &epoll_fd);
+				handle_bind_update(&socket_fd, &epoll_fd);
 			} else if (events[i].data.fd == timer_fd) {
-				ssize_t return_val = read(timer_fd, &timer_ticks, sizeof(timer_ticks));
-
-				if (return_val != sizeof(timer_ticks)) {
-					network_error(APP_ERR_TIMER, socket_fd);
-				}
-
-				for (uint32_t i = 0; i < map.size; i++) {
-					if (map.table[i].device == NULL) {
-						continue;
-					}
-
-					device *device_to_update = map.table[i].device;
-					uint32_t rate = atomic_load(&device_to_update->total_frames) - atomic_load(&device_to_update->previous_frames);
-
-					atomic_store(&device_to_update->graph.data[device_to_update->graph.head], rate);
-					atomic_store(&device_to_update->previous_frames, atomic_load(&device_to_update->total_frames));
-
-					device_to_update->graph.head = (device_to_update->graph.head + 1) % RATE_HISTORY_SIZE;
-				}
-
-				msg.msg_type = UI_UPDATE_TABLE;
-				msg.data = NULL;
-				event_bus_publish(&msg);
+				handle_timer_tick(socket_fd, timer_fd, &map);
 			} else if (events[i].data.fd == shutdown_network_fd) {
 				continue;
 			}

@@ -1,6 +1,6 @@
 #include "ui/popup_interfaces.h"
 #include "error.h"
-#include "network.h"
+#include "net/raw_socket.h"
 #include "ui/popup_templates.h"
 #include <net/if.h>
 #include <stdlib.h>

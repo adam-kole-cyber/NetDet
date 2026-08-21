@@ -1,7 +1,7 @@
 #include "tui.h"
 #include "app_context.h"
 #include "device.h"
-#include "network.h"
+#include "net/raw_socket.h"
 #include "scroll_view.h"
 #include "tui_app.h"
 #include "tui_popup.h"
@@ -90,15 +90,6 @@ void input_handler(int32_t input, app_context *variables) {
 				break;
 
 			set_bound_interface(get_interface_index(selected), get_interface_name(selected));
-			/*pthread_mutex_lock(&binded_interface_mutex);
-
-			binded_interface.if_index = get_interface_index(selected);
-			free(binded_interface.if_name);
-
-			binded_interface.if_name = strdup(get_interface_name(selected));
-
-			pthread_mutex_unlock(&binded_interface_mutex);*/
-
 			bind_update_notify();
 
 			popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL);

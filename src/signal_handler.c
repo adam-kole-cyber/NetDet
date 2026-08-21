@@ -2,7 +2,7 @@
 #include "device.h"
 #include "init.h"
 #include "lifecycle.h"
-#include "network.h"
+#include "net/network_thread.h"
 #include <pthread.h>
 #include <signal.h>
 #include <stdatomic.h>

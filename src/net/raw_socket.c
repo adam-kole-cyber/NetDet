@@ -38,7 +38,7 @@ int32_t raw_socket_create(void) {
 	return socket_fd;
 }
 
-void socket_init(int32_t socket_fd, int32_t epoll_fd, struct network_thread_args *args) {
+void socket_init(int32_t socket_fd, int32_t epoll_fd, const char *initial_interface) {
 	bind_update_fd = eventfd(0, 0);
 
 	pthread_mutex_init(&binded_interface_mutex, NULL);
@@ -48,12 +48,12 @@ void socket_init(int32_t socket_fd, int32_t epoll_fd, struct network_thread_args
 	binded_interface.if_name = strdup("all");
 	pthread_mutex_unlock(&binded_interface_mutex);
 
-	if (args->argc > 1) {
+	if (initial_interface != NULL) {
 		struct sockaddr_ll sll;
 		memset(&sll, 0, sizeof(sll));
 		sll.sll_family = AF_PACKET;
 		sll.sll_protocol = htons(ETH_P_ALL);
-		sll.sll_ifindex = if_nametoindex(args->argv[1]);
+		sll.sll_ifindex = if_nametoindex(initial_interface);
 
 		if (sll.sll_ifindex == 0) {
 			network_error(APP_ERR_IF_NAMETOINDEX, socket_fd);
@@ -68,7 +68,7 @@ void socket_init(int32_t socket_fd, int32_t epoll_fd, struct network_thread_args
 		pthread_mutex_lock(&binded_interface_mutex);
 		binded_interface.if_index = sll.sll_ifindex;
 		free(binded_interface.if_name);
-		binded_interface.if_name = strdup(args->argv[1]);
+		binded_interface.if_name = strdup(initial_interface);
 		pthread_mutex_unlock(&binded_interface_mutex);
 	}
 

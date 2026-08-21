@@ -1,4 +1,5 @@
 #include "device.h"
+#include "error.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -132,4 +133,34 @@ void raise_frame_count(device *device_to_update) {
 	atomic_store(&device_to_update->total_frames, atomic_load(&device_to_update->total_frames) + 1);
 
 	return;
+}
+
+bool device_registry_upsert(hash_map *map, device *incoming, int32_t socket_fd) {
+	device *existing_device = hashmap_check_entry(map, incoming->mac);
+
+	if (existing_device != NULL) {
+		atomic_store(&existing_device->last_seen.hour, incoming->last_seen.hour);
+		atomic_store(&existing_device->last_seen.minutes, incoming->last_seen.minutes);
+		atomic_store(&existing_device->last_seen.seconds, incoming->last_seen.seconds);
+
+		free(incoming);
+		incoming = NULL;
+		return false;
+	} else {
+		if (hashmap_store_entry(map, incoming) == -1) {
+			network_error(APP_ERR_HASHMAP_STORE_ENTRY, socket_fd);
+		}
+
+		atomic_store(&incoming->previous_frames, 0);
+		atomic_store(&incoming->total_frames, 1); // 1 because this frame, through which we discovered this device, also counts
+
+		incoming->graph.head = 0;
+		incoming->graph.count = 0;
+
+		for (uint32_t i = 0; i < RATE_HISTORY_SIZE; i++) {
+			atomic_store(&incoming->graph.data[i], 0);
+		}
+
+		return true;
+	}
 }
