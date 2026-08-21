@@ -12,9 +12,6 @@ extern atomic_uint_fast32_t termination_reason;
 extern int32_t shutdown_main_fd;
 extern int32_t shutdown_network_fd;
 extern int32_t pipe_fd[2];
-extern struct if_nameindex binded_interface;
-extern int32_t bind_update_fd;
-extern pthread_mutex_t binded_interface_mutex;
 extern pthread_t signal_thread;
 
 #endif

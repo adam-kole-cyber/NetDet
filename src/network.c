@@ -1,9 +1,7 @@
 #include "network.h"
-#include "clean_up.h"
 #include "device.h"
 #include "epoll_utils.h"
 #include "error.h"
-#include "init.h"
 #include "shared_state.h"
 #include <arpa/inet.h>
 #include <bits/pthreadtypes.h>
@@ -14,6 +12,7 @@
 #include <net/if.h>
 #include <netinet/in.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -25,14 +24,102 @@
 #include <sys/eventfd.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <sys/timerfd.h>
 #include <time.h>
 #include <unistd.h>
 
 atomic_bool end_listen_loop = false;
 int32_t shutdown_network_fd;
-int32_t bind_update_fd;
-struct if_nameindex binded_interface = {0};
-pthread_mutex_t binded_interface_mutex;
+static int32_t bind_update_fd;
+static struct if_nameindex binded_interface = {0};
+static pthread_mutex_t binded_interface_mutex;
+
+static void network_init(int32_t *socket_fd, struct network_thread_args *args, hash_map *map, int32_t *epoll_fd, int32_t *timer_fd) {
+	int32_t enable = 1;
+	struct itimerspec timer = {.it_value = {.tv_sec = 1, .tv_nsec = 0}, .it_interval = {.tv_sec = 1, .tv_nsec = 0}};
+	shutdown_network_fd = eventfd(0, 0);
+	bind_update_fd = eventfd(0, 0);
+
+	pthread_mutex_init(&binded_interface_mutex, NULL);
+
+	*socket_fd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+	if (*socket_fd == -1) {
+		set_error(APP_ERR_SOCKET, errno);
+		pthread_kill(signal_thread, SIGUSR1);
+		pthread_exit(NULL);
+		return;
+	}
+
+	if (setsockopt(*socket_fd, SOL_PACKET, PACKET_AUXDATA, &enable, sizeof(enable)) == -1) {
+		network_error(APP_ERR_SETSOCKOPT, socket_fd);
+		return;
+	}
+
+	pthread_mutex_lock(&binded_interface_mutex);
+	binded_interface.if_index = UINT32_MAX;
+	binded_interface.if_name = strdup("all");
+	pthread_mutex_unlock(&binded_interface_mutex);
+
+	if (args->argc > 1) {
+		struct sockaddr_ll sll;
+		memset(&sll, 0, sizeof(sll));
+		sll.sll_family = AF_PACKET;
+		sll.sll_protocol = htons(ETH_P_ALL);
+		sll.sll_ifindex = if_nametoindex(args->argv[1]);
+
+		if (sll.sll_ifindex == 0) {
+			network_error(APP_ERR_IF_NAMETOINDEX, socket_fd);
+			return;
+		}
+
+		if (bind(*socket_fd, (struct sockaddr *)&sll, sizeof(sll)) == -1) {
+			network_error(APP_ERR_BIND, socket_fd);
+			return;
+		}
+
+		pthread_mutex_lock(&binded_interface_mutex);
+		binded_interface.if_index = sll.sll_ifindex;
+		free(binded_interface.if_name);
+		binded_interface.if_name = strdup(args->argv[1]);
+		pthread_mutex_unlock(&binded_interface_mutex);
+	}
+
+	map->size = BUFFER_INITIAL_SIZE;
+	map->count = 0;
+	map->table = calloc(map->size, sizeof(hash_entry));
+	if (map->table == NULL) {
+		network_error(APP_ERR_CALLOC, socket_fd);
+		return;
+	}
+
+	*timer_fd = timerfd_create(CLOCK_MONOTONIC, 0);
+	timerfd_settime(*timer_fd, 0, &timer, NULL);
+
+	*epoll_fd = epoll_create1(0);
+	epoll_register(*epoll_fd, bind_update_fd);
+	epoll_register(*epoll_fd, shutdown_network_fd);
+	epoll_register(*epoll_fd, *socket_fd);
+	epoll_register(*epoll_fd, *timer_fd);
+	return;
+}
+
+static void network_clean_up(hash_map *map, int32_t *socket_fd, int32_t *epoll_fd, int32_t *timer_fd) {
+
+	free(map->table);
+	map->table = NULL;
+
+	pthread_mutex_lock(&binded_interface_mutex);
+	free(binded_interface.if_name);
+	pthread_mutex_unlock(&binded_interface_mutex);
+
+	pthread_mutex_destroy(&binded_interface_mutex);
+
+	close(bind_update_fd);
+	close(*epoll_fd);
+	close(*socket_fd);
+	close(*timer_fd);
+	close(shutdown_network_fd);
+}
 
 static void get_vlan_info(struct msghdr *control_msg, unsigned char *processed_frame, int32_t *socket_fd) {
 
@@ -121,6 +208,33 @@ static void change_bind(int32_t *socket_fd, int32_t *epoll) {
 	}
 
 	epoll_register(*epoll, *socket_fd);
+
+	return;
+}
+
+uint32_t get_bound_interface(void) {
+	pthread_mutex_lock(&binded_interface_mutex);
+	uint32_t if_index = binded_interface.if_index;
+	pthread_mutex_unlock(&binded_interface_mutex);
+
+	return if_index;
+}
+
+void set_bound_interface(int32_t if_index, char *if_name) {
+	pthread_mutex_lock(&binded_interface_mutex);
+
+	binded_interface.if_index = if_index;
+	free(binded_interface.if_name);
+
+	binded_interface.if_name = strdup(if_name);
+
+	pthread_mutex_unlock(&binded_interface_mutex);
+	return;
+}
+
+void bind_update_notify(void) {
+	uint64_t event_updated_bind = 1;
+	write(bind_update_fd, &event_updated_bind, sizeof(event_updated_bind));
 
 	return;
 }

@@ -42,11 +42,6 @@ void main_clean_up(app_context *variables) {
 		}
 	}
 
-	/*popup_descriptor *descriptor = get_popup_descriptor(INTERFACES_LIST);
-	if (*(struct if_nameindex **)(descriptor[INTERFACES_LIST].data) != NULL) {
-		descriptor[INTERFACES_LIST].data_cleanup(descriptor[INTERFACES_LIST].args);
-	}*/
-
 	del_panel(variables->main_window.panel);
 	delwin(variables->main_window.window);
 	endwin();
@@ -54,24 +49,6 @@ void main_clean_up(app_context *variables) {
 	get_error();
 
 	return;
-}
-
-void network_clean_up(hash_map *map, int32_t *socket_fd, int32_t *epoll_fd, int32_t *timer_fd) {
-
-	free(map->table);
-	map->table = NULL;
-
-	pthread_mutex_lock(&binded_interface_mutex);
-	free(binded_interface.if_name);
-	pthread_mutex_unlock(&binded_interface_mutex);
-
-	pthread_mutex_destroy(&binded_interface_mutex);
-
-	close(bind_update_fd);
-	close(*epoll_fd);
-	close(*socket_fd);
-	close(*timer_fd);
-	close(shutdown_network_fd);
 }
 
 void popup_clean_up(popup_window_data *popup_window) {

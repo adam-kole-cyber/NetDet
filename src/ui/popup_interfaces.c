@@ -1,6 +1,6 @@
 #include "ui/popup_interfaces.h"
 #include "error.h"
-#include "shared_state.h"
+#include "network.h"
 #include "ui/popup_templates.h"
 #include <net/if.h>
 #include <stdlib.h>
@@ -50,9 +50,7 @@ void prepare_interface_list(void *args) {
 void render_interface_item(WINDOW *popup_window, int32_t row, int32_t col, uint32_t index, void *data) {
 	struct if_nameindex *items = *(struct if_nameindex **)data;
 
-	pthread_mutex_lock(&binded_interface_mutex);
-	mvwprintw(popup_window, row, col, "[%c] - %s", (binded_interface.if_index == items[index].if_index) ? '*' : ' ', items[index].if_name);
-	pthread_mutex_unlock(&binded_interface_mutex);
+	mvwprintw(popup_window, row, col, "[%c] - %s", (get_bound_interface() == items[index].if_index) ? '*' : ' ', items[index].if_name);
 
 	return;
 }
