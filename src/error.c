@@ -2,10 +2,12 @@
 #include "lifecycle.h"
 #include <errno.h>
 #include <pthread.h>
+#include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
 
+static atomic_bool error_set = false;
 static error_code error_app = APP_ERR_NONE;
 static int32_t errno_val_app = 0;
 
@@ -40,8 +42,13 @@ static const char *error_code_to_text(error_code err) {
 }
 
 void set_error(error_code error, int32_t errno_val) {
-	error_app = error;
-	errno_val_app = errno_val;
+	bool expected = false;
+
+	if (atomic_compare_exchange_strong(&error_set, &expected, true)) {
+		error_app = error;
+		errno_val_app = errno_val;
+	}
+
 	return;
 }
 

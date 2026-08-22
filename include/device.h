@@ -36,7 +36,6 @@ typedef struct {
 	device **items; // array of pointers to devices
 	uint32_t size;	// size of whole buffer
 	uint32_t count;
-	// scroll_view view;
 } device_buffer;
 
 typedef struct {
