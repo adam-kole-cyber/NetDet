@@ -145,7 +145,7 @@ bool device_registry_upsert(hash_map *map, device *incoming, int32_t socket_fd) 
 
 		free(incoming);
 		incoming = NULL;
-		return false;
+		return true;
 	} else {
 		if (hashmap_store_entry(map, incoming) == -1) {
 			network_error(APP_ERR_HASHMAP_STORE_ENTRY, socket_fd);
@@ -161,6 +161,6 @@ bool device_registry_upsert(hash_map *map, device *incoming, int32_t socket_fd) 
 			atomic_store(&incoming->graph.data[i], 0);
 		}
 
-		return true;
+		return false;
 	}
 }
