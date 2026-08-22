@@ -53,7 +53,7 @@ static void handle_incoming_frame(int32_t socket_fd, hash_map *map) {
 	}
 
 	get_vlan_info(&control_msg, processed_frame, &socket_fd);
-	set_device_data(device_data, processed_frame, &socket_fd, device_data);
+	set_device_data(device_data, processed_frame, &socket_fd);
 
 	if (device_registry_upsert(map, device_data, socket_fd)) {
 		msg.msg_type = UI_UPDATE_TABLE;

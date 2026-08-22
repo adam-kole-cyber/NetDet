@@ -69,8 +69,8 @@ void input_handler(int32_t input, app_context *variables) {
 		popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL);
 		break;
 	case 'i': {
-		sliding_window_buffer *buffer_reference = &variables->buffer;
-		device *action_device = buffer_reference->items[buffer_reference->view.head + buffer_reference->view.cursor];
+		device_table_view *buffer_reference = &variables->buffer;
+		device *action_device = buffer_reference->data->items[buffer_reference->view.head + buffer_reference->view.cursor];
 		if (action_device == NULL) {
 			break;
 		}

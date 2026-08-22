@@ -94,7 +94,7 @@ void process_raw_arp_frame(unsigned char *raw_frame_data, unsigned char *process
 	return;
 }
 
-void set_device_data(device *device_data, unsigned char *processed_frame, int32_t *socket, device *device) {
+void set_device_data(device *device_data, unsigned char *processed_frame, int32_t *socket) {
 	time_t now;
 	struct tm local_time;
 	struct eth_header *eth = (struct eth_header *)processed_frame;
@@ -108,8 +108,8 @@ void set_device_data(device *device_data, unsigned char *processed_frame, int32_
 	now = time(NULL);
 
 	if (localtime_r(&now, &local_time) == NULL) {
-		free(device);
-		device = NULL;
+		free(device_data);
+		device_data = NULL;
 		network_error(APP_ERR_LOCALTIME_R, *socket);
 		return;
 	}

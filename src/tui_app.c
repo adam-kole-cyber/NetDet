@@ -6,9 +6,9 @@
 
 static table_layout current_layout = {0};
 
-static inline void sync_display_limit(sliding_window_buffer *buffer) {
+static inline void sync_display_limit(device_table_view *buffer) {
 	buffer->view.visible =
-		(atomic_load(&buffer->view.viewport_capacity) < buffer->size) ? atomic_load(&buffer->view.viewport_capacity) : buffer->size;
+		(atomic_load(&buffer->view.viewport_capacity) < buffer->data->size) ? atomic_load(&buffer->view.viewport_capacity) : buffer->data->size;
 }
 
 static void print_mac(WINDOW *window, int32_t row, int32_t column, const uint8_t *mac, bool highlight_line) {
@@ -173,7 +173,7 @@ void draw_table_header(WINDOW *window) {
 	return;
 }
 
-void print_network_data(WINDOW *window, sliding_window_buffer *buffer) {
+void print_network_data(WINDOW *window, device_table_view *buffer) {
 	int32_t display_row_start = 2;
 
 	sync_display_limit(buffer);
@@ -188,7 +188,7 @@ void print_network_data(WINDOW *window, sliding_window_buffer *buffer) {
 			wattron(window, COLOR_PAIR(3));
 		}
 
-		print_network_row(window, display_row_start + i, 2, buffer->items[buffer->view.head + i], i == (uint32_t)buffer->view.cursor);
+		print_network_row(window, display_row_start + i, 2, buffer->data->items[buffer->view.head + i], i == (uint32_t)buffer->view.cursor);
 
 		if (i == (uint32_t)buffer->view.cursor) {
 			wattroff(window, COLOR_PAIR(3));

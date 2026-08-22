@@ -1,5 +1,4 @@
 #include "clean_up.h"
-#include "device.h"
 #include "error.h"
 #include "lifecycle.h"
 #include "tui.h"
@@ -17,12 +16,15 @@ void main_clean_up(app_context *variables) {
 	lifecycle_cleanup();
 
 	for (uint32_t i = 0; i < variables->buffer.view.count; i++) {
-		free(variables->buffer.items[i]);
-		variables->buffer.items[i] = NULL;
+		free(variables->buffer.data->items[i]);
+		variables->buffer.data->items[i] = NULL;
 	}
 
-	free(variables->buffer.items);
-	variables->buffer.items = NULL;
+	free(variables->buffer.data->items);
+	variables->buffer.data->items = NULL;
+
+	free(variables->buffer.data);
+	variables->buffer.data = NULL;
 
 	close(variables->epoll_fd);
 

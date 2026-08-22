@@ -11,6 +11,7 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <sys/ioctl.h>
@@ -33,11 +34,13 @@ int main(int argc, char *argv[]) {
 
 		for (int32_t i = 0; i < number_of_events; i++) {
 			if (events[i].data.fd == get_event_bus_fd()) {
+				// TODO this needs to be checked
 				ui_message msg;
 				read(get_event_bus_fd(), &msg, sizeof(ui_message));
+				fprintf(stderr, "%d - %p\n", msg.msg_type, msg.data);
 
 				if (msg.msg_type == UI_NEW_ENTRY) {
-					if (slidingwindowbuffer_store_entry(&variables.buffer, msg.data) == -1) {
+					if (slidingwindowbuffer_store_entry(variables.buffer.data, msg.data) == -1) {
 						main_error(APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY);
 					}
 				} else if (msg.msg_type == UI_RESIZE) {

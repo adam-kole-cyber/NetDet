@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -60,7 +61,7 @@ static int32_t hashmap_realloc(hash_map *map) {
 	return 0;
 }
 
-static int32_t slidingwindowbuffer_realloc(sliding_window_buffer *buffer) {
+static int32_t slidingwindowbuffer_realloc(device_buffer *buffer) {
 	uint32_t new_size = buffer->size << 1;
 	device **tmp = realloc(buffer->items, buffer->size * sizeof(device *));
 	if (tmp == NULL) {
@@ -111,17 +112,17 @@ int32_t hashmap_store_entry(hash_map *map, device *dev) {
 	return 0;
 }
 
-int32_t slidingwindowbuffer_store_entry(sliding_window_buffer *buffer, device *dev) {
-	if ((buffer->view.count + 1) > (buffer->size * 0.8)) {
+int32_t slidingwindowbuffer_store_entry(device_buffer *buffer, device *dev) {
+	if ((buffer->count + 1) > (buffer->size * 0.8)) {
 		if (slidingwindowbuffer_realloc(buffer) == -1) {
 			return -1;
 		}
 	}
 
-	int32_t index = buffer->view.count;
+	int32_t index = buffer->count;
 
 	buffer->items[index] = dev;
-	buffer->view.count++;
+	buffer->count++;
 	return 0;
 }
 
@@ -137,6 +138,7 @@ void raise_frame_count(device *device_to_update) {
 
 bool device_registry_upsert(hash_map *map, device *incoming, int32_t socket_fd) {
 	device *existing_device = hashmap_check_entry(map, incoming->mac);
+	fprintf(stderr, "%p\n", existing_device);
 
 	if (existing_device != NULL) {
 		atomic_store(&existing_device->last_seen.hour, incoming->last_seen.hour);

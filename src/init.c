@@ -66,12 +66,14 @@ void main_init(app_context *variables, struct network_thread_args *args) {
 					 ? 0
 					 : (variables->main_window.height - WINDOW_UNUSABLE_NUMBERS_OF_LINES) - 1;
 
-	variables->buffer.size = BUFFER_INITIAL_SIZE;
-	variables->buffer.items = calloc(variables->buffer.size, sizeof(device *));
-	if (variables->buffer.items == NULL) {
+	variables->buffer.data = calloc(1, sizeof(device_buffer));
+	variables->buffer.data->size = BUFFER_INITIAL_SIZE;
+	variables->buffer.data->items = calloc(variables->buffer.data->size, sizeof(device *));
+	if (variables->buffer.data->items == NULL) {
 		main_error(APP_ERR_CALLOC);
 		return;
 	}
+
 	variables->buffer.view.count = 0;
 	variables->buffer.view.visible = 0;
 	variables->buffer.view.head = 0;
