@@ -138,7 +138,6 @@ void raise_frame_count(device *device_to_update) {
 
 bool device_registry_upsert(hash_map *map, device *incoming, int32_t socket_fd) {
 	device *existing_device = hashmap_check_entry(map, incoming->mac);
-	fprintf(stderr, "%p\n", existing_device);
 
 	if (existing_device != NULL) {
 		atomic_store(&existing_device->last_seen.hour, incoming->last_seen.hour);
