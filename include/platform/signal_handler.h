@@ -1,5 +1,5 @@
-#ifndef SIGNAL_HANDLER_H
-#define SIGNAL_HANDLER_H
+#ifndef PLATFORM_SIGNAL_HANDLER_H
+#define PLATFORM_SIGNAL_HANDLER_H
 
 #include <stdatomic.h>
 #include <stdint.h>

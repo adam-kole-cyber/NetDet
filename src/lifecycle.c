@@ -1,6 +1,6 @@
 #include "lifecycle.h"
-#include "epoll_utils.h"
-#include "signal_handler.h"
+#include "platform/epoll_utils.h"
+#include "platform/signal_handler.h"
 #include <pthread.h>
 #include <signal.h>
 #include <stdatomic.h>

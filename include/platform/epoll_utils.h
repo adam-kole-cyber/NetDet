@@ -1,5 +1,5 @@
-#ifndef EPOLL_UTILS_H
-#define EPOLL_UTILS_H
+#ifndef PLATFORM_EPOLL_UTILS_H
+#define PLATFORM_EPOLL_UTILS_H
 
 #include <stdint.h>
 

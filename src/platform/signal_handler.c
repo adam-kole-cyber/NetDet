@@ -1,4 +1,4 @@
-#include "signal_handler.h"
+#include "platform/signal_handler.h"
 #include "core/device.h"
 #include "init.h"
 #include "lifecycle.h"
