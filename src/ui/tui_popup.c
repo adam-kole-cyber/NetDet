@@ -1,10 +1,10 @@
-#include "tui_popup.h"
+#include "ui/tui_popup.h"
 #include "clean_up.h"
 #include "core/device.h"
 #include "init.h"
-#include "scroll_view.h"
-#include "tui.h"
 #include "ui/popup_templates.h"
+#include "ui/scroll_view.h"
+#include "ui/tui.h"
 #include <ncurses.h>
 #include <net/if.h>
 #include <stdatomic.h>

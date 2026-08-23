@@ -1,12 +1,12 @@
-#include "tui.h"
+#include "ui/tui.h"
 #include "app_context.h"
 #include "core/device.h"
 #include "net/raw_socket.h"
-#include "scroll_view.h"
-#include "tui_app.h"
-#include "tui_popup.h"
 #include "ui/popup_interfaces.h"
 #include "ui/popup_templates.h"
+#include "ui/scroll_view.h"
+#include "ui/tui_app.h"
+#include "ui/tui_popup.h"
 #include <ncurses.h>
 #include <net/if.h>
 #include <panel.h>

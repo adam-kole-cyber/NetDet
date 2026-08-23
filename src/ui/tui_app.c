@@ -1,4 +1,4 @@
-#include "tui_app.h"
+#include "ui/tui_app.h"
 #include "core/device.h"
 #include <ncurses.h>
 #include <stdint.h>

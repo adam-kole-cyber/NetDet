@@ -4,7 +4,7 @@
 #include "core/device.h"
 #include "init.h"
 #include "lifecycle.h"
-#include "tui.h"
+#include "ui/tui.h"
 #include <ncurses.h>
 #include <panel.h>
 #include <pthread.h>

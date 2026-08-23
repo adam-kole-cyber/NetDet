@@ -1,8 +1,8 @@
 #include "clean_up.h"
 #include "common/error.h"
 #include "lifecycle.h"
-#include "tui.h"
 #include "ui/popup_templates.h"
+#include "ui/tui.h"
 #include <ncurses.h>
 #include <panel.h>
 #include <pthread.h>

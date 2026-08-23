@@ -1,5 +1,5 @@
-#ifndef TUI_H
-#define TUI_H
+#ifndef UI_TUI_H
+#define UI_TUI_H
 
 #include <ncurses.h>
 #include <net/if.h>

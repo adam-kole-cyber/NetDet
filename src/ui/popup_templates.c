@@ -1,7 +1,7 @@
 #include "ui/popup_templates.h"
-#include "scroll_view.h"
 #include "ui/popup_inspect.h"
 #include "ui/popup_interfaces.h"
+#include "ui/scroll_view.h"
 #include <net/if.h>
 #include <stdint.h>
 #include <string.h>

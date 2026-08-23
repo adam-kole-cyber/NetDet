@@ -1,9 +1,9 @@
 #ifndef APP_CONTEXT_H
 #define APP_CONTEXT_H
 
-#include "tui.h"
-#include "tui_app.h"
 #include "ui/popup_templates.h"
+#include "ui/tui.h"
+#include "ui/tui_app.h"
 #include <pthread.h>
 #include <stdint.h>
 

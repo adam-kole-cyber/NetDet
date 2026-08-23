@@ -1,5 +1,5 @@
-#ifndef TUI_POPUP_H
-#define TUI_POPUP_H
+#ifndef UI_TUI_POPUP_H
+#define UI_TUI_POPUP_H
 
 #include "core/device.h"
 #include "tui.h"

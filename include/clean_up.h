@@ -2,7 +2,7 @@
 #define CLEAN_UP_H
 
 #include "app_context.h"
-#include "tui.h"
+#include "ui/tui.h"
 #include <stdint.h>
 
 void main_clean_up(app_context *variables);

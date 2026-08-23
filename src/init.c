@@ -4,9 +4,9 @@
 #include "lifecycle.h"
 #include "net/network_thread.h"
 #include "platform/epoll_utils.h"
-#include "tui.h"
-#include "tui_app.h"
 #include "ui/popup_templates.h"
+#include "ui/tui.h"
+#include "ui/tui_app.h"
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <locale.h>

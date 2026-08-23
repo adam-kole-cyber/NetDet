@@ -3,7 +3,7 @@
 
 #include "app_context.h"
 #include "net/network_thread.h"
-#include "tui.h"
+#include "ui/tui.h"
 #include <signal.h>
 #include <stdint.h>
 

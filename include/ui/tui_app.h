@@ -1,5 +1,5 @@
-#ifndef TUI_APP_H
-#define TUI_APP_H
+#ifndef UI_TUI_APP_H
+#define UI_TUI_APP_H
 
 #include "core/device.h"
 #include "scroll_view.h"
