@@ -1,5 +1,5 @@
 #include "ui/tui.h"
-#include "app_context.h"
+#include "app/app_context.h"
 #include "core/device.h"
 #include "net/raw_socket.h"
 #include "ui/popup_interfaces.h"

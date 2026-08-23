@@ -1,5 +1,5 @@
 #include "common/error.h"
-#include "lifecycle.h"
+#include "app/lifecycle.h"
 #include <errno.h>
 #include <pthread.h>
 #include <stdatomic.h>

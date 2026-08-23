@@ -1,5 +1,5 @@
-#ifndef INIT_H
-#define INIT_H
+#ifndef APP_INIT_H
+#define APP_INIT_H
 
 #include "app_context.h"
 #include "net/network_thread.h"

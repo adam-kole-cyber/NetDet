@@ -1,7 +1,7 @@
 #include "platform/signal_handler.h"
+#include "app/init.h"
+#include "app/lifecycle.h"
 #include "core/device.h"
-#include "init.h"
-#include "lifecycle.h"
 #include "net/network_thread.h"
 #include <pthread.h>
 #include <signal.h>

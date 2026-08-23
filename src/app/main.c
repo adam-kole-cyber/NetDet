@@ -1,9 +1,9 @@
-#include "app_context.h"
-#include "clean_up.h"
+#include "app/app_context.h"
+#include "app/clean_up.h"
+#include "app/init.h"
+#include "app/lifecycle.h"
 #include "common/error.h"
 #include "core/device.h"
-#include "init.h"
-#include "lifecycle.h"
 #include "ui/tui.h"
 #include <ncurses.h>
 #include <panel.h>

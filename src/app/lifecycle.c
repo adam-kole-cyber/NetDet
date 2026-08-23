@@ -1,4 +1,4 @@
-#include "lifecycle.h"
+#include "app/lifecycle.h"
 #include "platform/epoll_utils.h"
 #include "platform/signal_handler.h"
 #include <pthread.h>

@@ -1,7 +1,7 @@
 #include "net/network_thread.h"
+#include "app/lifecycle.h"
 #include "common/error.h"
 #include "core/device.h"
-#include "lifecycle.h"
 #include "net/frame_parser.h"
 #include "net/raw_socket.h"
 #include "platform/epoll_utils.h"

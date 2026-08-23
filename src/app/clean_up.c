@@ -1,6 +1,6 @@
-#include "clean_up.h"
+#include "app/clean_up.h"
+#include "app/lifecycle.h"
 #include "common/error.h"
-#include "lifecycle.h"
 #include "ui/popup_templates.h"
 #include "ui/tui.h"
 #include <ncurses.h>

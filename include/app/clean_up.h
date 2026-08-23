@@ -1,5 +1,5 @@
-#ifndef CLEAN_UP_H
-#define CLEAN_UP_H
+#ifndef APP_CLEAN_UP_H
+#define APP_CLEAN_UP_H
 
 #include "app_context.h"
 #include "ui/tui.h"

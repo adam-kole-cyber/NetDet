@@ -1,5 +1,5 @@
-#ifndef LIFECYCLE_H
-#define LIFECYCLE_H
+#ifndef APP_LIFECYCLE_H
+#define APP_LIFECYCLE_H
 
 #include "core/device.h"
 #include <stdbool.h>
