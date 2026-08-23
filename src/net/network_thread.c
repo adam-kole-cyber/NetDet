@@ -5,10 +5,10 @@
 #include "net/frame_parser.h"
 #include "net/raw_socket.h"
 #include "platform/epoll_utils.h"
-#include <linux/if_ether.h>
-#include <linux/if_packet.h>
-#include <net/if.h>
-#include <netinet/in.h>
+#include <bits/time.h>
+#include <bits/types/struct_iovec.h>
+#include <bits/types/struct_itimerspec.h>
+#include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -17,6 +17,7 @@
 #include <sys/eventfd.h>
 #include <sys/socket.h>
 #include <sys/timerfd.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 static atomic_bool end_listen_loop = false;
@@ -30,8 +31,12 @@ static void handle_incoming_frame(int32_t socket_fd, hash_map *map) {
 	ssize_t frame_length = 0;
 	device *device_data = malloc(sizeof(device) * 1);
 	struct iovec iov = {.iov_base = raw_frame_data, .iov_len = sizeof(raw_frame_data)};
-	struct msghdr control_msg = {
-		.msg_name = NULL, .msg_namelen = 0, .msg_iov = &iov, .msg_iovlen = 1, .msg_control = control, .msg_controllen = sizeof(control)};
+	struct msghdr control_msg = {.msg_name = NULL,
+								 .msg_namelen = 0,
+								 .msg_iov = &iov,
+								 .msg_iovlen = 1,
+								 .msg_control = control,
+								 .msg_controllen = sizeof(control)};
 
 	memset(raw_frame_data, 0, sizeof(raw_frame_data));
 	memset(processed_frame, 0, sizeof(processed_frame));
@@ -44,7 +49,8 @@ static void handle_incoming_frame(int32_t socket_fd, hash_map *map) {
 		return;
 	}
 
-	raise_frame_count(hashmap_check_entry(map, &raw_frame_data[6])); // TODO consider increasing the frame rate and saving the device
+	raise_frame_count(
+		hashmap_check_entry(map, &raw_frame_data[6])); // TODO consider increasing the frame rate and saving the device
 
 	process_raw_arp_frame(raw_frame_data, processed_frame, &frame_length);
 	if (frame_length <= 0 || (size_t)frame_length < sizeof(struct eth_header) + sizeof(struct arp_header)) {
@@ -108,7 +114,8 @@ static void handle_timer_tick(int32_t socket_fd, int32_t timer_fd, hash_map *map
 	return;
 }
 
-void network_init(int32_t *socket_fd, int32_t *epoll_fd, int32_t *timer_fd, hash_map *map, struct network_thread_args *args) {
+void network_init(int32_t *socket_fd, int32_t *epoll_fd, int32_t *timer_fd, hash_map *map,
+				  struct network_thread_args *args) {
 	struct itimerspec timer = {.it_value = {.tv_sec = 1, .tv_nsec = 0}, .it_interval = {.tv_sec = 1, .tv_nsec = 0}};
 
 	*socket_fd = raw_socket_create();

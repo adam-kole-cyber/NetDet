@@ -6,6 +6,5 @@
 #include <stdint.h>
 
 void main_clean_up(app_context *variables);
-void popup_clean_up(popup_window_data *popup_window);
 
 #endif

@@ -1,4 +1,4 @@
-#include "app/clean_up.h"
+#include "app/app_clean_up.h"
 #include "app/lifecycle.h"
 #include "common/error.h"
 #include "ui/popup_templates.h"
@@ -46,22 +46,6 @@ void main_clean_up(app_context *variables) {
 	endwin();
 
 	get_error();
-
-	return;
-}
-
-void popup_clean_up(popup_window_data *popup_window) {
-
-	popup_window->is_active = false;
-	popup_window->start_x = 0;
-	popup_window->start_y = 0;
-	popup_window->height = 0;
-	popup_window->width = 0;
-
-	del_panel(popup_window->panel);
-	delwin(popup_window->window);
-	popup_window->panel = NULL;
-	popup_window->window = NULL;
 
 	return;
 }

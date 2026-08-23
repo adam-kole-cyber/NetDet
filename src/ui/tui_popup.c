@@ -1,17 +1,39 @@
 #include "ui/tui_popup.h"
-#include "app/clean_up.h"
-#include "app/init.h"
 #include "core/device.h"
 #include "ui/popup_templates.h"
 #include "ui/scroll_view.h"
 #include "ui/tui.h"
 #include <ncurses.h>
-#include <net/if.h>
+#include <panel.h>
 #include <stdatomic.h>
 #include <stdint.h>
 #include <string.h>
 
-void popup_window_action(window_data *main_window, popup_window_data *popup_window, popup_type window_type, device *action_device) {
+void popup_init(popup_window_data *popup_window, const window_data *main_window, popup_type window_type) {
+	popup_window->is_active = true;
+	popup_window->popup_type = window_type;
+
+	if ((main_window->height - 10) >= 3) {
+		popup_window->start_x = main_window->start_x + 5;
+		popup_window->start_y = main_window->start_y + 5;
+		popup_window->width = main_window->width - 10;
+		popup_window->height = main_window->height - 10;
+	} else {
+		popup_window->start_x = main_window->start_x;
+		popup_window->start_y = main_window->start_y;
+		popup_window->width = main_window->width;
+		popup_window->height = main_window->height;
+	}
+
+	popup_window->window =
+		newwin(popup_window->height, popup_window->width, popup_window->start_y, popup_window->start_x);
+	popup_window->panel = new_panel(popup_window->window);
+
+	return;
+}
+
+void popup_window_action(window_data *main_window, popup_window_data *popup_window, popup_type window_type,
+						 device *action_device) {
 	static bool is_visible = false;
 
 	is_visible = !is_visible;
@@ -41,6 +63,21 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 			descriptor->data_cleanup(descriptor->args);
 		}
 	}
+
+	return;
+}
+
+void popup_clean_up(popup_window_data *popup_window) {
+	popup_window->is_active = false;
+	popup_window->start_x = 0;
+	popup_window->start_y = 0;
+	popup_window->height = 0;
+	popup_window->width = 0;
+
+	del_panel(popup_window->panel);
+	delwin(popup_window->window);
+	popup_window->panel = NULL;
+	popup_window->window = NULL;
 
 	return;
 }

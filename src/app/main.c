@@ -1,19 +1,16 @@
+#include "app/app_clean_up.h"
 #include "app/app_context.h"
-#include "app/clean_up.h"
-#include "app/init.h"
+#include "app/app_init.h"
 #include "app/lifecycle.h"
 #include "common/error.h"
 #include "core/device.h"
+#include "net/network_thread.h"
 #include "ui/tui.h"
 #include <ncurses.h>
-#include <panel.h>
-#include <pthread.h>
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/epoll.h>
-#include <sys/eventfd.h>
-#include <sys/ioctl.h>
 #include <unistd.h>
 
 int main(int argc, char *argv[]) {

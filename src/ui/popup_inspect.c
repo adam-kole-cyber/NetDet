@@ -1,7 +1,10 @@
 #include "ui/popup_inspect.h"
 #include "core/device.h"
 #include <math.h>
+#include <ncurses.h>
 #include <stdatomic.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 static uint8_t *ip;
@@ -56,7 +59,8 @@ static const char *get_graph(void *arg) {
 	}
 
 	for (uint32_t i = 0; i < RATE_HISTORY_SIZE; i++) {
-		uint32_t block_index = (int)round((double)atomic_load(&graph->data[(graph->head + i) % RATE_HISTORY_SIZE]) / max * 7.0);
+		uint32_t block_index =
+			(int)round((double)atomic_load(&graph->data[(graph->head + i) % RATE_HISTORY_SIZE]) / max * 7.0);
 		strcpy(buffer[i], blocks[block_index]);
 	}
 
@@ -91,25 +95,27 @@ void render_inspect_item(WINDOW *popup_window, int32_t row, int32_t col, uint32_
 	const inspect_field_t *items = (const inspect_field_t *)data;
 
 	switch (popup_inspect[index].getter_type) {
-	case IP:
-		mvwprintw(popup_window, row, col, items[index].string, items[index].getter.get_ip(items[index].arg));
-		break;
-	case VLAN_TAG: {
-		uint32_t vlan_tag = items[index].getter.get_vlan_tag(items[index].arg);
-		mvwprintw(popup_window, row, col, items[index].string, (vlan_tag & 0xfff), (vlan_tag & 0xe000) >> 13, (vlan_tag & 0x1000) >> 12);
-		break;
-	}
-	case ATOMIC_INT:
-		mvwprintw(popup_window, row, col, items[index].string, items[index].getter.get_atomic_int(items[index].arg));
-		break;
-	case GRAPH:
-		mvwprintw(popup_window, row, col, items[index].string, items[index].getter.get_graph(items[index].arg));
-		break;
-	case NONE:
-		mvwprintw(popup_window, row, col, "%s", items[index].string);
-		break;
-	default:
-		break;
+		case IP:
+			mvwprintw(popup_window, row, col, items[index].string, items[index].getter.get_ip(items[index].arg));
+			break;
+		case VLAN_TAG: {
+			uint32_t vlan_tag = items[index].getter.get_vlan_tag(items[index].arg);
+			mvwprintw(popup_window, row, col, items[index].string, (vlan_tag & 0xfff), (vlan_tag & 0xe000) >> 13,
+					  (vlan_tag & 0x1000) >> 12);
+			break;
+		}
+		case ATOMIC_INT:
+			mvwprintw(popup_window, row, col, items[index].string,
+					  items[index].getter.get_atomic_int(items[index].arg));
+			break;
+		case GRAPH:
+			mvwprintw(popup_window, row, col, items[index].string, items[index].getter.get_graph(items[index].arg));
+			break;
+		case NONE:
+			mvwprintw(popup_window, row, col, "%s", items[index].string);
+			break;
+		default:
+			break;
 	}
 
 	return;

@@ -4,7 +4,7 @@
 #include "core/device.h"
 #include <stdint.h>
 #include <sys/socket.h>
-#include <unistd.h>
+#include <sys/types.h>
 
 #define ETH_MAC_ADDRS_LEN 12	  // dst mac (6B) + src mac (6B)
 #define ETH_QinQ_TAG_LEN 4		  // in bytes

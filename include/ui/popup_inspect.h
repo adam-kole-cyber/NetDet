@@ -2,6 +2,7 @@
 #define UI_POPUP_INSPECT_H
 
 #include <ncurses.h>
+#include <stdint.h>
 
 #define INSPECT_FIELD_COUNT 6
 

@@ -1,15 +1,22 @@
 #include "platform/signal_handler.h"
-#include "app/init.h"
 #include "app/lifecycle.h"
 #include "core/device.h"
 #include "net/network_thread.h"
-#include <pthread.h>
+#include <bits/types/sigset_t.h>
 #include <signal.h>
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <sys/socket.h>
 #include <unistd.h>
+
+void signal_init(sigset_t *mask) {
+	sigemptyset(mask);
+	sigaddset(mask, SIGINT);
+	sigaddset(mask, SIGWINCH);
+	sigaddset(mask, SIGUSR1);
+
+	return;
+}
 
 void *signal_routine(void *args) {
 	(void)args;
@@ -27,19 +34,19 @@ void *signal_routine(void *args) {
 		}
 
 		switch (signal) {
-		case SIGWINCH:
-			msg.msg_type = UI_RESIZE;
-			msg.data = NULL;
-			event_bus_publish(&msg);
-			break;
-		case SIGINT:
-			termination_reason = SIGINT_END;
-			keep_running = false;
-			break;
-		case SIGUSR1:
-			termination_reason = SIGUSR1_END;
-			keep_running = false;
-			break;
+			case SIGWINCH:
+				msg.msg_type = UI_RESIZE;
+				msg.data = NULL;
+				event_bus_publish(&msg);
+				break;
+			case SIGINT:
+				termination_reason = SIGINT_END;
+				keep_running = false;
+				break;
+			case SIGUSR1:
+				termination_reason = SIGUSR1_END;
+				keep_running = false;
+				break;
 		}
 	}
 

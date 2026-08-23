@@ -2,11 +2,13 @@
 #include "app/lifecycle.h"
 #include "common/error.h"
 #include "platform/epoll_utils.h"
+#include <bits/pthreadtypes.h>
 #include <errno.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <net/if.h>
 #include <netinet/in.h>
+#include <pthread.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -89,7 +91,7 @@ void socket_cleanup(void) {
 	return;
 }
 
-uint32_t get_bound_interface(void) {
+uint32_t get_bouget_bound_interface(void) {
 	pthread_mutex_lock(&binded_interface_mutex);
 	uint32_t if_index = binded_interface.if_index;
 	pthread_mutex_unlock(&binded_interface_mutex);
@@ -109,7 +111,9 @@ void set_bound_interface(int32_t if_index, char *if_name) {
 	return;
 }
 
-int32_t get_bind_update_fd(void) { return bind_update_fd; }
+int32_t get_bind_update_fd(void) {
+	return bind_update_fd;
+}
 
 void bind_update_notify(void) {
 	uint64_t event_updated_bind = 1;

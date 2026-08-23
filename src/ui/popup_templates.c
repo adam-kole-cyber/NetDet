@@ -2,7 +2,7 @@
 #include "ui/popup_inspect.h"
 #include "ui/popup_interfaces.h"
 #include "ui/scroll_view.h"
-#include <net/if.h>
+#include <ncurses.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -28,9 +28,17 @@ void set_popup_descriptor_data_count(popup_type type, int32_t count) {
 	return;
 }
 
-scroll_view *get_popup_descriptor_scroll_view(popup_type type) { return &popup_descriptors[type].view; }
-const char *get_popup_descriptor_title(popup_type type) { return popup_descriptors[type].popup_title; }
-popup_descriptor *get_popup_descriptor(popup_type type) { return &popup_descriptors[type]; }
+scroll_view *get_popup_descriptor_scroll_view(popup_type type) {
+	return &popup_descriptors[type].view;
+}
+
+const char *get_popup_descriptor_title(popup_type type) {
+	return popup_descriptors[type].popup_title;
+}
+
+popup_descriptor *get_popup_descriptor(popup_type type) {
+	return &popup_descriptors[type];
+}
 
 void draw_popup(popup_window_data *popup_window) {
 	popup_descriptor *descriptor = &popup_descriptors[popup_window->popup_type];

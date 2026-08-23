@@ -1,7 +1,6 @@
 #ifndef COMMON_ERROR_H
 #define COMMON_ERROR_H
 
-#include <pthread.h>
 #include <stdint.h>
 
 typedef enum {

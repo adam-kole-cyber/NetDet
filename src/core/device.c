@@ -1,5 +1,6 @@
 #include "core/device.h"
 #include "common/error.h"
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -9,8 +10,8 @@
 #include <time.h>
 
 static uint64_t mac_to_u64(const uint8_t mac[6]) {
-	return ((uint64_t)mac[0] << 40) | ((uint64_t)mac[1] << 32) | ((uint64_t)mac[2] << 24) | ((uint64_t)mac[3] << 16) | ((uint64_t)mac[4] << 8) |
-		   ((uint64_t)mac[5]);
+	return ((uint64_t)mac[0] << 40) | ((uint64_t)mac[1] << 32) | ((uint64_t)mac[2] << 24) | ((uint64_t)mac[3] << 16) |
+		   ((uint64_t)mac[4] << 8) | ((uint64_t)mac[5]);
 }
 
 static uint32_t hash_mac(const uint8_t mac[6]) {
@@ -153,7 +154,8 @@ bool device_registry_upsert(hash_map *map, device *incoming, int32_t socket_fd) 
 		}
 
 		atomic_store(&incoming->previous_frames, 0);
-		atomic_store(&incoming->total_frames, 1); // 1 because this frame, through which we discovered this device, also counts
+		atomic_store(&incoming->total_frames,
+					 1); // 1 because this frame, through which we discovered this device, also counts
 
 		incoming->graph.head = 0;
 		incoming->graph.count = 0;

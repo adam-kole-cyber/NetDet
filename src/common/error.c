@@ -13,30 +13,31 @@ static int32_t errno_val_app = 0;
 
 static const char *error_code_to_text(error_code err) {
 	switch (err) {
-	case APP_ERR_ANCILLARY_DATA:
-		return "Ancillary data are not available. Try disabling RX VLAN offload for that interface, or rebuild against newer Linux headers.";
-	case APP_ERR_BIND:
-		return "bind() failed";
-	case APP_ERR_CALLOC:
-		return "calloc() failed";
-	case APP_ERR_HASHMAP_STORE_ENTRY:
-		return "hashmap_store_entry() failed";
-	case APP_ERR_IF_NAMEINDEX:
-		return "if_nameindex() failed";
-	case APP_ERR_IF_NAMETOINDEX:
-		return "if_nametoindex() failed";
-	case APP_ERR_LOCALTIME_R:
-		return "localtime_r() failed";
-	case APP_ERR_NONE:
-		return "no error";
-	case APP_ERR_SETSOCKOPT:
-		return "setsockopt() failed";
-	case APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY:
-		return "slidingwindowbuffer_store_entry() failed";
-	case APP_ERR_SOCKET:
-		return "socket() failed";
-	case APP_ERR_TIMER:
-		return "timer() failed";
+		case APP_ERR_ANCILLARY_DATA:
+			return "Ancillary data are not available. Try disabling RX VLAN offload for that interface, or rebuild "
+				   "against newer Linux headers.";
+		case APP_ERR_BIND:
+			return "bind() failed";
+		case APP_ERR_CALLOC:
+			return "calloc() failed";
+		case APP_ERR_HASHMAP_STORE_ENTRY:
+			return "hashmap_store_entry() failed";
+		case APP_ERR_IF_NAMEINDEX:
+			return "if_nameindex() failed";
+		case APP_ERR_IF_NAMETOINDEX:
+			return "if_nametoindex() failed";
+		case APP_ERR_LOCALTIME_R:
+			return "localtime_r() failed";
+		case APP_ERR_NONE:
+			return "no error";
+		case APP_ERR_SETSOCKOPT:
+			return "setsockopt() failed";
+		case APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY:
+			return "slidingwindowbuffer_store_entry() failed";
+		case APP_ERR_SOCKET:
+			return "socket() failed";
+		case APP_ERR_TIMER:
+			return "timer() failed";
 	}
 	return "unknown error";
 }

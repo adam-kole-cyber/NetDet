@@ -2,9 +2,7 @@
 #define UI_TUI_H
 
 #include <ncurses.h>
-#include <net/if.h>
 #include <panel.h>
-#include <pthread.h>
 #include <stdint.h>
 
 #define WINDOW_OUTER_INDENT 5
@@ -24,6 +22,7 @@ typedef struct {
 	PANEL *panel;
 } window_data;
 
+void ncurses_init(void);
 void draw_window_frame(window_data *window_data, const char *title);
 void input_handler(int32_t input, app_context *variables);
 void draw(app_context *variables);

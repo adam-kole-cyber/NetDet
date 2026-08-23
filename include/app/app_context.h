@@ -4,7 +4,7 @@
 #include "ui/popup_templates.h"
 #include "ui/tui.h"
 #include "ui/tui_app.h"
-#include <pthread.h>
+#include <bits/pthreadtypes.h>
 #include <stdint.h>
 
 typedef struct app_context {

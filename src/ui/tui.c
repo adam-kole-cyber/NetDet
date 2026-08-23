@@ -7,17 +7,41 @@
 #include "ui/scroll_view.h"
 #include "ui/tui_app.h"
 #include "ui/tui_popup.h"
+#include <asm-generic/ioctls.h>
+#include <locale.h>
 #include <ncurses.h>
-#include <net/if.h>
 #include <panel.h>
-#include <pthread.h>
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <sys/ioctl.h>
-#include <sys/socket.h>
 #include <unistd.h>
+
+void ncurses_init(void) {
+	setlocale(LC_ALL, "");
+	initscr();
+	noecho();
+	cbreak();
+	keypad(stdscr, TRUE);
+	curs_set(0);
+
+	if (has_colors()) { // enables colors in terminal
+		start_color();
+		use_default_colors();
+		init_pair(1, COLOR_GREEN, -1);
+		init_pair(2, COLOR_YELLOW, -1);
+		init_pair(3, -1, COLOR_BLACK);
+		init_pair(4, COLOR_RED, -1);
+		init_pair(5, COLOR_CYAN, -1);
+		init_pair(6, COLOR_RED, COLOR_BLACK);
+		init_pair(7, COLOR_YELLOW, COLOR_BLACK);
+		init_pair(8, COLOR_GREEN, COLOR_BLACK);
+		init_pair(9, COLOR_CYAN, COLOR_BLACK);
+	}
+
+	return;
+}
 
 void draw_window_frame(window_data *window_data, const char *title) {
 	bool title_set = title != NULL;
@@ -51,53 +75,54 @@ void draw_window_frame(window_data *window_data, const char *title) {
 
 void input_handler(int32_t input, app_context *variables) {
 	switch (input) {
-	case KEY_DOWN:
-		if (variables->main_window.is_active) {
-			scroll_move(&variables->buffer.view, 1);
-		} else {
-			scroll_move(get_popup_descriptor_scroll_view(variables->popup_window.popup_type), 1);
-		}
-		break;
-	case KEY_UP:
-		if (variables->main_window.is_active) {
-			scroll_move(&variables->buffer.view, -1);
-		} else {
-			scroll_move(get_popup_descriptor_scroll_view(variables->popup_window.popup_type), -1);
-		}
-		break;
-	case 'b':
-		popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL);
-		break;
-	case 'i': {
-		device_table_view *buffer_reference = &variables->buffer;
-		device *action_device = buffer_reference->data->items[buffer_reference->view.head + buffer_reference->view.cursor];
-		if (action_device == NULL) {
+		case KEY_DOWN:
+			if (variables->main_window.is_active) {
+				scroll_move(&variables->buffer.view, 1);
+			} else {
+				scroll_move(get_popup_descriptor_scroll_view(variables->popup_window.popup_type), 1);
+			}
+			break;
+		case KEY_UP:
+			if (variables->main_window.is_active) {
+				scroll_move(&variables->buffer.view, -1);
+			} else {
+				scroll_move(get_popup_descriptor_scroll_view(variables->popup_window.popup_type), -1);
+			}
+			break;
+		case 'b':
+			popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL);
+			break;
+		case 'i': {
+			device_table_view *buffer_reference = &variables->buffer;
+			device *action_device =
+				buffer_reference->data->items[buffer_reference->view.head + buffer_reference->view.cursor];
+			if (action_device == NULL) {
+				break;
+			}
+			// the way in wich is action device passed to function might be reworked later
+			popup_window_action(&variables->main_window, &variables->popup_window, INSPECT_LIST, action_device);
 			break;
 		}
-		// the way in wich is action device passed to function might be reworked later
-		popup_window_action(&variables->main_window, &variables->popup_window, INSPECT_LIST, action_device);
-		break;
-	}
-	case '\n':
-		if (variables->popup_window.is_active && variables->popup_window.popup_type == INTERFACES_LIST) {
-			scroll_view *view = get_popup_descriptor_scroll_view(variables->popup_window.popup_type);
-			int32_t selected = view->head + view->cursor;
+		case '\n':
+			if (variables->popup_window.is_active && variables->popup_window.popup_type == INTERFACES_LIST) {
+				scroll_view *view = get_popup_descriptor_scroll_view(variables->popup_window.popup_type);
+				int32_t selected = view->head + view->cursor;
 
-			if ((uint32_t)selected >= view->count)
-				break;
+				if ((uint32_t)selected >= view->count)
+					break;
 
-			if (get_interface_index(selected) == 0)
-				break;
+				if (get_interface_index(selected) == 0)
+					break;
 
-			set_bound_interface(get_interface_index(selected), get_interface_name(selected));
-			bind_update_notify();
+				set_bound_interface(get_interface_index(selected), get_interface_name(selected));
+				bind_update_notify();
 
-			popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL);
-		}
+				popup_window_action(&variables->main_window, &variables->popup_window, INTERFACES_LIST, NULL);
+			}
 
-		break;
-	default:
-		break;
+			break;
+		default:
+			break;
 	}
 
 	return;
@@ -121,7 +146,8 @@ void draw(app_context *variables) {
 
 		if (variables->popup_window.is_active) {
 			werase(variables->popup_window.window);
-			draw_window_frame((window_data *)&variables->popup_window, get_popup_descriptor_title(variables->popup_window.popup_type));
+			draw_window_frame((window_data *)&variables->popup_window,
+							  get_popup_descriptor_title(variables->popup_window.popup_type));
 			draw_popup(&variables->popup_window);
 		}
 
