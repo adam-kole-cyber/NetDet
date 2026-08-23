@@ -1,5 +1,5 @@
-#ifndef DEVICE_H
-#define DEVICE_H
+#ifndef CORE_DEVICE_H
+#define CORE_DEVICE_H
 
 #include <pthread.h>
 #include <stdatomic.h>

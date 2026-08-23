@@ -1,7 +1,7 @@
 #ifndef TUI_POPUP_H
 #define TUI_POPUP_H
 
-#include "device.h"
+#include "core/device.h"
 #include "tui.h"
 #include "ui/popup_templates.h"
 #include <pthread.h>

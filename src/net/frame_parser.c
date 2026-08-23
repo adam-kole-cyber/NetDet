@@ -1,5 +1,5 @@
 #include "net/frame_parser.h"
-#include "device.h"
+#include "core/device.h"
 #include "error.h"
 #include <linux/if_packet.h>
 #include <netinet/in.h>

@@ -1,5 +1,5 @@
 #include "net/network_thread.h"
-#include "device.h"
+#include "core/device.h"
 #include "epoll_utils.h"
 #include "error.h"
 #include "lifecycle.h"

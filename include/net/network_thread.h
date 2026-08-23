@@ -1,7 +1,7 @@
 #ifndef NET_NETWORKTHREAD_H
 #define NET_NETWORKTHREAD_H
 
-#include "device.h"
+#include "core/device.h"
 #include <stdint.h>
 
 struct network_thread_args {

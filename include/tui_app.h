@@ -1,7 +1,7 @@
 #ifndef TUI_APP_H
 #define TUI_APP_H
 
-#include "device.h"
+#include "core/device.h"
 #include "scroll_view.h"
 #include <ncurses.h>
 #include <stdint.h>

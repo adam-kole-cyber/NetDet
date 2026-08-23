@@ -1,4 +1,4 @@
-#include "device.h"
+#include "core/device.h"
 #include "error.h"
 #include <stdbool.h>
 #include <stddef.h>

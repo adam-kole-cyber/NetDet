@@ -1,7 +1,7 @@
 #ifndef NET_FRAMEPARSER_H
 #define NET_FRAMEPARSER_H
 
-#include "device.h"
+#include "core/device.h"
 #include <stdint.h>
 #include <sys/socket.h>
 #include <unistd.h>

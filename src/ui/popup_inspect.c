@@ -1,5 +1,5 @@
 #include "ui/popup_inspect.h"
-#include "device.h"
+#include "core/device.h"
 #include <math.h>
 #include <stdatomic.h>
 #include <string.h>

@@ -1,6 +1,6 @@
 #include "tui_popup.h"
 #include "clean_up.h"
-#include "device.h"
+#include "core/device.h"
 #include "init.h"
 #include "scroll_view.h"
 #include "tui.h"

@@ -1,6 +1,6 @@
 #include "tui.h"
 #include "app_context.h"
-#include "device.h"
+#include "core/device.h"
 #include "net/raw_socket.h"
 #include "scroll_view.h"
 #include "tui_app.h"

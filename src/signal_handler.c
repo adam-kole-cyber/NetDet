@@ -1,5 +1,5 @@
 #include "signal_handler.h"
-#include "device.h"
+#include "core/device.h"
 #include "init.h"
 #include "lifecycle.h"
 #include "net/network_thread.h"

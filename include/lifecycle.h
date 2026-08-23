@@ -1,7 +1,7 @@
 #ifndef LIFECYCLE_H
 #define LIFECYCLE_H
 
-#include "device.h"
+#include "core/device.h"
 #include <stdbool.h>
 #include <stdint.h>
 

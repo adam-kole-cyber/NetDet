@@ -1,5 +1,5 @@
 #include "tui_app.h"
-#include "device.h"
+#include "core/device.h"
 #include <ncurses.h>
 #include <stdint.h>
 #include <stdio.h>
