@@ -1,5 +1,5 @@
 #include "clean_up.h"
-#include "error.h"
+#include "common/error.h"
 #include "lifecycle.h"
 #include "tui.h"
 #include "ui/popup_templates.h"

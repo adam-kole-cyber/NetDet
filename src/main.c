@@ -1,7 +1,7 @@
 #include "app_context.h"
 #include "clean_up.h"
+#include "common/error.h"
 #include "core/device.h"
-#include "error.h"
 #include "init.h"
 #include "lifecycle.h"
 #include "tui.h"

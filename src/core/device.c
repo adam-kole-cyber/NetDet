@@ -1,5 +1,5 @@
 #include "core/device.h"
-#include "error.h"
+#include "common/error.h"
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

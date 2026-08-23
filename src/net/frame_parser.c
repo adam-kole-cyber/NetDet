@@ -1,6 +1,6 @@
 #include "net/frame_parser.h"
+#include "common/error.h"
 #include "core/device.h"
-#include "error.h"
 #include <linux/if_packet.h>
 #include <netinet/in.h>
 #include <stdint.h>

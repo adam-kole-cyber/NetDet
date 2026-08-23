@@ -1,7 +1,7 @@
 #include "init.h"
+#include "common/error.h"
 #include "core/device.h"
 #include "epoll_utils.h"
-#include "error.h"
 #include "lifecycle.h"
 #include "net/network_thread.h"
 #include "tui.h"
