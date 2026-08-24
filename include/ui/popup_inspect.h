@@ -6,14 +6,15 @@
 
 #define INSPECT_FIELD_COUNT 6
 
-enum union_type { VLAN_TAG, ATOMIC_INT, IP, GRAPH, NONE };
+enum union_type { VLAN_TAG, ATOMIC_INT, IP, GRAPH, RATE };
 
 typedef struct {
 	const char *string;
 	enum union_type getter_type;
 	union {
 		uint32_t (*get_vlan_tag)(void *arg);
-		uint32_t (*get_atomic_int)(void *arg);
+		uint64_t (*get_atomic_int64)(void *arg);
+		uint32_t (*get_rate)(void *arg);
 		const char *(*get_ip)(void *arg);
 		const char *(*get_graph)(void *arg);
 	} getter;
