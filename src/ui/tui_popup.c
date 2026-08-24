@@ -34,9 +34,7 @@ void popup_init(popup_window_data *popup_window, const window_data *main_window,
 
 void popup_window_action(window_data *main_window, popup_window_data *popup_window, popup_type window_type,
 						 device *action_device) {
-	static bool is_visible = false;
-
-	is_visible = !is_visible;
+	static bool is_visible = true;
 
 	if (is_visible) {
 		main_window->is_active = false;
@@ -54,6 +52,10 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 		draw_window_frame((window_data *)popup_window, get_popup_descriptor_title(popup_window->popup_type));
 		draw_popup(popup_window);
 	} else {
+		if (popup_window->is_active && popup_window->popup_type != window_type) {
+			return;
+		}
+
 		main_window->is_active = true;
 		popup_clean_up(popup_window);
 
@@ -64,6 +66,7 @@ void popup_window_action(window_data *main_window, popup_window_data *popup_wind
 		}
 	}
 
+	is_visible = !is_visible;
 	return;
 }
 
