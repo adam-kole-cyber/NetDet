@@ -1,6 +1,9 @@
-#include "lifecycle.h"
-#include "epoll_utils.h"
-#include "signal_handler.h"
+#include "app/lifecycle.h"
+#include "core/device.h"
+#include "platform/epoll_utils.h"
+#include "platform/signal_handler.h"
+#include <bits/pthreadtypes.h>
+#include <bits/types/sigset_t.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdatomic.h>
@@ -53,8 +56,13 @@ void lifecycle_request_shutdown(uint32_t reason) {
 	return;
 }
 
-bool get_end_main_loop(void) { return atomic_load(&end_main_loop); }
-int32_t get_shutdown_main_fd(void) { return shutdown_main_fd; }
+bool get_end_main_loop(void) {
+	return atomic_load(&end_main_loop);
+}
+
+int32_t get_shutdown_main_fd(void) {
+	return shutdown_main_fd;
+}
 
 void lifecycle_notify_fatal_error(void) {
 	pthread_kill(signal_thread, SIGUSR1);
@@ -66,4 +74,6 @@ void event_bus_publish(const ui_message *msg) {
 	return;
 }
 
-int32_t get_event_bus_fd(void) { return pipe_fd[0]; }
+int32_t get_event_bus_fd(void) {
+	return pipe_fd[0];
+}

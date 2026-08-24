@@ -1,15 +1,22 @@
 #include "ui/popup_interfaces.h"
-#include "error.h"
+#include "common/error.h"
 #include "net/raw_socket.h"
 #include "ui/popup_templates.h"
+#include <ncurses.h>
 #include <net/if.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 struct if_nameindex *popup_list = NULL;
 
-uint32_t get_interface_index(int32_t interface_index) { return popup_list[interface_index].if_index; }
-char *get_interface_name(int32_t interface_index) { return popup_list[interface_index].if_name; }
+uint32_t get_interface_index(int32_t interface_index) {
+	return popup_list[interface_index].if_index;
+}
+
+char *get_interface_name(int32_t interface_index) {
+	return popup_list[interface_index].if_name;
+}
 
 void prepare_interface_list(void *args) {
 	(void)args;
@@ -50,7 +57,8 @@ void prepare_interface_list(void *args) {
 void render_interface_item(WINDOW *popup_window, int32_t row, int32_t col, uint32_t index, void *data) {
 	struct if_nameindex *items = *(struct if_nameindex **)data;
 
-	mvwprintw(popup_window, row, col, "[%c] - %s", (get_bound_interface() == items[index].if_index) ? '*' : ' ', items[index].if_name);
+	mvwprintw(popup_window, row, col, "[%c] - %s", (get_bound_interface() == items[index].if_index) ? '*' : ' ',
+			  items[index].if_name);
 
 	return;
 }

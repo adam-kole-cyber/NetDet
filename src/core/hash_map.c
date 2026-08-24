@@ -1,15 +1,14 @@
-#include "device.h"
-#include "error.h"
-#include <stdbool.h>
-#include <stddef.h>
+#include "core/hash_map.h"
+#include "common/error.h"
+#include "core/device.h"
+#include <stdatomic.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
 static uint64_t mac_to_u64(const uint8_t mac[6]) {
-	return ((uint64_t)mac[0] << 40) | ((uint64_t)mac[1] << 32) | ((uint64_t)mac[2] << 24) | ((uint64_t)mac[3] << 16) | ((uint64_t)mac[4] << 8) |
-		   ((uint64_t)mac[5]);
+	return ((uint64_t)mac[0] << 40) | ((uint64_t)mac[1] << 32) | ((uint64_t)mac[2] << 24) | ((uint64_t)mac[3] << 16) |
+		   ((uint64_t)mac[4] << 8) | ((uint64_t)mac[5]);
 }
 
 static uint32_t hash_mac(const uint8_t mac[6]) {
@@ -60,22 +59,6 @@ static int32_t hashmap_realloc(hash_map *map) {
 	return 0;
 }
 
-static int32_t slidingwindowbuffer_realloc(sliding_window_buffer *buffer) {
-	uint32_t new_size = buffer->size << 1;
-	device **tmp = realloc(buffer->items, buffer->size * sizeof(device *));
-	if (tmp == NULL) {
-		return -1;
-	}
-
-	for (uint32_t i = buffer->size; i < new_size; i++) {
-		tmp[i] = NULL;
-	}
-
-	buffer->items = tmp;
-	buffer->size = new_size;
-	return 0;
-}
-
 device *hashmap_check_entry(hash_map *map, const uint8_t *mac) {
 	uint32_t index = hash_mac(mac) % map->size;
 	uint32_t start_index = index;
@@ -111,30 +94,6 @@ int32_t hashmap_store_entry(hash_map *map, device *dev) {
 	return 0;
 }
 
-int32_t slidingwindowbuffer_store_entry(sliding_window_buffer *buffer, device *dev) {
-	if ((buffer->view.count + 1) > (buffer->size * 0.8)) {
-		if (slidingwindowbuffer_realloc(buffer) == -1) {
-			return -1;
-		}
-	}
-
-	int32_t index = buffer->view.count;
-
-	buffer->items[index] = dev;
-	buffer->view.count++;
-	return 0;
-}
-
-void raise_frame_count(device *device_to_update) {
-	if (device_to_update == NULL) {
-		return;
-	}
-
-	atomic_store(&device_to_update->total_frames, atomic_load(&device_to_update->total_frames) + 1);
-
-	return;
-}
-
 bool device_registry_upsert(hash_map *map, device *incoming, int32_t socket_fd) {
 	device *existing_device = hashmap_check_entry(map, incoming->mac);
 
@@ -152,7 +111,8 @@ bool device_registry_upsert(hash_map *map, device *incoming, int32_t socket_fd) 
 		}
 
 		atomic_store(&incoming->previous_frames, 0);
-		atomic_store(&incoming->total_frames, 1); // 1 because this frame, through which we discovered this device, also counts
+		atomic_store(&incoming->total_frames,
+					 1); // 1 because this frame, through which we discovered this device, also counts
 
 		incoming->graph.head = 0;
 		incoming->graph.count = 0;

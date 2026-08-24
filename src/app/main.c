@@ -1,19 +1,17 @@
-#include "app_context.h"
-#include "clean_up.h"
-#include "device.h"
-#include "error.h"
-#include "init.h"
-#include "lifecycle.h"
-#include "tui.h"
+#include "app/app_clean_up.h"
+#include "app/app_context.h"
+#include "app/app_init.h"
+#include "app/lifecycle.h"
+#include "common/error.h"
+#include "core/device.h"
+#include "net/network_thread.h"
+#include "ui/popup_templates.h"
+#include "ui/tui.h"
 #include <ncurses.h>
-#include <panel.h>
-#include <pthread.h>
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/epoll.h>
-#include <sys/eventfd.h>
-#include <sys/ioctl.h>
 #include <unistd.h>
 
 int main(int argc, char *argv[]) {
@@ -37,14 +35,21 @@ int main(int argc, char *argv[]) {
 				read(get_event_bus_fd(), &msg, sizeof(ui_message));
 
 				if (msg.msg_type == UI_NEW_ENTRY) {
-					if (slidingwindowbuffer_store_entry(&variables.buffer, msg.data) == -1) {
+					if (device_buffer_store_entry(variables.buffer.data, msg.data) == -1) {
 						main_error(APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY);
 					}
+
+					variables.buffer.view.count++;
+					draw(&variables);
 				} else if (msg.msg_type == UI_RESIZE) {
 					resize_handler(&variables);
+					draw(&variables);
+				} else if (msg.msg_type == UI_TIMER_TICK) {
+					if (variables.popup_window.is_active && variables.popup_window.popup_type == INSPECT_LIST) {
+						draw(&variables);
+					}
 				}
 
-				draw(&variables);
 			} else if (events[i].data.fd == STDIN_FILENO) {
 				int32_t input = wgetch(variables.main_window.window);
 				input_handler(input, &variables);

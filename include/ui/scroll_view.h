@@ -1,5 +1,5 @@
-#ifndef SCROLL_VIEW_H
-#define SCROLL_VIEW_H
+#ifndef UI_SCROLL_VIEW_H
+#define UI_SCROLL_VIEW_H
 
 #include <stdatomic.h>
 #include <stdint.h>

@@ -1,12 +1,15 @@
 #include "net/frame_parser.h"
-#include "device.h"
-#include "error.h"
+#include "common/error.h"
+#include "core/device.h"
 #include <linux/if_packet.h>
 #include <netinet/in.h>
+#include <stdatomic.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
 
 void get_vlan_info(struct msghdr *control_msg, unsigned char *processed_frame, int32_t *socket_fd) {
@@ -59,25 +62,33 @@ void process_raw_arp_frame(unsigned char *raw_frame_data, unsigned char *process
 	if (raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED] == 0x08 && raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED + 1] == 0x06) {
 		memcpy(processed_frame, raw_frame_data, ETH_MAC_ADDRS_LEN);
 		memset(&processed_frame[ETH_TYPE_OFFSET_UNTAGGED], 0, ETH_QinQ_DOT1Q_TAGS_LEN);
-		memcpy(&processed_frame[ETH_TYPE_OFFSET_DOUBLE_TAG], &raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED], *frame_length - ETH_MAC_ADDRS_LEN);
+		memcpy(&processed_frame[ETH_TYPE_OFFSET_DOUBLE_TAG], &raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED],
+			   *frame_length - ETH_MAC_ADDRS_LEN);
 
 		*frame_length += ETH_QinQ_DOT1Q_TAGS_LEN;
-	} else if (raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED] == 0x81 && raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED + 1] == 0x00) {
-		if (!(raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG] == 0x08 && raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG + 1] == 0x06)) {
+	} else if (raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED] == 0x81 &&
+			   raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED + 1] == 0x00) {
+		if (!(raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG] == 0x08 &&
+			  raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG + 1] == 0x06)) {
 			*frame_length = 0;
 			return;
 		}
 
 		memcpy(processed_frame, raw_frame_data, ETH_MAC_ADDRS_LEN);
 		memset(&processed_frame[ETH_TYPE_OFFSET_UNTAGGED], 0, ETH_QinQ_TAG_LEN);
-		memcpy(&processed_frame[ETH_TYPE_OFFSET_SINGLE_TAG], &raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED], *frame_length - ETH_MAC_ADDRS_LEN);
+		memcpy(&processed_frame[ETH_TYPE_OFFSET_SINGLE_TAG], &raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED],
+			   *frame_length - ETH_MAC_ADDRS_LEN);
 
 		*frame_length += ETH_QinQ_TAG_LEN;
-	} else if (raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED] == 0x88 && raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED + 1] == 0xa8) {
-		if ((raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG] == 0x81 && raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG + 1] == 0x00) &&
-			(raw_frame_data[ETH_TYPE_OFFSET_DOUBLE_TAG] == 0x08 && raw_frame_data[ETH_TYPE_OFFSET_DOUBLE_TAG + 1] == 0x06)) {
+	} else if (raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED] == 0x88 &&
+			   raw_frame_data[ETH_TYPE_OFFSET_UNTAGGED + 1] == 0xa8) {
+		if ((raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG] == 0x81 &&
+			 raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG + 1] == 0x00) &&
+			(raw_frame_data[ETH_TYPE_OFFSET_DOUBLE_TAG] == 0x08 &&
+			 raw_frame_data[ETH_TYPE_OFFSET_DOUBLE_TAG + 1] == 0x06)) {
 			memcpy(processed_frame, raw_frame_data, *frame_length);
-		} else if (raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG] == 0x08 && raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG + 1] == 0x06) {
+		} else if (raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG] == 0x08 &&
+				   raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG + 1] == 0x06) {
 			memcpy(processed_frame, raw_frame_data, ETH_MAC_ADDRS_LEN + ETH_QinQ_TAG_LEN);
 			memset(&processed_frame[ETH_TYPE_OFFSET_SINGLE_TAG], 0, ETH_QinQ_TAG_LEN);
 			memcpy(&processed_frame[ETH_TYPE_OFFSET_DOUBLE_TAG], &raw_frame_data[ETH_TYPE_OFFSET_SINGLE_TAG],
@@ -94,7 +105,7 @@ void process_raw_arp_frame(unsigned char *raw_frame_data, unsigned char *process
 	return;
 }
 
-void set_device_data(device *device_data, unsigned char *processed_frame, int32_t *socket, device *device) {
+void set_device_data(device *device_data, unsigned char *processed_frame, int32_t *socket) {
 	time_t now;
 	struct tm local_time;
 	struct eth_header *eth = (struct eth_header *)processed_frame;
@@ -108,8 +119,8 @@ void set_device_data(device *device_data, unsigned char *processed_frame, int32_
 	now = time(NULL);
 
 	if (localtime_r(&now, &local_time) == NULL) {
-		free(device);
-		device = NULL;
+		free(device_data);
+		device_data = NULL;
 		network_error(APP_ERR_LOCALTIME_R, *socket);
 		return;
 	}

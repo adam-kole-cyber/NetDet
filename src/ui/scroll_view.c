@@ -1,4 +1,4 @@
-#include "scroll_view.h"
+#include "ui/scroll_view.h"
 #include <stdint.h>
 
 void scroll_move(scroll_view *view, int32_t direction) {
