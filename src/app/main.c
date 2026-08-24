@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
 				read(get_event_bus_fd(), &msg, sizeof(ui_message));
 
 				if (msg.msg_type == UI_NEW_ENTRY) {
-					if (slidingwindowbuffer_store_entry(variables.buffer.data, msg.data) == -1) {
+					if (device_buffer_store_entry(variables.buffer.data, msg.data) == -1) {
 						main_error(APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY);
 					}
 

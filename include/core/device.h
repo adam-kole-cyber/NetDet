@@ -54,10 +54,7 @@ typedef struct {
 	device *data;
 } ui_message;
 
-device *hashmap_check_entry(hash_map *map, const uint8_t *mac);
-int32_t hashmap_store_entry(hash_map *map, device *dev);
-int32_t slidingwindowbuffer_store_entry(device_buffer *buffer, device *dev);
-void raise_frame_count(device *device_to_update);
-bool device_registry_upsert(hash_map *map, device *incoming, int32_t socket_fd);
+int32_t device_buffer_store_entry(device_buffer *buffer, device *dev);
+void device_raise_frame_count(device *device_to_update);
 
 #endif

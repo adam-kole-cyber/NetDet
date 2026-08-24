@@ -91,7 +91,7 @@ void socket_cleanup(void) {
 	return;
 }
 
-uint32_t get_bouget_bound_interface(void) {
+uint32_t get_bound_interface(void) {
 	pthread_mutex_lock(&binded_interface_mutex);
 	uint32_t if_index = binded_interface.if_index;
 	pthread_mutex_unlock(&binded_interface_mutex);

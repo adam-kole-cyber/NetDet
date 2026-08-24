@@ -2,6 +2,7 @@
 #include "app/lifecycle.h"
 #include "common/error.h"
 #include "core/device.h"
+#include "core/hash_map.h"
 #include "net/frame_parser.h"
 #include "net/raw_socket.h"
 #include "platform/epoll_utils.h"
@@ -49,7 +50,7 @@ static void handle_incoming_frame(int32_t socket_fd, hash_map *map) {
 		return;
 	}
 
-	raise_frame_count(
+	device_raise_frame_count(
 		hashmap_check_entry(map, &raw_frame_data[6])); // TODO consider increasing the frame rate and saving the device
 
 	process_raw_arp_frame(raw_frame_data, processed_frame, &frame_length);
