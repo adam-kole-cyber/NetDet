@@ -108,7 +108,7 @@ static void handle_timer_tick(int32_t socket_fd, int32_t timer_fd, hash_map *map
 		device_to_update->graph.head = (device_to_update->graph.head + 1) % RATE_HISTORY_SIZE;
 	}
 
-	msg.msg_type = UI_UPDATE_TABLE;
+	msg.msg_type = UI_TIMER_TICK;
 	msg.data = NULL;
 	event_bus_publish(&msg);
 

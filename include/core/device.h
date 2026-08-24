@@ -48,7 +48,7 @@ typedef struct {
 	uint32_t count;
 } hash_map;
 
-enum ui_message_type { UI_NEW_ENTRY = 0, UI_UPDATE_TABLE, UI_RESIZE };
+enum ui_message_type { UI_NEW_ENTRY = 0, UI_UPDATE_TABLE, UI_RESIZE, UI_TIMER_TICK };
 typedef struct {
 	enum ui_message_type msg_type;
 	device *data;

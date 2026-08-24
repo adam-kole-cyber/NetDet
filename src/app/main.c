@@ -5,6 +5,7 @@
 #include "common/error.h"
 #include "core/device.h"
 #include "net/network_thread.h"
+#include "ui/popup_templates.h"
 #include "ui/tui.h"
 #include <ncurses.h>
 #include <stdatomic.h>
@@ -39,11 +40,16 @@ int main(int argc, char *argv[]) {
 					}
 
 					variables.buffer.view.count++;
+					draw(&variables);
 				} else if (msg.msg_type == UI_RESIZE) {
 					resize_handler(&variables);
+					draw(&variables);
+				} else if (msg.msg_type == UI_TIMER_TICK) {
+					if (variables.popup_window.is_active && variables.popup_window.popup_type == INSPECT_LIST) {
+						draw(&variables);
+					}
 				}
 
-				draw(&variables);
 			} else if (events[i].data.fd == STDIN_FILENO) {
 				int32_t input = wgetch(variables.main_window.window);
 				input_handler(input, &variables);
