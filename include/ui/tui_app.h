@@ -19,6 +19,6 @@ typedef struct {
 void draw_table_header(WINDOW *window);
 void print_network_data(WINDOW *window, device_table_view *buffer);
 void set_column_width(int32_t window_width);
-void update_row(void);
+void update_row(WINDOW *window, device_table_view *buffer, device *device_to_update);
 
 #endif

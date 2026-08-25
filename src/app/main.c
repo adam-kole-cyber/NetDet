@@ -7,10 +7,12 @@
 #include "net/network_thread.h"
 #include "ui/popup_templates.h"
 #include "ui/tui.h"
+#include "ui/tui_app.h"
 #include <ncurses.h>
 #include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <sys/epoll.h>
 #include <unistd.h>
 
@@ -44,7 +46,9 @@ int main(int argc, char *argv[]) {
 						draw(&variables);
 						break;
 					case UI_UPDATE_TABLE:
-
+						/*fprintf(stderr, "%x:%x:%x:%x:%x:%x\n", msg.data->mac[0], msg.data->mac[1], msg.data->mac[2],
+								msg.data->mac[3], msg.data->mac[4], msg.data->mac[5]);*/
+						update_row(variables.main_window.window, &variables.buffer, msg.data);
 						break;
 					case UI_RESIZE:
 						resize_handler(&variables);

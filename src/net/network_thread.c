@@ -65,7 +65,7 @@ static void handle_incoming_frame(int32_t socket_fd, hash_map *map) {
 
 	if (device_registry_upsert(map, device_data, socket_fd)) {
 		msg.msg_type = UI_UPDATE_TABLE;
-		msg.data = device_data;
+		msg.data = hashmap_check_entry(map, device_data->mac);
 
 		free(device_data);
 		device_data = NULL;
