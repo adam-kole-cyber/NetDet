@@ -166,6 +166,11 @@ static void print_network_row(WINDOW *window, int32_t row, int32_t column, const
 	return;
 }
 
+static table_layout table_layout_compute(int32_t window_width) {
+	table_layout layout = {.col_width = (window_width - 4) / 4, .col_width_remainder = (window_width - 4) % 4};
+	return layout;
+}
+
 void draw_table_header(WINDOW *window) {
 	wattron(window, COLOR_PAIR(2));
 
@@ -202,12 +207,10 @@ void print_network_data(WINDOW *window, device_table_view *buffer) {
 	return;
 }
 
-static table_layout table_layout_compute(int32_t window_width) {
-	table_layout layout = {.col_width = (window_width - 4) / 4, .col_width_remainder = (window_width - 4) % 4};
-	return layout;
-}
-
 void set_column_width(int32_t window_width) {
 	current_layout = table_layout_compute(window_width);
 	return;
+}
+
+void update_row(void) {
 }

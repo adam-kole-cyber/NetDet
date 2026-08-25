@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
 						draw(&variables);
 						break;
 					case UI_UPDATE_TABLE:
-						// do something
+
 						break;
 					case UI_RESIZE:
 						resize_handler(&variables);

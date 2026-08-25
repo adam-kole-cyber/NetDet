@@ -65,7 +65,10 @@ static void handle_incoming_frame(int32_t socket_fd, hash_map *map) {
 
 	if (device_registry_upsert(map, device_data, socket_fd)) {
 		msg.msg_type = UI_UPDATE_TABLE;
-		msg.data = NULL; // this can be used when optimizing TUI
+		msg.data = device_data;
+
+		free(device_data);
+		device_data = NULL;
 	} else {
 		msg.msg_type = UI_NEW_ENTRY;
 		msg.data = device_data;
