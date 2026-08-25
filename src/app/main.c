@@ -34,20 +34,29 @@ int main(int argc, char *argv[]) {
 				ui_message msg;
 				read(get_event_bus_fd(), &msg, sizeof(ui_message));
 
-				if (msg.msg_type == UI_NEW_ENTRY) {
-					if (device_buffer_store_entry(variables.buffer.data, msg.data) == -1) {
-						main_error(APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY);
-					}
+				switch (msg.msg_type) {
+					case UI_NEW_ENTRY:
+						if (device_buffer_store_entry(variables.buffer.data, msg.data) == -1) {
+							main_error(APP_ERR_SLIDINGWINDOWBUFFER_STORE_ENTRY);
+						}
 
-					variables.buffer.view.count++;
-					draw(&variables);
-				} else if (msg.msg_type == UI_RESIZE) {
-					resize_handler(&variables);
-					draw(&variables);
-				} else if (msg.msg_type == UI_TIMER_TICK) {
-					if (variables.popup_window.is_active && variables.popup_window.popup_type == INSPECT_LIST) {
+						variables.buffer.view.count++;
 						draw(&variables);
-					}
+						break;
+					case UI_UPDATE_TABLE:
+						// do something
+						break;
+					case UI_RESIZE:
+						resize_handler(&variables);
+						draw(&variables);
+						break;
+					case UI_TIMER_TICK:
+						if (variables.popup_window.is_active && variables.popup_window.popup_type == INSPECT_LIST) {
+							draw(&variables);
+						}
+						break;
+					default:
+						break;
 				}
 
 			} else if (events[i].data.fd == STDIN_FILENO) {
