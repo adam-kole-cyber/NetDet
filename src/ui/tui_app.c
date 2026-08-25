@@ -6,7 +6,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 
 static table_layout current_layout = {0};
 
@@ -200,16 +199,8 @@ void print_network_data(WINDOW *window, device_table_view *buffer) {
 	}
 
 	for (uint32_t i = 0; i < limit; i++) {
-		/*if (i == (uint32_t)buffer->view.cursor) {
-			wattron(window, COLOR_PAIR(3));
-		}*/
-
 		print_network_row(window, display_row_start + i, 2, buffer->data->items[buffer->view.head + i],
 						  i == (uint32_t)buffer->view.cursor);
-
-		/*if (i == (uint32_t)buffer->view.cursor) {
-			wattroff(window, COLOR_PAIR(3));
-		}*/
 	}
 	return;
 }
@@ -220,7 +211,6 @@ void set_column_width(int32_t window_width) {
 }
 
 void update_row(WINDOW *window, device_table_view *buffer, device *device_to_update) {
-	fprintf(stderr, "%p [head] - %p [device]\n", buffer->data->items[buffer->view.head], device_to_update);
 	if (buffer->data->items[buffer->view.head] > device_to_update) {
 		return;
 	}
@@ -231,15 +221,13 @@ void update_row(WINDOW *window, device_table_view *buffer, device *device_to_upd
 	}
 
 	for (uint32_t i = 0; i < limit; i++) {
-		fprintf(stderr, "cyklus %p [head] - %p [device]\n", buffer->data->items[buffer->view.head + i],
-				device_to_update);
 		if (buffer->data->items[buffer->view.head + i] != device_to_update) {
 			continue;
 		} else {
-			fprintf(stderr, "Vetva else\n");
 			print_network_row(window, 2 + i, 2, device_to_update, i == (uint32_t)buffer->view.cursor);
 			update_panels();
 			doupdate();
+
 			return;
 		}
 	}
