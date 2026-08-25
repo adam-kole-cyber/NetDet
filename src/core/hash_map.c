@@ -102,8 +102,6 @@ bool device_registry_upsert(hash_map *map, device *incoming, int32_t socket_fd) 
 		atomic_store(&existing_device->last_seen.minutes, incoming->last_seen.minutes);
 		atomic_store(&existing_device->last_seen.seconds, incoming->last_seen.seconds);
 
-		free(incoming);
-		incoming = NULL;
 		return true;
 	} else {
 		if (hashmap_store_entry(map, incoming) == -1) {
