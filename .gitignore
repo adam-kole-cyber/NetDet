@@ -1,4 +1,5 @@
 build/
+data/oui/link.txt
 NetDet
 compile_commands.json
 *.log
