@@ -1,73 +1,80 @@
+#include "quicksort.h"
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-
-void swap(int *x, int *y) {
-	int temp = *x;
-	*x = *y;
-	*y = temp;
-	return;
-}
-
-int sort_subarray(int *arr, int low_element, int high_element) {
-	int selected_index = low_element + (rand() % (high_element - low_element));
-
-	if (selected_index != high_element) {
-		swap(&arr[selected_index], &arr[high_element]);
-	}
-
-	int selected_element = arr[high_element];
-	int i = low_element;
-
-	for (int j = low_element; j < high_element; j++) {
-		if (arr[j] <= selected_element) {
-			swap(&arr[i], &arr[j]);
-			i++;
-		}
-	}
-
-	swap(&arr[i], &arr[high_element]);
-
-	return i;
-}
-
-void split_array(int *arr, int low_element, int high_element) {
-	if (low_element < high_element) {
-		int selected_element = sort_subarray(arr, low_element, high_element);
-
-		split_array(arr, low_element, selected_element - 1);
-		split_array(arr, selected_element + 1, high_element);
-	}
-	return;
-}
-
-void quicksort(int *arr, int length) {
-	srand(time(NULL));
-	split_array(arr, 0, length - 1);
-	return;
-}
+#include <string.h>
+#include <unistd.h>
 
 int main(void) {
-	int arr[] = {5, 28, 13, 19, 4, 38, 9, 33, 21};
-	int length = 9;
+	char *line = NULL;
+	char character;
+	int capacity = 128;
+	int size = 0;
+	int mac_table[10];
+	int count = 0;
 
-	printf("Unsorted: ");
-	for (int i = 0; i < length; i++) {
-		printf("%d ", arr[i]);
+	int file_fd = open("~/C/NetDet/data/oui/test.csv", O_RDONLY);
+	line = calloc(capacity, sizeof(char));
+
+	while (read(file_fd, &character, 1) > 0 && character != '\n') {
 	}
 
-	quicksort(arr, length);
+	while (read(file_fd, &character, 1) > 0) {
+		if (size + 1 >= capacity) {
+			capacity = capacity << 1;
+			line = realloc(line, capacity);
 
-	printf("\nSorted: ");
-	for (int i = 0; i < length; i++) {
-		printf("%d ", arr[i]);
+			if (line == NULL) {
+				perror("realloc");
+				return -1;
+			}
+		}
+
+		if (character == '\n') {
+			char *oui = strchr(line, ',') + 1;
+			int i = 0;
+			mac_table[count] = 0;
+			int decrement;
+
+			while (oui[i] != ',') {
+				if (oui[i] > '9') {
+					decrement = 55;
+				} else {
+					decrement = 48;
+				}
+
+				mac_table[count] = mac_table[count] << 4;
+				mac_table[count] = mac_table[count] | (oui[i] - decrement);
+
+				i++;
+			}
+
+			count++;
+			line[size] = '\0';
+			size = 0;
+			continue;
+		}
+
+		line[size++] = character;
+	}
+
+	line[size] = '\0';
+
+	printf("unsorted: ");
+	for (int i = 0; i < count; i++) {
+		printf("%x ", mac_table[i]);
 	}
 	printf("\n");
 
+	quicksort(mac_table, 10);
+
+	printf("sorted: ");
+	for (int i = 0; i < count; i++) {
+		printf("%x ", mac_table[i]);
+	}
+	printf("\n");
+
+	free(line);
+	close(file_fd);
 	return 0;
 }
-
-// 6 7 5 2 1 3 6 9 4 2 8 [3]
-//          2 1 3 [2] <- [3] -> 6 7 5 6 9 4 [8]
-//       2 [1] <- [2] -> [3] -> 6 7 5 6 4 <- [8] -> 9
-//         [1] -> 2
