@@ -1,3 +1,4 @@
+#include "parser.h"
 #include "quicksort.h"
 #include <fcntl.h>
 #include <stdio.h>
@@ -5,76 +6,139 @@
 #include <string.h>
 #include <unistd.h>
 
+#define CHUNK_SIZE 10240
+
 int main(void) {
-	char *line = NULL;
-	char character;
-	int capacity = 128;
-	int size = 0;
-	int mac_table[10];
-	int count = 0;
+	char buffer[CHUNK_SIZE + 1];
+	int mac_prefix_capacity = CHUNK_SIZE;
+	int *mac_prefix = calloc(mac_prefix_capacity, sizeof(unsigned int));
+	int mac_prefix_index = 0;
+	int vendor_name_capacity = 100;
+	char *vendor_name = calloc(vendor_name_capacity, sizeof(char));
+	int vendor_name_count = 0;
+	int read_size = 0;
+	int current_read_size = 0;
+	char *leftover_buff;
+	char leftover_size = 0;
+	int file_fd = open("/home/adam/C/NetDet/data/oui/ma-l.csv", O_RDONLY);
 
-	int file_fd = open("~/C/NetDet/data/oui/test.csv", O_RDONLY);
-	line = calloc(capacity, sizeof(char));
-
-	while (read(file_fd, &character, 1) > 0 && character != '\n') {
+	if (file_fd == -1) {
+		perror("open");
+		free(vendor_name);
+		free(mac_prefix);
+		return -1;
 	}
 
-	while (read(file_fd, &character, 1) > 0) {
-		if (size + 1 >= capacity) {
-			capacity = capacity << 1;
-			line = realloc(line, capacity);
+	while (read(file_fd, &buffer[0], 1) > 0 && buffer[0] != '\n') {
+		// to get rid of header
+	}
 
-			if (line == NULL) {
-				perror("realloc");
-				return -1;
-			}
-		}
+	while ((current_read_size = read(file_fd, buffer + read_size, CHUNK_SIZE - read_size)) > 0) {
+		read_size += current_read_size;
 
-		if (character == '\n') {
-			char *oui = strchr(line, ',') + 1;
-			int i = 0;
-			mac_table[count] = 0;
-			int decrement;
-
-			while (oui[i] != ',') {
-				if (oui[i] > '9') {
-					decrement = 55;
-				} else {
-					decrement = 48;
-				}
-
-				mac_table[count] = mac_table[count] << 4;
-				mac_table[count] = mac_table[count] | (oui[i] - decrement);
-
-				i++;
-			}
-
-			count++;
-			line[size] = '\0';
-			size = 0;
+		if (read_size < CHUNK_SIZE && current_read_size > 0) {
 			continue;
 		}
 
-		line[size++] = character;
+		int step_number = 0;
+		char *current_index = buffer;
+		char *end_index;
+		int i = CHUNK_SIZE - 1;
+
+		while (i >= 0 && buffer[i] != '\n') {
+			leftover_size++;
+			i--;
+		}
+
+		end_index = &buffer[i + 1];
+
+		leftover_buff = calloc(leftover_size, sizeof(char));
+		if (leftover_buff == NULL) {
+			perror("calloc"); // this keeps crashing, investigate why
+			free(vendor_name);
+			free(mac_prefix);
+			close(file_fd);
+			return -1;
+		}
+
+		memcpy(leftover_buff, end_index, leftover_size);
+		end_index[0] = '\0';
+
+		while (current_index != end_index) {
+			current_index = strchr(current_index, ',') + 1; // we need it to point right after the ','
+			step_number = mac_prefix_parser(current_index, mac_prefix, mac_prefix_index, mac_prefix_capacity);
+			if (step_number == -1) {
+				free(vendor_name);
+				free(mac_prefix);
+				close(file_fd);
+				return -1;
+			}
+			printf("%06x ", mac_prefix[mac_prefix_index]);
+
+			mac_prefix_index++;
+			current_index = current_index + step_number + 1; // this is first character of the vendors name
+
+			step_number = vendor_name_parser(current_index, vendor_name, vendor_name_count, vendor_name_capacity);
+			if (step_number == -1) {
+				free(vendor_name);
+				free(mac_prefix);
+				close(file_fd);
+				return -1;
+			}
+			printf("%s\n", vendor_name);
+
+			current_index = strchr(current_index + step_number, '\n') + 1;
+		}
+
+		memcpy(buffer, leftover_buff, leftover_size);
+
+		read_size = leftover_size;
+		leftover_size = 0;
+
+		free(leftover_buff);
+		leftover_buff = NULL;
 	}
 
-	line[size] = '\0';
+	if (current_read_size < 0) {
+		perror("read");
+		free(vendor_name);
+		free(mac_prefix);
+		close(file_fd);
+		return -1;
+	} else {
+		int step_number = 0;
+		char *current_index = buffer;
+		char *end_index = &buffer[read_size];
 
-	printf("unsorted: ");
-	for (int i = 0; i < count; i++) {
-		printf("%x ", mac_table[i]);
+		while (current_index != end_index) {
+			current_index = strchr(current_index, ',') + 1; // we need it to point right after the ','
+			step_number = mac_prefix_parser(current_index, mac_prefix, mac_prefix_index, mac_prefix_capacity);
+			if (step_number == -1) {
+				free(vendor_name);
+				free(mac_prefix);
+				close(file_fd);
+				return -1;
+			}
+			printf("%6x <- ", mac_prefix[mac_prefix_index]);
+
+			mac_prefix_index++;
+			current_index = current_index + step_number + 1; // this is first character of the vendors name
+
+			step_number = vendor_name_parser(current_index, vendor_name, vendor_name_count, vendor_name_capacity);
+			if (step_number == -1) {
+				free(vendor_name);
+				free(mac_prefix);
+				close(file_fd);
+				return -1;
+			}
+			printf("%s\n", vendor_name);
+
+			current_index = strchr(current_index + step_number, '\n') + 1;
+		}
 	}
-	printf("\n");
 
-	quicksort(mac_table, 10);
-
-	printf("sorted: ");
-	for (int i = 0; i < count; i++) {
-		printf("%x ", mac_table[i]);
-	}
-	printf("\n");
-
-	free(line);
+	free(vendor_name);
+	free(mac_prefix);
 	close(file_fd);
 	return 0;
 }
