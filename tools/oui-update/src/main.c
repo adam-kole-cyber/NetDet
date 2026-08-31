@@ -19,7 +19,7 @@ int main(void) {
 	int read_size = 0;
 	int current_read_size = 0;
 	char *leftover_buff;
-	char leftover_size = 0;
+	int leftover_size = 0;
 	int file_fd = open("/home/adam/C/NetDet/data/oui/ma-l.csv", O_RDONLY);
 
 	if (file_fd == -1) {
@@ -54,7 +54,7 @@ int main(void) {
 
 		leftover_buff = calloc(leftover_size, sizeof(char));
 		if (leftover_buff == NULL) {
-			perror("calloc"); // this keeps crashing, investigate why
+			perror("calloc");
 			free(vendor_name);
 			free(mac_prefix);
 			close(file_fd);
@@ -66,7 +66,8 @@ int main(void) {
 
 		while (current_index != end_index) {
 			current_index = strchr(current_index, ',') + 1; // we need it to point right after the ','
-			step_number = mac_prefix_parser(current_index, mac_prefix, mac_prefix_index, mac_prefix_capacity);
+			mac_prefix[mac_prefix_index] = 0;
+			step_number = mac_prefix_parser(current_index, &mac_prefix, mac_prefix_index, &mac_prefix_capacity);
 			if (step_number == -1) {
 				free(vendor_name);
 				free(mac_prefix);
@@ -112,7 +113,8 @@ int main(void) {
 
 		while (current_index != end_index) {
 			current_index = strchr(current_index, ',') + 1; // we need it to point right after the ','
-			step_number = mac_prefix_parser(current_index, mac_prefix, mac_prefix_index, mac_prefix_capacity);
+			mac_prefix[mac_prefix_index] = 0;
+			step_number = mac_prefix_parser(current_index, &mac_prefix, mac_prefix_index, &mac_prefix_capacity);
 			if (step_number == -1) {
 				free(vendor_name);
 				free(mac_prefix);
