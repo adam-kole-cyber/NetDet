@@ -2,10 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int mac_prefix_parser(char *buffer, int **mac_prefix, int mac_prefix_index, int *mac_prefix_capacity) {
+int mac_prefix_parser(char *buffer, mac_prefix *mac) {
 	int step_number = 0;
 	int decrement = 0;
 	int *tmp;
+
+	mac->data[mac->count] = 0;
 
 	while (buffer[step_number] != ',') {
 		if (buffer[step_number] >= '0' && buffer[step_number] <= '9') {
@@ -20,20 +22,20 @@ int mac_prefix_parser(char *buffer, int **mac_prefix, int mac_prefix_index, int 
 			return -1;
 		}
 
-		if (mac_prefix_index + 1 >= *mac_prefix_capacity) {
-			int new_capacity = *mac_prefix_capacity << 1;
-			tmp = realloc(*mac_prefix, sizeof(unsigned int) * new_capacity);
+		if (mac->count + 1 >= mac->capacity) {
+			int new_capacity = mac->capacity << 1;
+			tmp = realloc(mac->data, sizeof(unsigned int) * new_capacity);
 
 			if (tmp == NULL) {
 				perror("realloc");
 				return -1;
 			}
 
-			*mac_prefix_capacity = new_capacity;
-			*mac_prefix = tmp;
+			mac->capacity = new_capacity;
+			mac->data = tmp;
 		}
 
-		(*mac_prefix)[mac_prefix_index] = ((*mac_prefix)[mac_prefix_index] << 4) | (buffer[step_number] - decrement);
+		mac->data[mac->count] = (mac->data[mac->count] << 4) | (buffer[step_number] - decrement);
 
 		step_number++;
 	}
