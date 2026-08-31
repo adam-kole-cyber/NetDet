@@ -126,16 +126,16 @@ int main(void) {
 		leftover_buff = NULL;
 	}
 
-	if (current_read_size < 0) {
-		perror("read");
-		error_close(vendor.data, mac.data, file_fd);
-		return -1;
-	} else {
+	if (current_read_size >= 0) {
 		char *end_index = &buffer[read_size];
 		if (process_data(buffer, end_index, &mac, &vendor) < 0) {
 			error_close(vendor.data, mac.data, file_fd);
 			return -1;
 		}
+	} else {
+		perror("read");
+		error_close(vendor.data, mac.data, file_fd);
+		return -1;
 	}
 
 	quicksort(mac.data, mac.count);
