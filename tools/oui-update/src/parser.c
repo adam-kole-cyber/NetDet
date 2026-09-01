@@ -6,8 +6,18 @@ int mac_prefix_parser(char *buffer, mac_prefix *mac) {
 	int step_number = 0;
 	int decrement = 0;
 	int *tmp;
+	int size;
 
-	mac->data[mac->count] = 0;
+	if (mac->data_type == MA_L) {
+		((ma_l_entry *)mac->data)[mac->count].oui = 0;
+		size = sizeof(((ma_l_entry *)mac->data)[mac->count].oui);
+	} else if (mac->data_type == MA_M) {
+		((ma_m_entry *)mac->data)[mac->count].oui = 0;
+		size = sizeof(((ma_m_entry *)mac->data)[mac->count].oui);
+	} else if (mac->data_type == MA_S) {
+		((ma_s_entry *)mac->data)[mac->count].oui = 0;
+		size = sizeof(((ma_s_entry *)mac->data)[mac->count].oui);
+	}
 
 	while (buffer[step_number] != ',') {
 		if (buffer[step_number] >= '0' && buffer[step_number] <= '9') {
@@ -24,7 +34,7 @@ int mac_prefix_parser(char *buffer, mac_prefix *mac) {
 
 		if (mac->count + 1 >= mac->capacity) {
 			int new_capacity = mac->capacity << 1;
-			tmp = realloc(mac->data, sizeof(unsigned int) * new_capacity);
+			tmp = realloc(mac->data, size * new_capacity);
 
 			if (tmp == NULL) {
 				perror("realloc");
@@ -35,17 +45,29 @@ int mac_prefix_parser(char *buffer, mac_prefix *mac) {
 			mac->data = tmp;
 		}
 
-		mac->data[mac->count] = (mac->data[mac->count] << 4) | (buffer[step_number] - decrement);
+		if (mac->data_type == MA_L) {
+			((ma_l_entry *)mac->data)[mac->count].oui =
+				(((ma_l_entry *)mac->data)[mac->count].oui << 4) | (buffer[step_number] - decrement);
+		} else if (mac->data_type == MA_M) {
+			((ma_m_entry *)mac->data)[mac->count].oui =
+				(((ma_m_entry *)mac->data)[mac->count].oui << 4) | (buffer[step_number] - decrement);
+		} else if (mac->data_type == MA_S) {
+			((ma_s_entry *)mac->data)[mac->count].oui =
+				(((ma_s_entry *)mac->data)[mac->count].oui << 4) | (buffer[step_number] - decrement);
+		}
 
 		step_number++;
 	}
 
+	mac->count++;
+
 	return step_number;
 }
 
-int vendor_name_parser(char *buffer, char *vendor_name, int vendor_name_count, int vendor_name_capacity) {
+int vendor_name_parser(char *buffer, vendor_name *vendor) {
 	int step_number = 0;
 	char vendor_delimiter;
+	vendor_entry *entry = &vendor->data[vendor->count];
 
 	if (buffer[0] == '"') {
 		vendor_delimiter = '"';
@@ -55,21 +77,25 @@ int vendor_name_parser(char *buffer, char *vendor_name, int vendor_name_count, i
 	}
 
 	while (buffer[step_number] != vendor_delimiter) {
-		if (vendor_name_count + 1 >= vendor_name_capacity) {
-			vendor_name_capacity = vendor_name_capacity << 1;
-			vendor_name = realloc(vendor_name, sizeof(char) * vendor_name_capacity);
+		if (entry->count + 1 >= entry->capacity) {
+			int new_capacity = entry->capacity << 1;
+			char *tmp = realloc(entry->vendor_name, new_capacity);
 
-			if (vendor_name == NULL) {
+			if (tmp == NULL) {
 				perror("realloc");
 				return -1;
 			}
+
+			entry->capacity = new_capacity;
+			entry->vendor_name = tmp;
 		}
 
-		vendor_name[vendor_name_count++] = buffer[step_number];
+		entry->vendor_name[entry->capacity] = buffer[step_number];
 		step_number++;
 	}
 
-	vendor_name[vendor_name_count] = '\0';
+	entry->vendor_name[entry->count] = '\0';
+	vendor->count++;
 
 	return step_number;
 }

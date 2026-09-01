@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "quicksort.h"
 #include <fcntl.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +10,7 @@
 #define HEADER_SIZE 59
 #define CHUNK_SIZE 10240
 
-void error_close(char *vendor_name, int *mac_prefix, int file_fd) {
+void error_close(vendor_entry *vendor_name, int *mac_prefix, int file_fd) {
 	free(vendor_name);
 	free(mac_prefix);
 	close(file_fd);
@@ -20,6 +21,15 @@ void error_close(char *vendor_name, int *mac_prefix, int file_fd) {
 int process_data(char *buffer, char *end_index, mac_prefix *mac, vendor_name *vendor) {
 	int step_number = 0;
 	char *current_index = buffer;
+	uint64_t oui;
+
+	if (mac->data_type == MA_L) {
+		oui = ((ma_l_entry *)mac->data)[mac->count].oui = 0;
+	} else if (mac->data_type == MA_M) {
+		oui = ((ma_m_entry *)mac->data)[mac->count].oui = 0;
+	} else if (mac->data_type == MA_S) {
+		oui = ((ma_s_entry *)mac->data)[mac->count].oui = 0;
+	}
 
 	while (current_index != end_index) {
 		current_index = strchr(current_index, ',') + 1; // we need it to point right after the ','
@@ -28,16 +38,15 @@ int process_data(char *buffer, char *end_index, mac_prefix *mac, vendor_name *ve
 		if (step_number == -1) {
 			return -1;
 		}
-		printf("%06x <- ", mac->data[mac->count]);
+		printf("%06lx <- ", oui);
 
-		mac->count++;
 		current_index = current_index + step_number + 1; // this is first character of the vendors name
 
-		step_number = vendor_name_parser(current_index, vendor->data, vendor->count, vendor->capacity);
+		step_number = vendor_name_parser(current_index, vendor);
 		if (step_number == -1) {
 			return -1;
 		}
-		printf("%s\n", vendor->data);
+		printf("%s\n", vendor->data[vendor->count].vendor_name);
 
 		current_index = strchr(current_index + step_number, '\n') + 1;
 	}
@@ -57,11 +66,12 @@ int main(void) {
 
 	mac.capacity = CHUNK_SIZE;
 	mac.count = 0;
-	mac.data = calloc(mac.capacity, sizeof(unsigned int));
+	mac.data_type = MA_L;
+	mac.data = calloc(mac.capacity, sizeof(ma_l_entry));
 
 	vendor.capacity = 100;
 	vendor.count = 0;
-	vendor.data = calloc(vendor.capacity, sizeof(char));
+	vendor.data = calloc(vendor.capacity, sizeof(vendor_entry));
 
 	if (file_fd == -1) {
 		perror("open");
@@ -138,10 +148,10 @@ int main(void) {
 		return -1;
 	}
 
-	quicksort(mac.data, mac.count);
+	/*quicksort(mac.data, mac.count);
 	for (int i = 0; i < mac.count; i++) {
 		printf("%06x\n", mac.data[i]);
-	}
+	}*/
 
 	free(vendor.data);
 	free(mac.data);
