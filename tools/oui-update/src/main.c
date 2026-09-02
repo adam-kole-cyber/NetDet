@@ -64,12 +64,12 @@ int main(void) {
 	int leftover_size = 0;
 	int read_size = 0;
 	int current_read_size = 0;
-	int file_fd = open("/home/adam/C/NetDet/data/oui/ma-s.csv", O_RDONLY);
+	int file_fd = open("/home/adam/C/NetDet/data/oui/test-ma-s.csv", O_RDONLY);
 
 	mac.capacity = CHUNK_SIZE;
 	mac.count = 0;
 	mac.data_type = MA_S;
-	mac.data = calloc(mac.capacity, sizeof(ma_l_entry));
+	mac.data = calloc(mac.capacity, sizeof(ma_s_entry));
 
 	vendor.capacity = 100;
 	vendor.count = 0;
@@ -150,7 +150,7 @@ int main(void) {
 		return -1;
 	}
 
-	/*quicksort(mac.data, mac.count);
+	quicksort_mac(&mac);
 	for (int i = 0; i < mac.count; i++) {
 		if (mac.data_type == MA_L) {
 			printf("%06x\n", ((ma_l_entry *)mac.data)[i].oui);
@@ -159,7 +159,7 @@ int main(void) {
 		} else if (mac.data_type == MA_S) {
 			printf("%06lx\n", ((ma_s_entry *)mac.data)[i].oui);
 		}
-	}*/
+	}
 
 	cleanup(&vendor, &mac, file_fd);
 	return 0;
