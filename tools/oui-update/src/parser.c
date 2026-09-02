@@ -5,18 +5,31 @@
 int mac_prefix_parser(char *buffer, mac_prefix *mac) {
 	int step_number = 0;
 	int decrement = 0;
-	int *tmp;
+	void *tmp;
 	int size;
 
 	if (mac->data_type == MA_L) {
 		((ma_l_entry *)mac->data)[mac->count].oui = 0;
-		size = sizeof(((ma_l_entry *)mac->data)[mac->count].oui);
+		size = sizeof(ma_l_entry);
 	} else if (mac->data_type == MA_M) {
 		((ma_m_entry *)mac->data)[mac->count].oui = 0;
-		size = sizeof(((ma_m_entry *)mac->data)[mac->count].oui);
+		size = sizeof(ma_m_entry);
 	} else if (mac->data_type == MA_S) {
 		((ma_s_entry *)mac->data)[mac->count].oui = 0;
-		size = sizeof(((ma_s_entry *)mac->data)[mac->count].oui);
+		size = sizeof(ma_s_entry);
+	}
+
+	if (mac->count + 1 >= mac->capacity) {
+		int new_capacity = mac->capacity << 1;
+		tmp = realloc(mac->data, size * new_capacity);
+
+		if (tmp == NULL) {
+			perror("mac prefix realloc");
+			return -1;
+		}
+
+		mac->capacity = new_capacity;
+		mac->data = tmp;
 	}
 
 	while (buffer[step_number] != ',') {
@@ -30,19 +43,6 @@ int mac_prefix_parser(char *buffer, mac_prefix *mac) {
 			printf("%c\n", buffer[step_number]);
 			printf("Offset is not in right spot.\n");
 			return -1;
-		}
-
-		if (mac->count + 1 >= mac->capacity) {
-			int new_capacity = mac->capacity << 1;
-			tmp = realloc(mac->data, size * new_capacity);
-
-			if (tmp == NULL) {
-				perror("realloc");
-				return -1;
-			}
-
-			mac->capacity = new_capacity;
-			mac->data = tmp;
 		}
 
 		if (mac->data_type == MA_L) {
@@ -67,7 +67,26 @@ int mac_prefix_parser(char *buffer, mac_prefix *mac) {
 int vendor_name_parser(char *buffer, vendor_name *vendor) {
 	int step_number = 0;
 	char vendor_delimiter;
-	vendor_entry *entry = &vendor->data[vendor->count];
+	vendor_entry *entry;
+
+	if (vendor->count >= vendor->capacity) {
+		int new_capacity = vendor->capacity << 1;
+		vendor_entry *tmp = realloc(vendor->data, sizeof(vendor_entry) * new_capacity);
+
+		if (tmp == NULL) {
+			perror(" vendor name realloc");
+			return -1;
+		}
+
+		vendor->capacity = new_capacity;
+		vendor->data = tmp;
+	}
+
+	entry = &vendor->data[vendor->count];
+	entry->capacity = 100;
+	entry->count = 0;
+	entry->id = 0;
+	entry->vendor_name = calloc(entry->capacity, sizeof(char));
 
 	if (buffer[0] == '"') {
 		vendor_delimiter = '"';
@@ -79,10 +98,10 @@ int vendor_name_parser(char *buffer, vendor_name *vendor) {
 	while (buffer[step_number] != vendor_delimiter) {
 		if (entry->count + 1 >= entry->capacity) {
 			int new_capacity = entry->capacity << 1;
-			char *tmp = realloc(entry->vendor_name, new_capacity);
+			char *tmp = realloc(entry->vendor_name, new_capacity * sizeof(char));
 
 			if (tmp == NULL) {
-				perror("realloc");
+				perror("vendor name entry realloc");
 				return -1;
 			}
 
@@ -90,7 +109,7 @@ int vendor_name_parser(char *buffer, vendor_name *vendor) {
 			entry->vendor_name = tmp;
 		}
 
-		entry->vendor_name[entry->capacity] = buffer[step_number];
+		entry->vendor_name[entry->count++] = buffer[step_number];
 		step_number++;
 	}
 

@@ -10,9 +10,13 @@
 #define HEADER_SIZE 59
 #define CHUNK_SIZE 10240
 
-void error_close(vendor_entry *vendor_name, int *mac_prefix, int file_fd) {
-	free(vendor_name);
-	free(mac_prefix);
+void cleanup(vendor_name *vendor, mac_prefix *mac_prefix, int file_fd) {
+	for (int i = 0; i < vendor->count; i++) {
+		free(vendor->data[i].vendor_name);
+	}
+
+	free(vendor->data);
+	free(mac_prefix->data);
 	close(file_fd);
 
 	return;
@@ -21,15 +25,6 @@ void error_close(vendor_entry *vendor_name, int *mac_prefix, int file_fd) {
 int process_data(char *buffer, char *end_index, mac_prefix *mac, vendor_name *vendor) {
 	int step_number = 0;
 	char *current_index = buffer;
-	uint64_t oui;
-
-	if (mac->data_type == MA_L) {
-		oui = ((ma_l_entry *)mac->data)[mac->count].oui = 0;
-	} else if (mac->data_type == MA_M) {
-		oui = ((ma_m_entry *)mac->data)[mac->count].oui = 0;
-	} else if (mac->data_type == MA_S) {
-		oui = ((ma_s_entry *)mac->data)[mac->count].oui = 0;
-	}
 
 	while (current_index != end_index) {
 		current_index = strchr(current_index, ',') + 1; // we need it to point right after the ','
@@ -38,7 +33,14 @@ int process_data(char *buffer, char *end_index, mac_prefix *mac, vendor_name *ve
 		if (step_number == -1) {
 			return -1;
 		}
-		printf("%06lx <- ", oui);
+
+		if (mac->data_type == MA_L) {
+			printf("%06x <- ", ((ma_l_entry *)mac->data)[mac->count - 1].oui);
+		} else if (mac->data_type == MA_M) {
+			printf("%06x <- ", ((ma_m_entry *)mac->data)[mac->count - 1].oui);
+		} else if (mac->data_type == MA_S) {
+			printf("%lx <- ", ((ma_s_entry *)mac->data)[mac->count - 1].oui);
+		}
 
 		current_index = current_index + step_number + 1; // this is first character of the vendors name
 
@@ -46,7 +48,7 @@ int process_data(char *buffer, char *end_index, mac_prefix *mac, vendor_name *ve
 		if (step_number == -1) {
 			return -1;
 		}
-		printf("%s\n", vendor->data[vendor->count].vendor_name);
+		printf("%s\n", vendor->data[vendor->count - 1].vendor_name);
 
 		current_index = strchr(current_index + step_number, '\n') + 1;
 	}
@@ -62,11 +64,11 @@ int main(void) {
 	int leftover_size = 0;
 	int read_size = 0;
 	int current_read_size = 0;
-	int file_fd = open("/home/adam/C/NetDet/data/oui/ma-l.csv", O_RDONLY);
+	int file_fd = open("/home/adam/C/NetDet/data/oui/ma-s.csv", O_RDONLY);
 
 	mac.capacity = CHUNK_SIZE;
 	mac.count = 0;
-	mac.data_type = MA_L;
+	mac.data_type = MA_S;
 	mac.data = calloc(mac.capacity, sizeof(ma_l_entry));
 
 	vendor.capacity = 100;
@@ -85,7 +87,7 @@ int main(void) {
 		current_read_size = read(file_fd, buffer, HEADER_SIZE);
 		if (current_read_size <= 0) {
 			printf("Something went wrong while processing the file header.\n");
-			error_close(vendor.data, mac.data, file_fd);
+			cleanup(&vendor, &mac, file_fd);
 			return -1;
 		}
 
@@ -115,7 +117,7 @@ int main(void) {
 		leftover_buff = calloc(leftover_size, sizeof(char));
 		if (leftover_buff == NULL) {
 			perror("calloc");
-			error_close(vendor.data, mac.data, file_fd);
+			cleanup(&vendor, &mac, file_fd);
 			return -1;
 		}
 
@@ -123,7 +125,7 @@ int main(void) {
 		end_index[0] = '\0';
 
 		if (process_data(buffer, end_index, &mac, &vendor)) {
-			error_close(vendor.data, mac.data, file_fd);
+			cleanup(&vendor, &mac, file_fd);
 			return -1;
 		}
 
@@ -139,22 +141,26 @@ int main(void) {
 	if (current_read_size >= 0) {
 		char *end_index = &buffer[read_size];
 		if (process_data(buffer, end_index, &mac, &vendor) < 0) {
-			error_close(vendor.data, mac.data, file_fd);
+			cleanup(&vendor, &mac, file_fd);
 			return -1;
 		}
 	} else {
 		perror("read");
-		error_close(vendor.data, mac.data, file_fd);
+		cleanup(&vendor, &mac, file_fd);
 		return -1;
 	}
 
 	/*quicksort(mac.data, mac.count);
 	for (int i = 0; i < mac.count; i++) {
-		printf("%06x\n", mac.data[i]);
+		if (mac.data_type == MA_L) {
+			printf("%06x\n", ((ma_l_entry *)mac.data)[i].oui);
+		} else if (mac.data_type == MA_M) {
+			printf("%06x\n", ((ma_m_entry *)mac.data)[i].oui);
+		} else if (mac.data_type == MA_S) {
+			printf("%06lx\n", ((ma_s_entry *)mac.data)[i].oui);
+		}
 	}*/
 
-	free(vendor.data);
-	free(mac.data);
-	close(file_fd);
+	cleanup(&vendor, &mac, file_fd);
 	return 0;
 }
